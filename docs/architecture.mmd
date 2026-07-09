@@ -1,0 +1,20 @@
+flowchart TD
+    A["iPhone Home Screen / Safari PWA"] --> B["Next.js Mobile UI"]
+    B --> C["Recipe Screens and Forms"]
+    C --> D["Supabase Client"]
+
+    D --> E["Supabase Auth"]
+    D --> F["Supabase Postgres Database"]
+    D --> G["Supabase Storage"]
+
+    F --> H["Recipes"]
+    F --> I["Ingredients"]
+    F --> J["Steps"]
+    F --> K["Source Links"]
+    F --> L["Tags / Meal Types"]
+
+    G --> M["Recipe Photos"]
+
+    N["GitHub Repo"] --> O["Vercel Hosting"]
+    O --> B
+
