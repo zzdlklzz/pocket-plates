@@ -48,7 +48,7 @@ Product angle:
 - Icons and visual placeholders: Lucide React icons with simple deterministic placeholder treatments.
 - Backend platform: Supabase.
 - Database: Supabase Postgres.
-- Auth: Supabase Auth.
+- Auth: Supabase Auth with email/password and Google OAuth.
 - Storage: Supabase Storage for recipe images, with pasted image URLs allowed for the MVP.
 - Deployment: Vercel.
 - Source control: GitHub.
@@ -75,7 +75,7 @@ The app has five main layers:
 - Supabase client integration inside the Next.js app.
 - Supabase services for Auth, Postgres, Storage, and Row Level Security.
 - GitHub Actions pipeline for checks, tests, type generation, and migration deployment.
-- Supabase custom SMTP for production-ready auth emails.
+- Supabase custom SMTP for production-ready auth emails, plus Google Cloud Console OAuth credentials for Google login.
 
 Main runtime flow:
 
@@ -114,6 +114,7 @@ Goal: create a deployable skeleton before building feature depth.
 Goal: any visitor can create an account, then save and retrieve their own private recipes.
 
 - Email sign-up and sign-in through Supabase Auth.
+- Google OAuth sign-in through Supabase Auth and Google Cloud Console credentials.
 - Automatic profile creation after account signup.
 - Recipe list with mobile-friendly cards.
 - Recipe detail page.
@@ -360,6 +361,22 @@ Sender: same mailbox or verified sender
 ```
 
 For a larger or more public app, prefer a transactional email provider such as Resend, Postmark, SendGrid, Brevo, or AWS SES instead of personal Gmail. Gmail is acceptable for low-volume personal use, but a transactional provider gives better deliverability controls, domain verification, and operational limits.
+
+## Google OAuth Login Plan
+
+Google login should be configured through Supabase Auth, with Google Cloud Console used only to create and manage the OAuth client credentials.
+
+Before application coding starts:
+
+- Create or select a Google Cloud project for PocketPlates.
+- Configure the OAuth consent screen with the app name, support email, developer contact email, and test users while the app is in testing mode.
+- Create a web application OAuth client.
+- Add the Supabase Google provider callback URL to the Google OAuth authorized redirect URIs.
+- Store the Google OAuth client ID and client secret in Supabase Auth provider settings, not in the repository.
+- Enable the Google provider in Supabase.
+- Add localhost and Vercel URLs to Supabase Auth redirect allow lists when those URLs are known.
+
+Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAuth client secret; Gmail SMTP uses a mailbox app password.
 
 ## Future Enhancements
 

@@ -8,5 +8,6 @@ dist/
 playwright-report/
 test-results/
 *.tsbuildinfo
+supabase/.temp/
 .codex/*
 !.codex/AGENTS.md

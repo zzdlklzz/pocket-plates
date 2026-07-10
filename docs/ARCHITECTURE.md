@@ -13,7 +13,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Forms and validation: React Hook Form and Zod.
 - Backend platform: Supabase.
 - Database: Supabase Postgres with migration files.
-- Auth: Supabase Auth with open email sign-up.
+- Auth: Supabase Auth with open email sign-up and planned Google OAuth.
 - Storage: Supabase Storage for future recipe images.
 - Hosting: Vercel.
 - CI/CD: GitHub Actions plus Vercel Git deployments.
@@ -168,13 +168,13 @@ npx playwright install
 6. Link the local repo to the Supabase project:
 
 ```bash
-supabase link --project-ref <your-project-ref>
+npm run supabase:link -- --project-ref <your-project-ref>
 ```
 
 7. Push migrations:
 
 ```bash
-supabase db push
+npm run supabase:db:push
 ```
 
 8. Generate database types:
@@ -207,6 +207,21 @@ Sender: same mailbox or verified sender
 ```
 
 For a larger public release, prefer a transactional provider such as Resend, Postmark, SendGrid, Brevo, or AWS SES.
+
+## Google OAuth Setup
+
+Use Supabase as the application auth broker and Google Cloud Console as the OAuth credential provider.
+
+1. Create or select a Google Cloud project for PocketPlates.
+2. Configure the OAuth consent screen with the app name, support email, developer contact email, and any required test users while the app is in testing mode.
+3. Create an OAuth 2.0 Client ID for a web application.
+4. Add the Supabase callback URL from Supabase Authentication provider settings to the Google OAuth authorized redirect URIs.
+5. Copy the Google OAuth client ID and client secret into Supabase Authentication provider settings. Do not commit either value to the repo.
+6. Enable the Google provider in Supabase Auth.
+7. Add the local and deployed app URLs to the Supabase Auth site URL and redirect URL allow list, including localhost for development and the Vercel production URL before release.
+8. Test Google sign-in with a Google account that is allowed by the OAuth consent screen.
+
+Keep Google SMTP credentials separate from Google OAuth credentials. SMTP uses a Google app password for the sender mailbox; OAuth login uses a Google Cloud OAuth client ID and client secret stored only in Supabase.
 
 ## Deployment Setup
 
