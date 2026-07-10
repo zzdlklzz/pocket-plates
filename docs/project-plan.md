@@ -292,12 +292,13 @@ Use Vercel's GitHub integration for application deployment:
 Required GitHub secrets later:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_PROJECT_REF`
 - `SUPABASE_DB_PASSWORD`
 
-Vercel will also need the public Supabase URL and anon key as environment variables.
+Vercel will also need the public Supabase URL and publishable key as environment variables. Keep `SUPABASE_SECRET_KEY` server-only and use it only for future backend/admin operations that require elevated Supabase access.
 
 ## Testing Strategy
 

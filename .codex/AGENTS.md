@@ -13,13 +13,20 @@ You must strictly adhere to these software engineering standards whenever writin
 - Maintain a strict, predictable folder structure at all times. Group related components, services, or modules logically.
 - Prioritize refactoring existing code over wrapping bad code if a change introduces duplication or violates good architectural design.
 
-## 3. Scope Management & Iterative Approvals
+## 3. Secret & API Key Safety
+- **Never Leak Secrets:** Never print, paste, commit, log, screenshot, or otherwise expose real API keys, database passwords, access tokens, JWT secrets, service role keys, secret API keys, OAuth client secrets, or production credentials.
+- **Use Placeholders:** Documentation, examples, changelogs, tests, and comments must use obvious placeholders such as `sb_publishable_...`, `sb_secret_...`, `<your-project-ref>`, or `<your-secret-key>` instead of real values.
+- **Client Boundary:** Never place server-only secrets in browser-exposed variables, especially variables prefixed with `NEXT_PUBLIC_`. Public clients may only receive explicitly publishable keys.
+- **Redaction Required:** If inspecting environment files, terminal output, dashboards, logs, or diffs that may contain secrets, redact values before sharing them with the user or writing them into any repository file.
+- **Leak Response:** If a secret appears to have been exposed, stop using it immediately, tell the user plainly, and recommend rotating/revoking the affected key before continuing related setup work.
+
+## 4. Scope Management & Iterative Approvals
 - **Modular Changes ("Vertical Slices"):** Do not create massive, monolithic changes or giant commits. If an implementation will affect many files or structural layers, you must modularize the changes and break them down into small, logical slices.
 - **Review Checkpoints:** Pause after completing each individual slice. Present the changes to the user for vetting and explicit approval before moving on to the next slice.
 - **Staged Commit Messages:** Every time a change is made, stage the changes and draft the commit message according to `.codex/rules/draft-commit.mdc`. **Do not execute the actual commit command.** Wait for the user to review and approve both the code and the message.
 - **Pull Request Drafts:** If asked to draft or create a pull request, follow `.codex/rules/draft-pr.mdc` for the PR title, summary, changes, testing, and notes.
 
-## 4. Post-Change Action Protocol
+## 5. Post-Change Action Protocol
 Every single time you execute a task, make changes, or add a feature, you **must** perform the following three steps before marking your work as complete:
 
 ### Step A: Generate Chronological Change Log

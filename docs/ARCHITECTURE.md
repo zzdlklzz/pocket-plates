@@ -130,8 +130,11 @@ cp .env.example .env.local
 
 ```txt
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
 ```
+
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the modern replacement for the legacy `anon` key in browser-safe code. `SUPABASE_SECRET_KEY` is server-only and should stay out of any `NEXT_PUBLIC_` variable; it is reserved for future backend-only admin work and is not used by the browser client.
 
 4. Start the local app:
 
@@ -158,27 +161,29 @@ npx playwright install
 ## Supabase Setup
 
 1. Create a Supabase project.
-2. Copy the project URL and anon key into `.env.local`.
-3. Install and authenticate the Supabase CLI if needed.
-4. Link the local repo to the Supabase project:
+2. Copy the project URL and publishable key into `.env.local`.
+3. Create a secret API key only if the project needs backend-only administrative access. Store it as `SUPABASE_SECRET_KEY`; never expose it to browser code, mobile clients, public source code, or Vercel public environment variables.
+4. A separate Supabase JWT secret is not required for the current app setup. Use the publishable key for client access and the secret key for future server-only admin operations. Only revisit JWT secrets if the app later signs/verifies custom JWTs directly or adds Edge Functions that rely on Supabase JWT verification behavior.
+5. Install and authenticate the Supabase CLI if needed.
+6. Link the local repo to the Supabase project:
 
 ```bash
 supabase link --project-ref <your-project-ref>
 ```
 
-5. Push migrations:
+7. Push migrations:
 
 ```bash
 supabase db push
 ```
 
-6. Generate database types:
+8. Generate database types:
 
 ```bash
 npm run supabase:types
 ```
 
-7. Confirm Row Level Security policies are enabled and signup creates `profiles` rows.
+9. Confirm Row Level Security policies are enabled and signup creates `profiles` rows.
 
 ## Email And SMTP Setup
 
@@ -211,7 +216,8 @@ For a larger public release, prefer a transactional provider such as Resend, Pos
 
 ```txt
 NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SECRET_KEY
 ```
 
 4. Add GitHub secrets for migration workflows:

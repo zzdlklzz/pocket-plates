@@ -1,14 +1,13 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { SUPABASE_ENV_KEYS } from "@/lib/env/env.constants";
+import { SUPABASE_ENV_KEYS, SUPABASE_PUBLIC_ENV } from "@/lib/env/env.constants";
 import type { Database } from "./database.types";
 
 export function createSupabaseBrowserClient() {
-  const url = process.env[SUPABASE_ENV_KEYS.url];
-  const anonKey = process.env[SUPABASE_ENV_KEYS.anonKey];
+  const { url, publishableKey } = SUPABASE_PUBLIC_ENV;
 
-  if (!url || !anonKey) {
-    throw new Error(`Missing ${SUPABASE_ENV_KEYS.url} or ${SUPABASE_ENV_KEYS.anonKey}.`);
+  if (!url || !publishableKey) {
+    throw new Error(`Missing ${SUPABASE_ENV_KEYS.url} or ${SUPABASE_ENV_KEYS.publishableKey}.`);
   }
 
-  return createBrowserClient<Database>(url, anonKey);
+  return createBrowserClient<Database>(url, publishableKey);
 }
