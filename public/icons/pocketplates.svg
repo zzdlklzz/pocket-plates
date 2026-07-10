@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">PocketPlates app icon</title>
+  <desc id="desc">A simple plate and leaf icon for PocketPlates.</desc>
+  <rect width="512" height="512" rx="112" fill="#2f6f55"/>
+  <circle cx="256" cy="256" r="150" fill="#fffdf8"/>
+  <circle cx="256" cy="256" r="92" fill="#e6f0e8"/>
+  <path d="M292 170c52 6 88 42 96 92-50-5-90-40-96-92Z" fill="#76a88f"/>
+  <path d="M268 226c-40-34-92-34-130 0 33 43 91 53 130 0Z" fill="#2f6f55"/>
+  <path d="M170 252c48 28 104 28 152 0" fill="none" stroke="#17392c" stroke-width="18" stroke-linecap="round"/>
+</svg>

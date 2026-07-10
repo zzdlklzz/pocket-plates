@@ -25,6 +25,7 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 
 ## Included Files
 
+- `docs/ARCHITECTURE.md`: current app architecture, feature, and setup guide
 - `docs/project-plan.md`: consolidated MVP, stack, CI/CD, testing, email, migration, DTO, and UI plan
 - `docs/architecture.mmd`: editable Mermaid architecture diagram source
 - `docs/database-erd.mmd`: editable Mermaid database ERD source
