@@ -1,0 +1,247 @@
+// PocketPlates relational database schema
+// Paste this file into https://dbdiagram.io to visualize the database.
+// Designed for Supabase Postgres, Row Level Security, and future migrations.
+
+Enum meal_type {
+  breakfast
+  lunch
+  dinner
+  snack
+  flexible
+}
+
+Enum recipe_visibility {
+  private
+  shared
+  public
+}
+
+Enum cost_rating {
+  very_cheap
+  cheap
+  moderate
+  splurge
+}
+
+Enum difficulty_level {
+  easy
+  medium
+  hard
+  beginner_friendly
+}
+
+Enum pantry_item_status {
+  active
+  archived
+}
+
+Table profiles {
+  id uuid [pk, note: 'Matches auth.users.id']
+  username text [unique]
+  display_name text
+  avatar_url text
+  bio text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+Table recipes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [not null, ref: > profiles.id]
+  title text [not null]
+  slug text
+  summary text
+  notes text
+  servings int [not null, default: 1]
+  prep_minutes int
+  cook_minutes int
+  cost_rating cost_rating
+  difficulty difficulty_level
+  estimated_total_cost numeric
+  visibility recipe_visibility [not null, default: 'private']
+  image_url text
+  image_storage_path text
+  source_name text
+  source_url text
+  is_favorite boolean [not null, default: false]
+  published_at timestamptz
+  archived_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (owner_id, created_at)
+    (owner_id, cost_rating)
+    (owner_id, difficulty)
+    (visibility, published_at)
+    (owner_id, is_favorite)
+    (owner_id, slug) [unique]
+  }
+}
+
+Table recipe_meal_types {
+  recipe_id uuid [not null, ref: > recipes.id]
+  meal_type meal_type [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (recipe_id, meal_type) [pk]
+    (meal_type)
+  }
+}
+
+Table recipe_links {
+  id uuid [pk, default: `gen_random_uuid()`]
+  recipe_id uuid [not null, ref: > recipes.id]
+  label text [not null]
+  url text [not null]
+  sort_order int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table recipe_ingredients {
+  id uuid [pk, default: `gen_random_uuid()`]
+  recipe_id uuid [not null, ref: > recipes.id]
+  name text [not null]
+  amount numeric
+  unit text
+  notes text
+  group_name text
+  sort_order int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (recipe_id, sort_order)
+    (name)
+  }
+}
+
+Table recipe_steps {
+  id uuid [pk, default: `gen_random_uuid()`]
+  recipe_id uuid [not null, ref: > recipes.id]
+  instruction text [not null]
+  timer_minutes int
+  sort_order int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (recipe_id, sort_order)
+  }
+}
+
+Table tags {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [not null, ref: > profiles.id]
+  label text [not null]
+  color text
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (owner_id, label) [unique]
+  }
+}
+
+Table recipe_tags {
+  recipe_id uuid [not null, ref: > recipes.id]
+  tag_id uuid [not null, ref: > tags.id]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (recipe_id, tag_id) [pk]
+    (tag_id)
+  }
+}
+
+Table equipment {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [not null, ref: > profiles.id]
+  label text [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (owner_id, label) [unique]
+  }
+}
+
+Table recipe_equipment {
+  recipe_id uuid [not null, ref: > recipes.id]
+  equipment_id uuid [not null, ref: > equipment.id]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (recipe_id, equipment_id) [pk]
+    (equipment_id)
+  }
+}
+
+Table pantry_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [not null, ref: > profiles.id]
+  name text [not null]
+  default_unit text
+  estimated_unit_cost numeric
+  status pantry_item_status [not null, default: 'active']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (owner_id, name) [unique]
+  }
+}
+
+Table meal_plans {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [not null, ref: > profiles.id]
+  week_start_date date [not null]
+  title text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (owner_id, week_start_date)
+  }
+}
+
+Table meal_plan_entries {
+  id uuid [pk, default: `gen_random_uuid()`]
+  meal_plan_id uuid [not null, ref: > meal_plans.id]
+  recipe_id uuid [not null, ref: > recipes.id]
+  planned_for date [not null]
+  meal_type meal_type [not null, default: 'flexible']
+  servings int [not null, default: 1]
+  notes text
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (meal_plan_id, planned_for)
+    (recipe_id)
+  }
+}
+
+Table grocery_lists {
+  id uuid [pk, default: `gen_random_uuid()`]
+  owner_id uuid [not null, ref: > profiles.id]
+  meal_plan_id uuid [ref: > meal_plans.id]
+  title text [not null]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+Table grocery_list_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  grocery_list_id uuid [not null, ref: > grocery_lists.id]
+  name text [not null]
+  amount numeric
+  unit text
+  checked boolean [not null, default: false]
+  source_recipe_id uuid [ref: > recipes.id]
+  sort_order int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (grocery_list_id, sort_order)
+  }
+}

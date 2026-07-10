@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="900" viewBox="0 0 1320 900" role="img" aria-labelledby="title desc">
+  <title id="title">PocketPlates Architecture</title>
+  <desc id="desc">High level system architecture for PocketPlates showing Next.js on Vercel, Supabase Auth, Postgres, Storage, Row Level Security, GitHub Actions, custom SMTP, and supporting frontend libraries.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#37515f"/>
+    </marker>
+    <style>
+      .bg { fill: #f8faf7; }
+      .band { fill: #eef5f0; stroke: #d5e2d8; stroke-width: 2; }
+      .card { fill: #ffffff; stroke: #bfd0c6; stroke-width: 2; rx: 8; }
+      .service { fill: #e8f3ff; stroke: #abc5dd; stroke-width: 2; rx: 8; }
+      .data { fill: #fff7e8; stroke: #dec99f; stroke-width: 2; rx: 8; }
+      .ops { fill: #f3ecff; stroke: #c8b4e5; stroke-width: 2; rx: 8; }
+      .label { font: 700 24px Arial, sans-serif; fill: #263238; }
+      .small { font: 700 16px Arial, sans-serif; fill: #33434a; }
+      .tiny { font: 500 13px Arial, sans-serif; fill: #53636b; }
+      .line { stroke: #37515f; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #78909c; stroke-width: 2.2; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1320" height="900"/>
+  <text class="label" x="52" y="58">PocketPlates - High Level Architecture</text>
+  <text class="tiny" x="52" y="84">Multi-user private-first recipe PWA for students and beginner cooks.</text>
+
+  <rect class="band" x="44" y="120" width="220" height="560" rx="12"/>
+  <text class="small" x="68" y="154">Client Devices</text>
+  <rect class="card" x="68" y="190" width="172" height="82"/>
+  <text class="small" x="88" y="224">iPhone PWA</text>
+  <text class="tiny" x="88" y="248">Home Screen install</text>
+  <rect class="card" x="68" y="306" width="172" height="82"/>
+  <text class="small" x="88" y="340">Browser</text>
+  <text class="tiny" x="88" y="364">Mobile or desktop</text>
+
+  <rect class="band" x="316" y="120" width="292" height="560" rx="12"/>
+  <text class="small" x="340" y="154">Frontend On Vercel</text>
+  <rect class="service" x="340" y="190" width="244" height="82"/>
+  <text class="small" x="360" y="224">Next.js + React</text>
+  <text class="tiny" x="360" y="248">TypeScript app shell</text>
+  <rect class="card" x="340" y="306" width="244" height="92"/>
+  <text class="small" x="360" y="340">UI Layer</text>
+  <text class="tiny" x="360" y="364">Tailwind, Lucide React</text>
+  <text class="tiny" x="360" y="384">recipe screens and filters</text>
+  <rect class="card" x="340" y="432" width="244" height="92"/>
+  <text class="small" x="360" y="466">Server State</text>
+  <text class="tiny" x="360" y="490">TanStack Query hooks</text>
+  <text class="tiny" x="360" y="510">cache, mutations, invalidation</text>
+  <rect class="service" x="340" y="558" width="244" height="82"/>
+  <text class="small" x="360" y="592">Forms, DTOs, Repository</text>
+  <text class="tiny" x="360" y="616">react-hook-form, zod, Supabase</text>
+
+  <rect class="band" x="660" y="120" width="388" height="560" rx="12"/>
+  <text class="small" x="684" y="154">Supabase Platform</text>
+  <rect class="service" x="684" y="190" width="150" height="82"/>
+  <text class="small" x="704" y="224">Auth</text>
+  <text class="tiny" x="704" y="248">Open email signup</text>
+  <rect class="service" x="872" y="190" width="150" height="82"/>
+  <text class="small" x="892" y="224">Storage</text>
+  <text class="tiny" x="892" y="248">Recipe photos</text>
+  <rect class="service" x="684" y="306" width="338" height="92"/>
+  <text class="small" x="704" y="340">Postgres + Row Level Security</text>
+  <text class="tiny" x="704" y="364">Owner-private libraries at launch</text>
+  <text class="tiny" x="704" y="384">Public reads added only in discovery stage</text>
+
+  <rect class="data" x="684" y="432" width="150" height="64"/>
+  <text class="tiny" x="714" y="468">recipes</text>
+  <rect class="data" x="872" y="432" width="150" height="64"/>
+  <text class="tiny" x="900" y="468">meal types</text>
+  <rect class="data" x="684" y="520" width="150" height="64"/>
+  <text class="tiny" x="710" y="556">ingredients</text>
+  <rect class="data" x="872" y="520" width="150" height="64"/>
+  <text class="tiny" x="918" y="556">steps</text>
+  <rect class="data" x="684" y="608" width="150" height="64"/>
+  <text class="tiny" x="712" y="644">links/tags</text>
+  <rect class="data" x="872" y="608" width="150" height="64"/>
+  <text class="tiny" x="894" y="644">future plans</text>
+
+  <rect class="band" x="1100" y="120" width="176" height="560" rx="12"/>
+  <text class="small" x="1124" y="154">Delivery</text>
+  <rect class="ops" x="1124" y="190" width="128" height="82"/>
+  <text class="small" x="1142" y="224">GitHub</text>
+  <text class="tiny" x="1142" y="248">source control</text>
+  <rect class="ops" x="1124" y="306" width="128" height="92"/>
+  <text class="small" x="1142" y="340">Actions</text>
+  <text class="tiny" x="1142" y="364">lint, types</text>
+  <text class="tiny" x="1142" y="384">Vitest, Playwright</text>
+  <rect class="ops" x="1124" y="432" width="128" height="92"/>
+  <text class="small" x="1142" y="466">Deploy</text>
+  <text class="tiny" x="1142" y="490">Vercel app</text>
+  <text class="tiny" x="1142" y="510">Supabase migrations</text>
+  <rect class="ops" x="1124" y="558" width="128" height="82"/>
+  <text class="small" x="1142" y="592">SMTP</text>
+  <text class="tiny" x="1142" y="616">Gmail or provider</text>
+
+  <path class="line" d="M240 230 C278 230, 292 230, 340 230"/>
+  <path class="line" d="M240 346 C278 346, 292 346, 340 346"/>
+  <path class="line" d="M462 272 L462 306"/>
+  <path class="line" d="M462 398 L462 432"/>
+  <path class="line" d="M462 524 L462 558"/>
+  <path class="line" d="M584 600 C624 600, 638 230, 684 230"/>
+  <path class="line" d="M584 600 C640 600, 640 352, 684 352"/>
+  <path class="line" d="M584 600 C640 600, 820 230, 872 230"/>
+  <path class="line" d="M854 398 L760 432"/>
+  <path class="line" d="M854 398 L946 432"/>
+  <path class="line" d="M854 398 L760 520"/>
+  <path class="line" d="M854 398 L946 520"/>
+  <path class="line" d="M854 398 L760 608"/>
+  <path class="line" d="M854 398 L946 608"/>
+  <path class="dash" d="M1188 272 L1188 306"/>
+  <path class="dash" d="M1188 398 L1188 432"/>
+  <path class="dash" d="M1124 478 L1082 478 L1082 96 L462 96 L462 190"/>
+  <path class="dash" d="M1124 600 L1066 600 L1066 96 L760 96 L760 190"/>
+</svg>

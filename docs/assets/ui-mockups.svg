@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="760" viewBox="0 0 1250 760" role="img" aria-labelledby="title desc">
+  <title id="title">PocketPlates Mobile UI Mockups</title>
+  <desc id="desc">Four compact iPhone-style UI mockups showing the recipe library, recipe detail, add edit recipe, and filters sheet.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8faf7; }
+      .phone { fill: #151a1f; rx: 30; }
+      .screen { fill: #fffdf8; rx: 22; }
+      .top { fill: #eaf2ec; }
+      .card { fill: #ffffff; stroke: #d9dfd8; stroke-width: 1.2; rx: 8; }
+      .chip { fill: #ecf3ef; stroke: #cbd9d0; stroke-width: 1; rx: 12; }
+      .active { fill: #2f6f55; rx: 12; }
+      .image { fill: #dfe9e1; rx: 8; }
+      .image2 { fill: #f5dfc4; rx: 8; }
+      .image3 { fill: #d7e7f7; rx: 8; }
+      .image4 { fill: #eadcf5; rx: 8; }
+      .line { stroke: #d8ddd8; stroke-width: 1.2; }
+      .title { font: 700 28px Arial, sans-serif; fill: #263238; }
+      .label { font: 700 15px Arial, sans-serif; fill: #263238; }
+      .text { font: 500 12px Arial, sans-serif; fill: #37474f; }
+      .muted { font: 500 11px Arial, sans-serif; fill: #697a80; }
+      .white { font: 700 10px Arial, sans-serif; fill: #ffffff; }
+      .button { fill: #2f6f55; rx: 8; }
+      .field { fill: #ffffff; stroke: #cfd8d3; stroke-width: 1.2; rx: 8; }
+      .nav { fill: #f1f5f2; }
+      .center { text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1250" height="760"/>
+  <text class="title" x="44" y="54">PocketPlates - Mobile UI Mockups</text>
+
+  <!-- Phone 1: Home -->
+  <rect class="phone" x="50" y="92" width="240" height="520"/>
+  <rect class="screen" x="62" y="104" width="216" height="496"/>
+  <rect class="top" x="62" y="104" width="216" height="94" rx="22"/>
+  <text class="label" x="82" y="142">PocketPlates</text>
+  <rect class="field" x="82" y="154" width="176" height="30"/>
+  <text class="muted" x="96" y="174">Search recipes</text>
+
+  <rect class="active" x="76" y="214" width="32" height="24"/><text class="white center" x="92" y="230">All</text>
+  <rect class="chip" x="114" y="214" width="42" height="24"/><text class="muted center" x="135" y="230">Bfast</text>
+  <rect class="chip" x="162" y="214" width="42" height="24"/><text class="muted center" x="183" y="230">Lunch</text>
+  <rect class="chip" x="210" y="214" width="48" height="24"/><text class="muted center" x="234" y="230">Dinner</text>
+
+  <rect class="card" x="82" y="258" width="78" height="116"/>
+  <rect class="image" x="92" y="268" width="58" height="48"/>
+  <text class="text center" x="121" y="334">Rice Bowl</text>
+  <text class="muted center" x="121" y="352">$ · easy</text>
+
+  <rect class="card" x="180" y="258" width="78" height="116"/>
+  <rect class="image2" x="190" y="268" width="58" height="48"/>
+  <text class="text center" x="219" y="334">Pasta</text>
+  <text class="muted center" x="219" y="352">$$ · easy</text>
+
+  <rect class="card" x="82" y="390" width="78" height="116"/>
+  <rect class="image3" x="92" y="400" width="58" height="48"/>
+  <text class="text center" x="121" y="466">Oats</text>
+  <text class="muted center" x="121" y="484">$ · easy</text>
+
+  <rect class="card" x="180" y="390" width="78" height="116"/>
+  <rect class="image4" x="190" y="400" width="58" height="48"/>
+  <text class="text center" x="219" y="466">Curry</text>
+  <text class="muted center" x="219" y="484">$$ · medium</text>
+
+  <path class="nav" d="M62 548H278V578Q278 600 256 600H84Q62 600 62 578Z"/>
+  <text class="muted" x="91" y="579">Home</text><text class="label" x="168" y="579">+</text><text class="muted" x="219" y="579">Filter</text>
+  <text class="label center" x="170" y="660">Library</text>
+
+  <!-- Phone 2: Detail -->
+  <rect class="phone" x="350" y="92" width="240" height="520"/>
+  <rect class="screen" x="362" y="104" width="216" height="496"/>
+  <text class="label" x="382" y="142">&lt; Rice Bowl</text><text class="label" x="540" y="142">...</text>
+  <rect class="image" x="382" y="162" width="176" height="112"/>
+  <text class="label" x="382" y="306">Rice Bowl</text>
+  <text class="muted" x="382" y="326">4 servings · lunch + dinner</text>
+  <rect class="chip" x="382" y="342" width="42" height="22"/><text class="muted center" x="403" y="357">cheap</text>
+  <rect class="chip" x="430" y="342" width="42" height="22"/><text class="muted center" x="451" y="357">easy</text>
+  <rect class="chip" x="478" y="342" width="48" height="22"/><text class="muted center" x="502" y="357">stove</text>
+  <line class="line" x1="382" y1="386" x2="558" y2="386"/>
+  <text class="label" x="382" y="414">Ingredients</text>
+  <text class="text" x="382" y="438">- Chicken thigh</text>
+  <text class="text" x="382" y="460">- Rice, 2 cups</text>
+  <text class="text" x="382" y="482">- Soy sauce</text>
+  <line class="line" x1="382" y1="506" x2="558" y2="506"/>
+  <text class="label" x="382" y="534">Steps</text>
+  <text class="text" x="382" y="556">1. Cook rice</text>
+  <text class="text" x="382" y="578">2. Pan-fry chicken</text>
+  <text class="label center" x="470" y="660">Recipe Detail</text>
+
+  <!-- Phone 3: Add/Edit -->
+  <rect class="phone" x="650" y="92" width="240" height="520"/>
+  <rect class="screen" x="662" y="104" width="216" height="496"/>
+  <text class="text" x="682" y="142">Cancel</text><text class="text" x="837" y="142">Save</text>
+
+  <text class="muted" x="682" y="184">Recipe name</text>
+  <rect class="field" x="682" y="194" width="176" height="30"/>
+  <text class="muted" x="682" y="250">Servings</text>
+  <rect class="field" x="682" y="260" width="68" height="30"/><text class="text" x="697" y="280">- 4 +</text>
+  <text class="muted" x="770" y="250">Meals</text>
+  <rect class="field" x="770" y="260" width="88" height="30"/><text class="text center" x="814" y="280">Lunch +</text>
+
+  <text class="muted" x="682" y="322">Cost</text>
+  <rect class="active" x="682" y="334" width="44" height="26"/><text class="white center" x="704" y="351">$</text>
+  <rect class="chip" x="734" y="334" width="44" height="26"/><text class="muted center" x="756" y="351">$$</text>
+  <text class="muted" x="796" y="322">Difficulty</text>
+  <rect class="chip" x="796" y="334" width="62" height="26"/><text class="muted center" x="827" y="351">Easy</text>
+
+  <text class="muted" x="682" y="398">Ingredients</text>
+  <rect class="field" x="682" y="408" width="176" height="30"/><text class="muted" x="696" y="428">Name, amount, unit</text>
+  <text class="text" x="682" y="462">+ Add ingredient</text>
+
+  <text class="muted" x="682" y="502">Steps</text>
+  <rect class="field" x="682" y="512" width="176" height="30"/><text class="muted" x="696" y="532">Instruction</text>
+  <text class="text" x="682" y="566">+ Add step</text>
+  <text class="label center" x="770" y="660">Add / Edit</text>
+
+  <!-- Phone 4: Filters -->
+  <rect class="phone" x="950" y="92" width="240" height="520"/>
+  <rect class="screen" x="962" y="104" width="216" height="496"/>
+  <text class="label" x="982" y="142">Filters</text><text class="text" x="1136" y="142">Done</text>
+  <line class="line" x1="982" y1="166" x2="1158" y2="166"/>
+
+  <text class="label" x="982" y="194">Meal</text>
+  <text class="text" x="982" y="218">□ Breakfast</text>
+  <text class="text" x="982" y="240">□ Lunch</text>
+  <text class="text" x="982" y="262">□ Dinner</text>
+  <text class="text" x="1070" y="218">□ Snack</text>
+  <text class="text" x="1070" y="240">□ Flexible</text>
+  <line class="line" x1="982" y1="286" x2="1158" y2="286"/>
+
+  <text class="label" x="982" y="318">Cost</text>
+  <text class="text" x="982" y="342">□ Very cheap</text>
+  <text class="text" x="982" y="364">□ Cheap</text>
+  <text class="text" x="1070" y="342">□ Moderate</text>
+  <line class="line" x1="982" y1="390" x2="1158" y2="390"/>
+
+  <text class="label" x="982" y="422">Difficulty</text>
+  <text class="text" x="982" y="446">○ Any</text>
+  <text class="text" x="982" y="468">○ Easy</text>
+  <text class="text" x="1070" y="446">○ Medium</text>
+  <text class="text" x="1070" y="468">○ Hard</text>
+  <line class="line" x1="982" y1="492" x2="1158" y2="492"/>
+
+  <text class="label" x="982" y="524">Equipment</text>
+  <text class="text" x="982" y="548">□ Microwave</text>
+  <text class="text" x="1070" y="548">□ No oven</text>
+  <text class="text" x="982" y="572">Clear filters</text>
+  <text class="label center" x="1070" y="660">Filters</text>
+</svg>

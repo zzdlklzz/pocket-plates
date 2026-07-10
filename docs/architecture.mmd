@@ -1,20 +1,43 @@
 flowchart TD
-    A["iPhone Home Screen / Safari PWA"] --> B["Next.js Mobile UI"]
-    B --> C["Recipe Screens and Forms"]
-    C --> D["Supabase Client"]
+    A["iPhone Home Screen / Safari PWA"] --> B["Vercel-hosted Next.js App"]
+    W["Desktop / Mobile Browser"] --> B
 
-    D --> E["Supabase Auth"]
-    D --> F["Supabase Postgres Database"]
-    D --> G["Supabase Storage"]
+    B --> C["React + TypeScript UI"]
+    C --> D["Tailwind CSS"]
+    C --> E["Lucide React placeholders and icons"]
+    C --> F["Recipe screens, filters, and PWA metadata"]
+    C --> AE["React Hook Form + Zod validation"]
+    C --> AF["DTO mappers and repository layer"]
+    C --> AG["TanStack Query server-state cache"]
 
-    F --> H["Recipes"]
-    F --> I["Ingredients"]
-    F --> J["Steps"]
-    F --> K["Source Links"]
-    F --> L["Tags / Meal Types"]
+    F --> G["Supabase browser/server client"]
+    AE --> G
+    AF --> G
+    AG --> AF
+    G --> H["Supabase Auth"]
+    G --> I["Supabase Postgres"]
+    G --> J["Supabase Storage"]
 
-    G --> M["Recipe Photos"]
+    H --> K["Open email sign-up / sign-in"]
+    H --> L["Profile created on signup"]
+    I --> M["Row Level Security"]
+    M --> N["Owner-private recipe libraries"]
 
-    N["GitHub Repo"] --> O["Vercel Hosting"]
-    O --> B
+    I --> O["recipes"]
+    I --> P["recipe_meal_types"]
+    I --> Q["recipe_ingredients"]
+    I --> R["recipe_steps"]
+    I --> S["recipe_links"]
+    I --> T["tags and equipment"]
+    I --> U["future meal plans and grocery lists"]
 
+    J --> V["Recipe photos"]
+
+    X["GitHub repository"] --> Y["GitHub Actions CI/CD"]
+    Y --> Z["Lint, type check, Vitest, Playwright, build"]
+    Y --> AA["Supabase migrations and type generation"]
+    X --> AB["Vercel Git deployment"]
+    AB --> B
+
+    AC["Supabase custom SMTP"] --> H
+    AD["Gmail / Google Workspace or transactional provider"] --> AC

@@ -1,0 +1,177 @@
+erDiagram
+    profiles ||--o{ recipes : owns
+    profiles ||--o{ tags : owns
+    profiles ||--o{ equipment : owns
+    profiles ||--o{ pantry_items : owns
+    profiles ||--o{ meal_plans : owns
+    profiles ||--o{ grocery_lists : owns
+
+    recipes ||--o{ recipe_links : has
+    recipes ||--o{ recipe_meal_types : categorized_as
+    recipes ||--o{ recipe_ingredients : has
+    recipes ||--o{ recipe_steps : has
+    recipes ||--o{ recipe_tags : has
+    tags ||--o{ recipe_tags : labels
+
+    recipes ||--o{ recipe_equipment : requires
+    equipment ||--o{ recipe_equipment : categorizes
+
+    meal_plans ||--o{ meal_plan_entries : contains
+    recipes ||--o{ meal_plan_entries : scheduled_as
+
+    meal_plans ||--o{ grocery_lists : can_generate
+    grocery_lists ||--o{ grocery_list_items : contains
+    recipes ||--o{ grocery_list_items : contributed
+
+    profiles {
+        uuid id PK
+        text username
+        text display_name
+        text avatar_url
+        text bio
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    recipes {
+        uuid id PK
+        uuid owner_id FK
+        text title
+        text slug
+        text summary
+        text notes
+        int servings
+        int prep_minutes
+        int cook_minutes
+        cost_rating cost_rating
+        difficulty_level difficulty
+        numeric estimated_total_cost
+        recipe_visibility visibility
+        text image_url
+        text image_storage_path
+        text source_name
+        text source_url
+        boolean is_favorite
+        timestamptz published_at
+        timestamptz archived_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    recipe_meal_types {
+        uuid recipe_id PK,FK
+        meal_type meal_type PK
+        timestamptz created_at
+    }
+
+    recipe_links {
+        uuid id PK
+        uuid recipe_id FK
+        text label
+        text url
+        int sort_order
+        timestamptz created_at
+    }
+
+    recipe_ingredients {
+        uuid id PK
+        uuid recipe_id FK
+        text name
+        numeric amount
+        text unit
+        text notes
+        text group_name
+        int sort_order
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    recipe_steps {
+        uuid id PK
+        uuid recipe_id FK
+        text instruction
+        int timer_minutes
+        int sort_order
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    tags {
+        uuid id PK
+        uuid owner_id FK
+        text label
+        text color
+        timestamptz created_at
+    }
+
+    recipe_tags {
+        uuid recipe_id PK,FK
+        uuid tag_id PK,FK
+        timestamptz created_at
+    }
+
+    equipment {
+        uuid id PK
+        uuid owner_id FK
+        text label
+        timestamptz created_at
+    }
+
+    recipe_equipment {
+        uuid recipe_id PK,FK
+        uuid equipment_id PK,FK
+        timestamptz created_at
+    }
+
+    pantry_items {
+        uuid id PK
+        uuid owner_id FK
+        text name
+        text default_unit
+        numeric estimated_unit_cost
+        pantry_item_status status
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    meal_plans {
+        uuid id PK
+        uuid owner_id FK
+        date week_start_date
+        text title
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    meal_plan_entries {
+        uuid id PK
+        uuid meal_plan_id FK
+        uuid recipe_id FK
+        date planned_for
+        meal_type meal_type
+        int servings
+        text notes
+        timestamptz created_at
+    }
+
+    grocery_lists {
+        uuid id PK
+        uuid owner_id FK
+        uuid meal_plan_id FK
+        text title
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    grocery_list_items {
+        uuid id PK
+        uuid grocery_list_id FK
+        text name
+        numeric amount
+        text unit
+        boolean checked
+        uuid source_recipe_id FK
+        int sort_order
+        timestamptz created_at
+        timestamptz updated_at
+    }
