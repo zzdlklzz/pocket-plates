@@ -104,7 +104,7 @@ Goal: create a deployable skeleton before building feature depth.
 
 - Scaffold Next.js, React, TypeScript, Tailwind, Vitest, and Playwright.
 - Add app shell, mobile layout, navigation, and placeholder screens.
-- Add Supabase client setup and environment variable structure.
+- Add Supabase client setup and document the required `.env.local` values.
 - Add TanStack Query provider, query key conventions, and repository-backed query/mutation hooks.
 - Add CI checks for install, lint, type check, tests, and build.
 - Add Vercel deployment configuration.
@@ -225,7 +225,7 @@ Future-ready tables already represented in the draft schema:
 
 Public discovery should build on the `recipes.visibility` and `recipes.published_at` fields rather than requiring a second recipe table. Private recipes stay visible only to their owner. Public recipes can be searched by other users once the community stage is implemented.
 
-All user-owned data should be protected by Supabase Row Level Security. The initial policies should support many users, but only owner access. Public-read policies should only be introduced when the community discovery stage is being built.
+All user-owned data should be protected by Supabase Row Level Security. Policies should target the `authenticated` role explicitly and use owner checks based on `(select auth.uid())`. The initial policies should support many users, but only owner access. Public-read policies should only be introduced when the community discovery stage is being built.
 
 ## DTO Boundary
 
@@ -283,7 +283,7 @@ Use GitHub Actions for repository checks and database safety:
 
 - `ci.yml`: runs install, lint, type check, unit tests, integration tests, build, and Playwright E2E tests.
 - `supabase-types.yml`: optionally checks that generated Supabase TypeScript types are up to date.
-- `database-deploy.yml`: runs Supabase migrations on `main` after CI passes.
+- `database-deploy.yml`: lists linked migrations, runs Supabase migrations on `main` after CI passes, then lists linked migrations again for audit visibility.
 
 Use Vercel's GitHub integration for application deployment:
 

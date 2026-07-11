@@ -120,13 +120,7 @@ Use TanStack Query for server state from the start. Components should consume fe
 npm install
 ```
 
-2. Create local environment values:
-
-```bash
-cp .env.example .env.local
-```
-
-3. Fill these values in `.env.local` after creating a Supabase project:
+2. Create `.env.local` in the project root after creating a Supabase project:
 
 ```txt
 NEXT_PUBLIC_SUPABASE_URL=
@@ -136,13 +130,13 @@ SUPABASE_SECRET_KEY=
 
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the modern replacement for the legacy `anon` key in browser-safe code. `SUPABASE_SECRET_KEY` is server-only and should stay out of any `NEXT_PUBLIC_` variable; it is reserved for future backend-only admin work and is not used by the browser client.
 
-4. Start the local app:
+3. Start the local app:
 
 ```bash
 npm run dev
 ```
 
-5. Run checks:
+4. Run checks:
 
 ```bash
 npm run lint
@@ -183,7 +177,7 @@ npm run supabase:db:push
 npm run supabase:types
 ```
 
-9. Confirm Row Level Security policies are enabled and signup creates `profiles` rows.
+9. Confirm Row Level Security policies are enabled, target the `authenticated` role, and signup creates `profiles` rows.
 
 ## Email And SMTP Setup
 
@@ -263,7 +257,7 @@ SUPABASE_DB_PASSWORD
 ```
 
 5. Let Vercel deploy previews for pull requests and production from `main`.
-6. Let GitHub Actions run CI and migration deployment.
+6. Let GitHub Actions run CI and migration deployment. The database deployment workflow lists linked migrations before and after `supabase db push` so migration state is visible in the workflow logs.
 
 ## PWA Support
 
