@@ -1,11 +1,12 @@
-import type { RecipeCardDto } from "./recipe.types";
+import type { MealType, RecipeCardDto } from "./recipe.types";
 
-type RecipeListRow = {
+export type RecipeListRow = {
   id: string;
   title: string;
   cost_rating: RecipeCardDto["costRating"];
   difficulty: RecipeCardDto["difficulty"];
   image_url: string | null;
+  recipe_meal_types?: { meal_type: MealType }[] | null;
 };
 
 export function toRecipeCardDto(row: RecipeListRow): RecipeCardDto {
@@ -14,6 +15,7 @@ export function toRecipeCardDto(row: RecipeListRow): RecipeCardDto {
     title: row.title,
     costRating: row.cost_rating,
     difficulty: row.difficulty,
-    imageUrl: row.image_url
+    imageUrl: row.image_url,
+    mealTypes: row.recipe_meal_types?.map(({ meal_type }) => meal_type) ?? []
   };
 }

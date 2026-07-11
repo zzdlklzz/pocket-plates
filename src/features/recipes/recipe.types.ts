@@ -10,6 +10,7 @@ export type RecipeCardDto = {
   costRating: CostRating | null;
   difficulty: DifficultyLevel | null;
   imageUrl: string | null;
+  mealTypes: MealType[];
 };
 
 export type RecipeListFilters = {
