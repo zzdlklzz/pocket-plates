@@ -19,6 +19,16 @@ function getCredentials(formData: FormData) {
   return { email, password };
 }
 
+function getEmail(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    return null;
+  }
+
+  return email;
+}
+
 export async function signInWithEmail(formData: FormData) {
   const credentials = getCredentials(formData);
 
@@ -56,6 +66,66 @@ export async function signUpWithEmail(formData: FormData) {
   }
 
   redirect("/?auth=check-email");
+}
+
+export async function resendConfirmationEmail(formData: FormData) {
+  const email = getEmail(formData);
+
+  if (!email) {
+    redirect("/?auth=resend-error");
+  }
+
+  const supabase = createSupabaseCookieClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${getOrigin()}/auth/callback`
+    }
+  });
+
+  if (error) {
+    redirect("/?auth=resend-error");
+  }
+
+  redirect("/?auth=confirmation-resent");
+}
+
+export async function sendPasswordResetEmail(formData: FormData) {
+  const email = getEmail(formData);
+
+  if (!email) {
+    redirect("/?auth=password-reset-error");
+  }
+
+  const supabase = createSupabaseCookieClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getOrigin()}/auth/callback?next=/auth/update-password`
+  });
+
+  if (error) {
+    redirect("/?auth=password-reset-error");
+  }
+
+  redirect("/?auth=password-reset-sent");
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+
+  if (password.length < 6) {
+    redirect("/auth/update-password?auth=password-update-error");
+  }
+
+  const supabase = createSupabaseCookieClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect("/auth/update-password?auth=password-update-error");
+  }
+
+  await supabase.auth.signOut();
+  redirect("/?auth=password-updated");
 }
 
 export async function signInWithGoogle() {

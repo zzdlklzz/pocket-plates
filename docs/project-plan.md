@@ -113,28 +113,28 @@ Goal: create a deployable skeleton before building feature depth.
 
 Goal: any visitor can create an account, then save and retrieve their own private recipes.
 
-- Email sign-up and sign-in through Supabase Auth. Initial app wiring is in place.
-- Google OAuth sign-in through Supabase Auth and Google Cloud Console credentials. Initial app wiring is in place.
-- Automatic profile creation after account signup.
-- Recipe list with mobile-friendly cards.
-- Recipe detail page.
-- Add/edit recipe form.
-- Required recipe fields: title, servings, one or more meal types, ingredients, and steps.
-- Optional recipe fields: notes, one source URL, and image URL.
-- Basic search by recipe title.
-- Basic filter by meal types, allowing more than one meal type to be selected.
-- Supabase persistence with Row Level Security.
-- TanStack Query hooks for recipe list, recipe detail, create recipe, update recipe, and delete/archive recipe flows.
-- Privacy guarantee: users can only read and change their own private library.
+- [x] Email sign-up and sign-in through Supabase Auth.
+- [x] Google OAuth sign-in through Supabase Auth and Google Cloud Console credentials.
+- [x] Automatic profile creation after account signup. Database trigger exists; signed-in UI now reads the generated profile.
+- [ ] Recipe list with mobile-friendly cards.
+- [ ] Recipe detail page.
+- [ ] Add/edit recipe form.
+- [ ] Required recipe fields: title, servings, one or more meal types, ingredients, and steps.
+- [ ] Optional recipe fields: notes, one source URL, and image URL.
+- [ ] Basic search by recipe title.
+- [ ] Basic filter by meal types, allowing more than one meal type to be selected.
+- [x] Supabase persistence with Row Level Security. Initial owner-scoped schema and RLS migrations are in place.
+- [ ] TanStack Query hooks for recipe list, recipe detail, create recipe, update recipe, and delete/archive recipe flows.
+- [x] Privacy guarantee: users can only read and change their own private library. Current authenticated app access and RLS policies preserve owner scope.
 
 This is the first version worth calling "usable." Anything not listed here should wait unless it is needed to avoid rework.
 
 Stage 1 implementation slices:
 
-1. Auth/session foundation: SSR clients, middleware cookie refresh, auth callback route, email and Google auth actions, signed-out auth panel, and signed-in starter shell.
-2. Auth UX hardening: password reset/resend flows, form pending states, profile display polish, and stronger auth E2E coverage.
-3. Recipe read path: authenticated recipe list, search, and meal-type filters backed by Supabase.
-4. Recipe write path: detail page, add/edit form, ingredients and steps, and create/update/delete/archive mutations.
+- [x] Auth/session foundation: SSR clients, middleware cookie refresh, auth callback route, email and Google auth actions, signed-out auth panel, and signed-in starter shell.
+- [x] Auth UX hardening: password reset/resend flows, form pending states, profile display polish, and stronger auth E2E coverage.
+- [ ] Recipe read path: authenticated recipe list, search, and meal-type filters backed by Supabase.
+- [ ] Recipe write path: detail page, add/edit form, ingredients and steps, and create/update/delete/archive mutations.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
 

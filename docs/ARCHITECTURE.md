@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has moved into Stage 1: it has the Next.js app shell, mobile-first starter UI behind authentication, PWA manifest, TanStack Query provider, Supabase browser/server/middleware client boundaries, auth callback handling, email and Google sign-in actions, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase is in Stage 1: it has the Next.js app shell, mobile-first starter UI behind authentication, PWA manifest, TanStack Query provider, Supabase browser/server/middleware client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
 
 ## Stack
 
@@ -76,6 +76,8 @@ src/
     auth/
       callback/
         route.ts
+      update-password/
+        page.tsx
     app.constants.ts
     globals.css
     layout.tsx
@@ -87,6 +89,7 @@ src/
       auth.actions.ts
       auth.constants.ts
       auth-panel.tsx
+      auth-submit-button.tsx
       sign-out-button.tsx
       __tests__/
         auth.constants.test.ts
@@ -129,9 +132,9 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 ## Auth Boundary
 
-Signed-out visitors see the auth panel on `/`. Email/password and Google OAuth flows run through server actions and the `/auth/callback` route. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI.
+Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI.
 
-The recipe library shell remains a starter screen until the recipe read path is implemented. Once signed in, the user sees the existing starter cards and a sign-out action.
+The recipe library shell remains a starter screen until the recipe read path is implemented. Once signed in, the user sees the existing starter cards, a profile label from `profiles.display_name`, `profiles.username`, or email, and a sign-out action.
 
 ## Local Setup
 

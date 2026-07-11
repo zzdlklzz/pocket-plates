@@ -1,7 +1,7 @@
 import { ChefHat, CircleDollarSign, Gauge, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { APP_METADATA } from "./app.constants";
 import { AuthPanel } from "@/features/auth/auth-panel";
-import { AUTH_SEARCH_PARAM, getAuthMessage } from "@/features/auth/auth.constants";
+import { AUTH_MODE_SEARCH_PARAM, AUTH_SEARCH_PARAM, getAuthMessage, getAuthMode } from "@/features/auth/auth.constants";
 import { SignOutButton } from "@/features/auth/sign-out-button";
 import { MEAL_FILTER_LABELS, STARTER_RECIPE_CARDS } from "@/features/recipes/recipe-library.constants";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -10,17 +10,28 @@ type HomePageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
 
+type ProfileSummary = {
+  display_name: string | null;
+  username: string | null;
+};
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const supabase = createSupabaseServerClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
   const authMessageKey = searchParams?.[AUTH_SEARCH_PARAM];
+  const authModeKey = searchParams?.[AUTH_MODE_SEARCH_PARAM];
   const authMessage = getAuthMessage(Array.isArray(authMessageKey) ? authMessageKey[0] : authMessageKey);
+  const authMode = getAuthMode(Array.isArray(authModeKey) ? authModeKey[0] : authModeKey);
 
   if (!user) {
-    return <AuthPanel message={authMessage} />;
+    return <AuthPanel initialMode={authMode} message={authMessage} />;
   }
+
+  const { data } = await supabase.from("profiles").select("display_name,username").eq("id", user.id).maybeSingle();
+  const profile = data as ProfileSummary | null;
+  const profileLabel = profile?.display_name ?? profile?.username ?? user.email ?? "PocketPlates cook";
 
   return (
     <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 pb-24 pt-8 shadow-sm">
@@ -28,7 +39,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-slate-800">{APP_METADATA.name}</h1>
-            <p className="mt-1 text-xs text-slate-500">{user.email}</p>
+            <p className="mt-1 text-xs text-slate-500">{profileLabel}</p>
           </div>
           <SignOutButton />
         </div>

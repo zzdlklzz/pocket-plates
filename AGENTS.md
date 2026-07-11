@@ -52,6 +52,7 @@ After every code, database, configuration, dependency, or feature change, comple
    - Add Mermaid diagrams when the change introduces or alters flows, architecture, or entity relationships.
 2. Update `docs/ARCHITECTURE.md` when the current system architecture, features, business logic, data model, flows, or setup assumptions change.
 3. Update setup/onboarding documentation when the change introduces dependencies, scripts, environment variables, migrations, Supabase setup, OAuth setup, storage buckets, or external infrastructure steps.
+4. Update feature progress tracking in `docs/project-plan.md` for every implemented feature or slice. Mark completed items as done in the roadmap/checklist during the same change, and add any newly discovered follow-up slice as pending rather than leaving progress implied only by code or changelogs.
 
 ## Verification
 

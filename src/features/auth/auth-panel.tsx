@@ -1,25 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { Chrome, Mail, UserPlus } from "lucide-react";
-import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "./auth.actions";
-
-type AuthMode = "sign-in" | "sign-up";
+import { Chrome, KeyRound, Mail, RotateCw, UserPlus } from "lucide-react";
+import {
+  resendConfirmationEmail,
+  sendPasswordResetEmail,
+  signInWithEmail,
+  signInWithGoogle,
+  signUpWithEmail
+} from "./auth.actions";
+import { AuthSubmitButton } from "./auth-submit-button";
+import type { AuthMode } from "./auth.constants";
 
 type AuthPanelProps = {
+  initialMode: AuthMode;
   message: string | null;
 };
 
-export function AuthPanel({ message }: AuthPanelProps) {
-  const [mode, setMode] = useState<AuthMode>("sign-in");
+export function AuthPanel({ initialMode, message }: AuthPanelProps) {
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const isSignIn = mode === "sign-in";
+  const isSignUp = mode === "sign-up";
+  const title =
+    mode === "reset" ? "Reset password" : mode === "resend" ? "Resend confirmation" : "Your private recipe shelf.";
+  const formAction =
+    mode === "reset"
+      ? sendPasswordResetEmail
+      : mode === "resend"
+        ? resendConfirmationEmail
+        : isSignIn
+          ? signInWithEmail
+          : signUpWithEmail;
+  const submitLabel =
+    mode === "reset"
+      ? "Send reset link"
+      : mode === "resend"
+        ? "Resend confirmation"
+        : isSignIn
+          ? "Sign in with email"
+          : "Create account";
+  const pendingLabel =
+    mode === "reset" ? "Sending link..." : mode === "resend" ? "Sending email..." : isSignIn ? "Signing in..." : "Creating...";
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col bg-[#fffdf8] px-5 py-8 shadow-sm">
       <section className="flex flex-1 flex-col justify-center">
         <div className="rounded-b-3xl bg-leaf-100 px-4 pb-6 pt-5">
           <p className="text-sm font-semibold text-leaf-700">PocketPlates</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900">Your private recipe shelf.</h1>
+          <h1 className="mt-3 text-3xl font-bold text-slate-900">{title}</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             Save practical meals, keep them private, and build a library that fits your kitchen.
           </p>
@@ -53,7 +81,7 @@ export function AuthPanel({ message }: AuthPanelProps) {
             </p>
           ) : null}
 
-          <form action={isSignIn ? signInWithEmail : signUpWithEmail} className="mt-4 space-y-3">
+          <form action={formAction} className="mt-4 space-y-3">
             <label className="block text-sm font-medium text-slate-700">
               Email
               <input
@@ -64,34 +92,43 @@ export function AuthPanel({ message }: AuthPanelProps) {
                 type="email"
               />
             </label>
-            <label className="block text-sm font-medium text-slate-700">
-              Password
-              <input
-                autoComplete={isSignIn ? "current-password" : "new-password"}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-base text-slate-900 outline-none focus:border-leaf-700"
-                minLength={6}
-                name="password"
-                required
-                type="password"
-              />
-            </label>
-            <button
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-leaf-700 px-4 py-3 text-sm font-semibold text-white"
-              type="submit"
-            >
-              {isSignIn ? <Mail className="h-4 w-4" aria-hidden="true" /> : <UserPlus className="h-4 w-4" aria-hidden="true" />}
-              {isSignIn ? "Sign in with email" : "Create account"}
-            </button>
+            {mode === "sign-in" || mode === "sign-up" ? (
+              <label className="block text-sm font-medium text-slate-700">
+                Password
+                <input
+                  autoComplete={isSignIn ? "current-password" : "new-password"}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-base text-slate-900 outline-none focus:border-leaf-700"
+                  minLength={6}
+                  name="password"
+                  required
+                  type="password"
+                />
+              </label>
+            ) : null}
+            <AuthSubmitButton pendingLabel={pendingLabel}>
+              {isSignIn ? <Mail className="h-4 w-4" aria-hidden="true" /> : isSignUp ? <UserPlus className="h-4 w-4" aria-hidden="true" /> : mode === "reset" ? <KeyRound className="h-4 w-4" aria-hidden="true" /> : <RotateCw className="h-4 w-4" aria-hidden="true" />}
+              {submitLabel}
+            </AuthSubmitButton>
           </form>
 
+          <div className="mt-4 flex flex-wrap justify-between gap-3">
+            {mode === "reset" ? null : (
+              <a className="text-sm font-semibold text-leaf-700" href="/?mode=reset">
+                Forgot password?
+              </a>
+            )}
+            {mode === "resend" ? null : (
+              <a className="text-sm font-semibold text-leaf-700" href="/?mode=resend">
+                Resend confirmation
+              </a>
+            )}
+          </div>
+
           <form action={signInWithGoogle} className="mt-3">
-            <button
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
-              type="submit"
-            >
+            <AuthSubmitButton pendingLabel="Opening Google..." variant="secondary">
               <Chrome className="h-4 w-4" aria-hidden="true" />
               Continue with Google
-            </button>
+            </AuthSubmitButton>
           </form>
         </div>
       </section>
