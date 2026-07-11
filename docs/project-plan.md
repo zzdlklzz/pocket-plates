@@ -368,11 +368,13 @@ Google login should be configured through Supabase Auth, with Google Cloud Conso
 
 Before application coding starts:
 
+- Create a dedicated PocketPlates email account for app ownership and support.
 - Create or select a Google Cloud project for PocketPlates.
-- Configure the OAuth consent screen with the app name, support email, developer contact email, and test users while the app is in testing mode.
-- Create a web application OAuth client.
-- Add the Supabase Google provider callback URL to the Google OAuth authorized redirect URIs.
-- Store the Google OAuth client ID and client secret in Supabase Auth provider settings, not in the repository.
+- In Google Cloud Console, open API and Services, configure the OAuth consent screen, then use Credentials > Create Credentials to create a web application OAuth client.
+- Add `http://localhost:3000` as a development authorized JavaScript origin, and add the production domain after deployment.
+- Add `https://<project-ref>.supabase.co/auth/v1/callback` as the hosted Supabase authorized redirect URI.
+- Add `http://127.0.0.1:54321/auth/v1/callback` as an authorized redirect URI only when using local Supabase.
+- Store the Google OAuth client ID and client secret in Supabase Authentication > Providers > Google, not in the repository.
 - Enable the Google provider in Supabase.
 - Add localhost and Vercel URLs to Supabase Auth redirect allow lists when those URLs are known.
 
