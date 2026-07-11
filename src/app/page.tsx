@@ -1,14 +1,36 @@
 import { ChefHat, CircleDollarSign, Gauge, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { APP_METADATA } from "./app.constants";
+import { AuthPanel } from "@/features/auth/auth-panel";
+import { AUTH_SEARCH_PARAM, getAuthMessage } from "@/features/auth/auth.constants";
+import { SignOutButton } from "@/features/auth/sign-out-button";
 import { MEAL_FILTER_LABELS, STARTER_RECIPE_CARDS } from "@/features/recipes/recipe-library.constants";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+type HomePageProps = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  const authMessageKey = searchParams?.[AUTH_SEARCH_PARAM];
+  const authMessage = getAuthMessage(Array.isArray(authMessageKey) ? authMessageKey[0] : authMessageKey);
+
+  if (!user) {
+    return <AuthPanel message={authMessage} />;
+  }
+
   return (
     <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 pb-24 pt-8 shadow-sm">
       <header className="space-y-4 rounded-b-3xl bg-leaf-100 px-4 pb-5 pt-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-800">{APP_METADATA.name}</h1>
-          <ChefHat className="h-6 w-6 text-leaf-700" aria-hidden="true" />
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">{APP_METADATA.name}</h1>
+            <p className="mt-1 text-xs text-slate-500">{user.email}</p>
+          </div>
+          <SignOutButton />
         </div>
         <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
           <Search className="h-4 w-4" aria-hidden="true" />

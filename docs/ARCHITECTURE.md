@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase is a Stage 0 foundation: it has the Next.js app shell, mobile-first starter UI, PWA manifest, TanStack Query provider, Supabase client boundary, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has moved into Stage 1: it has the Next.js app shell, mobile-first starter UI behind authentication, PWA manifest, TanStack Query provider, Supabase browser/server/middleware client boundaries, auth callback handling, email and Google sign-in actions, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
 
 ## Stack
 
@@ -28,6 +28,8 @@ flowchart TD
     C --> D["Tailwind CSS + Lucide React"]
     C --> E["React Hook Form + Zod"]
     C --> F["TanStack Query hooks"]
+    C --> Q["Auth panel + server actions"]
+    Q --> I["Supabase Auth"]
     F --> G["Recipe repository layer"]
     G --> H["Supabase client"]
     H --> I["Supabase Auth"]
@@ -71,6 +73,9 @@ Future-ready entities:
 ```txt
 src/
   app/
+    auth/
+      callback/
+        route.ts
     app.constants.ts
     globals.css
     layout.tsx
@@ -78,6 +83,13 @@ src/
     page.tsx
     providers.tsx
   features/
+    auth/
+      auth.actions.ts
+      auth.constants.ts
+      auth-panel.tsx
+      sign-out-button.tsx
+      __tests__/
+        auth.constants.test.ts
     recipes/
       recipe-library.constants.ts
       recipe.mappers.ts
@@ -96,6 +108,9 @@ src/
     supabase/
       client.ts
       database.types.ts
+      middleware.ts
+      server.ts
+middleware.ts
 ```
 
 ## Documentation Organization
@@ -111,6 +126,12 @@ src/
 ## Server-State Rule
 
 Use TanStack Query for server state from the start. Components should consume feature-level query hooks, such as `useRecipeList`, instead of making ad hoc API calls in `useEffect`. Keep `useEffect` for true browser-side effects such as focus handling, subscriptions, or direct browser APIs.
+
+## Auth Boundary
+
+Signed-out visitors see the auth panel on `/`. Email/password and Google OAuth flows run through server actions and the `/auth/callback` route. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI.
+
+The recipe library shell remains a starter screen until the recipe read path is implemented. Once signed in, the user sees the existing starter cards and a sign-out action.
 
 ## Local Setup
 

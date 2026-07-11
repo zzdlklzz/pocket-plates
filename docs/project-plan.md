@@ -113,8 +113,8 @@ Goal: create a deployable skeleton before building feature depth.
 
 Goal: any visitor can create an account, then save and retrieve their own private recipes.
 
-- Email sign-up and sign-in through Supabase Auth.
-- Google OAuth sign-in through Supabase Auth and Google Cloud Console credentials.
+- Email sign-up and sign-in through Supabase Auth. Initial app wiring is in place.
+- Google OAuth sign-in through Supabase Auth and Google Cloud Console credentials. Initial app wiring is in place.
 - Automatic profile creation after account signup.
 - Recipe list with mobile-friendly cards.
 - Recipe detail page.
@@ -128,6 +128,13 @@ Goal: any visitor can create an account, then save and retrieve their own privat
 - Privacy guarantee: users can only read and change their own private library.
 
 This is the first version worth calling "usable." Anything not listed here should wait unless it is needed to avoid rework.
+
+Stage 1 implementation slices:
+
+1. Auth/session foundation: SSR clients, middleware cookie refresh, auth callback route, email and Google auth actions, signed-out auth panel, and signed-in starter shell.
+2. Auth UX hardening: password reset/resend flows, form pending states, profile display polish, and stronger auth E2E coverage.
+3. Recipe read path: authenticated recipe list, search, and meal-type filters backed by Supabase.
+4. Recipe write path: detail page, add/edit form, ingredients and steps, and create/update/delete/archive mutations.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
 
