@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase is in Stage 1: it has the Next.js app shell, authenticated recipe library read path, PWA manifest, TanStack Query provider, Supabase browser/server/middleware client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive flows, PWA manifest, TanStack Query provider, Supabase browser/server/middleware client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
 
 ## Stack
 
@@ -84,6 +84,13 @@ src/
     manifest.ts
     page.tsx
     providers.tsx
+    recipes/
+      [id]/
+        edit/
+          page.tsx
+        page.tsx
+      new/
+        page.tsx
   features/
     auth/
       auth.actions.ts
@@ -95,12 +102,16 @@ src/
         auth.constants.test.ts
     recipes/
       recipe-card.tsx
+      recipe-detail.tsx
+      recipe-edit.tsx
+      recipe-form.tsx
       recipe-library.tsx
       recipe-library.constants.ts
       recipe.mappers.ts
       recipe.queries.ts
       recipe.repository.ts
       recipe.types.ts
+      recipe.validation.ts
       __tests__/
         recipe.mappers.test.ts
   lib/
@@ -136,17 +147,28 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI.
 
-Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title and one or more meal types. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a sign-out action.
+Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title and one or more meal types. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a sign-out action.
 
 ## Recipe Read Path
 
 The recipe read path keeps database rows, DTOs, and UI state separate:
 
 - `recipe.repository.ts` queries `recipes` and `recipe_meal_types` through the browser Supabase client.
-- `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` objects.
-- `recipe.queries.ts` exposes `useRecipeList` for TanStack Query caching.
+- `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects.
+- `recipe.queries.ts` exposes `useRecipeList` and `useRecipeDetail` for TanStack Query caching.
 - `recipe-library.tsx` owns search and meal-type filter UI state.
 - `recipe-card.tsx` renders compact mobile-friendly recipe cards.
+
+## Recipe Write Path
+
+Recipe create/edit/archive flows use the same repository and TanStack Query boundary:
+
+- `/recipes/new` checks the server auth session before rendering the client recipe form.
+- `/recipes/[id]` checks the server auth session before rendering recipe detail.
+- `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
+- `recipe-form.tsx` uses React Hook Form with `recipe.validation.ts` Zod rules for title, servings, meal types, ingredients, steps, optional source URL, optional image URL, notes, cost rating, and difficulty.
+- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_ingredients`, and `recipe_steps` child rows, and soft-archives recipes through `archived_at`.
+- `recipe.queries.ts` exposes create, update, and archive mutations and invalidates recipe list/detail caches after successful writes.
 
 ## Local Setup
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chrome, KeyRound, Mail, RotateCw, UserPlus } from "lucide-react";
 import {
   resendConfirmationEmail,
@@ -19,6 +19,8 @@ type AuthPanelProps = {
 
 export function AuthPanel({ initialMode, message }: AuthPanelProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  useEffect(() => setMode(initialMode), [initialMode]);
+
   const isSignIn = mode === "sign-in";
   const isSignUp = mode === "sign-up";
   const title =
@@ -113,12 +115,12 @@ export function AuthPanel({ initialMode, message }: AuthPanelProps) {
 
           <div className="mt-4 flex flex-wrap justify-between gap-3">
             {mode === "reset" ? null : (
-              <a className="text-sm font-semibold text-leaf-700" href="/?mode=reset">
+              <a className="text-sm font-semibold text-leaf-700" href="/?mode=reset" onClick={() => setMode("reset")}>
                 Forgot password?
               </a>
             )}
             {mode === "resend" ? null : (
-              <a className="text-sm font-semibold text-leaf-700" href="/?mode=resend">
+              <a className="text-sm font-semibold text-leaf-700" href="/?mode=resend" onClick={() => setMode("resend")}>
                 Resend confirmation
               </a>
             )}

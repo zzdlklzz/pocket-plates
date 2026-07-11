@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
 import { SignOutButton } from "@/features/auth/sign-out-button";
@@ -105,7 +106,9 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         {recipes.length ? (
           <div className="grid grid-cols-2 gap-4">
             {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
+              <Link href={`/recipes/${recipe.id}`} key={recipe.id}>
+                <RecipeCard recipe={recipe} />
+              </Link>
             ))}
           </div>
         ) : null}
@@ -115,9 +118,9 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         <button className="font-semibold text-leaf-700" type="button">
           Home
         </button>
-        <button className="rounded-full bg-leaf-700 p-3 text-white" type="button" aria-label="Add recipe">
+        <Link className="rounded-full bg-leaf-700 p-3 text-white" href="/recipes/new" aria-label="Add recipe">
           <Plus className="h-5 w-5" aria-hidden="true" />
-        </button>
+        </Link>
         <button className="flex items-center gap-1" type="button">
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
           Filter
