@@ -43,7 +43,7 @@ Product angle:
 
 ## Confirmed Stack
 
-- Frontend: Next.js with React and TypeScript.
+- Frontend: Next.js 16 with React 19 and TypeScript.
 - Styling: Tailwind CSS.
 - Icons and visual placeholders: Lucide React icons with simple deterministic placeholder treatments.
 - Backend platform: Supabase.
@@ -52,8 +52,9 @@ Product angle:
 - Storage: Supabase Storage for recipe images, with pasted image URLs allowed for the MVP.
 - Deployment: Vercel.
 - Source control: GitHub.
-- CI/CD: GitHub Actions for checks, tests, type generation, and database migration deployment.
-- Testing: Vitest for unit/integration tests and Playwright for end-to-end tests.
+- CI/CD: GitHub Actions on Node.js 24 for checks, tests, type generation, and database migration deployment.
+- Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
+- Testing: Vitest 4 for unit/integration tests and Playwright for end-to-end tests.
 - Auth email: Supabase custom SMTP, initially using a dedicated Gmail or Google Workspace mailbox if acceptable for the project scale.
 - Client server-state management: TanStack Query from the start, backed by typed Supabase repository functions.
 
@@ -107,6 +108,7 @@ Goal: create a deployable skeleton before building feature depth.
 - Add Supabase client setup and document the required `.env.local` values.
 - Add TanStack Query provider, query key conventions, and repository-backed query/mutation hooks.
 - Add CI checks for install, lint, type check, tests, and build.
+- [x] Refresh GitHub Actions workflows for Node.js 24 action runtimes, patched framework/test dependencies, ESLint 9 linting, deterministic Playwright startup, and a pinned Supabase CLI deploy action.
 - Add Vercel deployment configuration.
 
 ### Stage 1: True MVP - Private Recipe Library
@@ -132,7 +134,7 @@ This is the first version worth calling "usable." Anything not listed here shoul
 
 Stage 1 implementation slices:
 
-- [x] Auth/session foundation: SSR clients, middleware cookie refresh, auth callback route, email and Google auth actions, signed-out auth panel, and signed-in starter shell.
+- [x] Auth/session foundation: SSR clients, proxy cookie refresh, auth callback route, email and Google auth actions, signed-out auth panel, and signed-in starter shell.
 - [x] Auth UX hardening: password reset/resend flows, form pending states, profile display polish, and stronger auth E2E coverage.
 - [x] Recipe read path: authenticated recipe list, search, and meal-type filters backed by Supabase.
 - [x] Recipe write path: detail page, add/edit form, ingredients and steps, and create/update/archive mutations.
@@ -289,7 +291,7 @@ Avoid changing production tables manually in the Supabase dashboard once migrati
 
 Use GitHub Actions for repository checks and database safety:
 
-- `ci.yml`: runs install, lint, type check, unit tests, integration tests, build, and Playwright E2E tests.
+- `ci.yml`: runs install, ESLint, type check, unit tests, integration tests, build, and Playwright E2E tests on Node.js 24.
 - `supabase-types.yml`: optionally checks that generated Supabase TypeScript types are up to date.
 - `database-deploy.yml`: lists linked migrations, runs Supabase migrations on `main` after CI passes, then lists linked migrations again for audit visibility.
 
@@ -315,8 +317,8 @@ Use Vitest and Playwright. Do not use Jest and Cypress together for this project
 
 Recommended split:
 
-- Unit tests: Vitest, for mappers, validation helpers, DTO conversion, utility functions, and pure components.
-- Integration tests: Vitest, for repository functions, TanStack Query hooks, and Supabase-facing logic. These can run against mocked clients at first, then a local Supabase database later.
+- Unit tests: Vitest 4, for mappers, validation helpers, DTO conversion, utility functions, and pure components.
+- Integration tests: Vitest 4, for repository functions, TanStack Query hooks, and Supabase-facing logic. These can run against mocked clients at first, then a local Supabase database later.
 - E2E tests: Playwright, for core browser flows like sign in, recipe creation, recipe editing, filtering, and mobile viewport behavior.
 
 This avoids the common Jest/Cypress issue where both tools inject global test types such as `describe`, `it`, and `expect`. Vitest and Playwright can also be kept in separate test folders with separate config files, so their types do not leak into each other.

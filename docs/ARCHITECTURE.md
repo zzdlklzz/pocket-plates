@@ -2,11 +2,11 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive flows, PWA manifest, TanStack Query provider, Supabase browser/server/middleware client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive flows, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
 
 ## Stack
 
-- App framework: Next.js with React and TypeScript.
+- App framework: Next.js 16 with React 19 and TypeScript.
 - Styling: Tailwind CSS.
 - Icons and placeholders: Lucide React plus deterministic SVG/icon treatments.
 - Server state: TanStack Query from the start.
@@ -16,15 +16,16 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Auth: Supabase Auth with open email sign-up and planned Google OAuth.
 - Storage: Supabase Storage for future recipe images.
 - Hosting: Vercel.
-- CI/CD: GitHub Actions plus Vercel Git deployments.
-- Testing: Vitest for unit/integration tests and Playwright for E2E tests.
+- CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments.
+- Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
+- Testing: Vitest 4 for unit/integration tests and Playwright for E2E tests.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
     A["Mobile/Desktop browser or installed PWA"] --> B["Vercel-hosted Next.js app"]
-    B --> C["React + TypeScript UI"]
+    B --> C["React 19 + TypeScript UI"]
     C --> D["Tailwind CSS + Lucide React"]
     C --> E["React Hook Form + Zod"]
     C --> F["TanStack Query hooks"]
@@ -36,7 +37,7 @@ flowchart TD
     H --> J["Supabase Postgres + RLS"]
     H --> K["Supabase Storage"]
     J --> L["Private owner-scoped recipe library"]
-    M["GitHub Actions"] --> N["Lint, typecheck, Vitest, build, Playwright"]
+    M["GitHub Actions on Node.js 24"] --> N["ESLint, typecheck, Vitest, build, Playwright"]
     M --> O["Supabase migration deploy"]
     P["Vercel"] --> B
 ```
@@ -126,7 +127,9 @@ src/
       database.types.ts
       middleware.ts
       server.ts
-middleware.ts
+proxy.ts
+eslint.config.mjs
+vitest.config.mts
 ```
 
 ## Documentation Organization
@@ -194,7 +197,7 @@ SUPABASE_SECRET_KEY=
 npm run dev
 ```
 
-4. Run checks:
+4. Run checks. CI runs these checks on Node.js 24. Playwright starts the local Next.js server on `127.0.0.1:3000` so E2E tests use a deterministic base URL:
 
 ```bash
 npm run lint

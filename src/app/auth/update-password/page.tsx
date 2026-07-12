@@ -6,15 +6,16 @@ import { AUTH_SEARCH_PARAM, getAuthMessage } from "@/features/auth/auth.constant
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type UpdatePasswordPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function UpdatePasswordPage({ searchParams }: UpdatePasswordPageProps) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const authMessageKey = searchParams?.[AUTH_SEARCH_PARAM];
+  const resolvedSearchParams = await searchParams;
+  const authMessageKey = resolvedSearchParams?.[AUTH_SEARCH_PARAM];
   const authMessage = getAuthMessage(Array.isArray(authMessageKey) ? authMessageKey[0] : authMessageKey);
 
   if (!user) {

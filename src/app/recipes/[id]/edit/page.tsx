@@ -3,20 +3,21 @@ import { RecipeEdit } from "@/features/recipes/recipe-edit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type EditRecipePageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function EditRecipePage({ params }: EditRecipePageProps) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
+  const { id } = await params;
 
   if (!user) {
     redirect("/");
   }
 
-  return <RecipeEdit id={params.id} />;
+  return <RecipeEdit id={id} />;
 }

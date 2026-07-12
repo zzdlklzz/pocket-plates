@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Chrome, KeyRound, Mail, RotateCw, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import {
   resendConfirmationEmail,
   sendPasswordResetEmail,
@@ -19,7 +20,6 @@ type AuthPanelProps = {
 
 export function AuthPanel({ initialMode, message }: AuthPanelProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  useEffect(() => setMode(initialMode), [initialMode]);
 
   const isSignIn = mode === "sign-in";
   const isSignUp = mode === "sign-up";
@@ -115,14 +115,14 @@ export function AuthPanel({ initialMode, message }: AuthPanelProps) {
 
           <div className="mt-4 flex flex-wrap justify-between gap-3">
             {mode === "reset" ? null : (
-              <a className="text-sm font-semibold text-leaf-700" href="/?mode=reset" onClick={() => setMode("reset")}>
+              <Link className="text-sm font-semibold text-leaf-700" href="/?mode=reset" onClick={() => setMode("reset")}>
                 Forgot password?
-              </a>
+              </Link>
             )}
             {mode === "resend" ? null : (
-              <a className="text-sm font-semibold text-leaf-700" href="/?mode=resend" onClick={() => setMode("resend")}>
+              <Link className="text-sm font-semibold text-leaf-700" href="/?mode=resend" onClick={() => setMode("resend")}>
                 Resend confirmation
-              </a>
+              </Link>
             )}
           </div>
 

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const next = getSafeNextPath(requestUrl.searchParams.get("next"));
 
   if (code) {
-    const supabase = createSupabaseCookieClient();
+    const supabase = await createSupabaseCookieClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {

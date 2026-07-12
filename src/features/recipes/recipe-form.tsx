@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { useCreateRecipe, useUpdateRecipe } from "./recipe.queries";
 import type { RecipeFormValues } from "./recipe.types";
@@ -23,7 +23,6 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
     formState: { errors },
     handleSubmit,
     register,
-    watch,
     setValue,
     control
   } = useForm<RecipeFormValues>({
@@ -32,7 +31,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
   });
   const ingredients = useFieldArray({ control, name: "ingredients" });
   const steps = useFieldArray({ control, name: "steps" });
-  const selectedMealTypes = watch("mealTypes");
+  const selectedMealTypes = useWatch({ control, name: "mealTypes" }) ?? [];
   const mutation = recipeId ? updateRecipe : createRecipe;
 
   async function onSubmit(values: RecipeFormValues) {

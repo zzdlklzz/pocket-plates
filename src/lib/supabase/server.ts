@@ -20,9 +20,9 @@ function getSupabaseConfig() {
   return { url, publishableKey };
 }
 
-export function createSupabaseServerClient() {
+export async function createSupabaseServerClient() {
   const { url, publishableKey } = getSupabaseConfig();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(url, publishableKey, {
     cookies: {
@@ -33,9 +33,9 @@ export function createSupabaseServerClient() {
   });
 }
 
-export function createSupabaseCookieClient() {
+export async function createSupabaseCookieClient() {
   const { url, publishableKey } = getSupabaseConfig();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(url, publishableKey, {
     cookies: {

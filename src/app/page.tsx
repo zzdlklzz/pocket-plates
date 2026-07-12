@@ -4,7 +4,7 @@ import { RecipeLibrary } from "@/features/recipes/recipe-library";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type HomePageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type ProfileSummary = {
@@ -13,17 +13,18 @@ type ProfileSummary = {
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const authMessageKey = searchParams?.[AUTH_SEARCH_PARAM];
-  const authModeKey = searchParams?.[AUTH_MODE_SEARCH_PARAM];
+  const resolvedSearchParams = await searchParams;
+  const authMessageKey = resolvedSearchParams?.[AUTH_SEARCH_PARAM];
+  const authModeKey = resolvedSearchParams?.[AUTH_MODE_SEARCH_PARAM];
   const authMessage = getAuthMessage(Array.isArray(authMessageKey) ? authMessageKey[0] : authMessageKey);
   const authMode = getAuthMode(Array.isArray(authModeKey) ? authModeKey[0] : authModeKey);
 
   if (!user) {
-    return <AuthPanel initialMode={authMode} message={authMessage} />;
+    return <AuthPanel initialMode={authMode} key={authMode} message={authMessage} />;
   }
 
   const { data } = await supabase.from("profiles").select("display_name,username").eq("id", user.id).maybeSingle();

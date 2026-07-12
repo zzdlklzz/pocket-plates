@@ -4,8 +4,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseCookieClient } from "@/lib/supabase/server";
 
-function getOrigin() {
-  return headers().get("origin") ?? "http://localhost:3000";
+async function getOrigin() {
+  const headerStore = await headers();
+
+  return headerStore.get("origin") ?? "http://localhost:3000";
 }
 
 function getCredentials(formData: FormData) {
@@ -36,7 +38,7 @@ export async function signInWithEmail(formData: FormData) {
     redirect("/?auth=invalid-credentials");
   }
 
-  const supabase = createSupabaseCookieClient();
+  const supabase = await createSupabaseCookieClient();
   const { error } = await supabase.auth.signInWithPassword(credentials);
 
   if (error) {
@@ -53,11 +55,12 @@ export async function signUpWithEmail(formData: FormData) {
     redirect("/?auth=signup-error");
   }
 
-  const supabase = createSupabaseCookieClient();
+  const supabase = await createSupabaseCookieClient();
+  const origin = await getOrigin();
   const { error } = await supabase.auth.signUp({
     ...credentials,
     options: {
-      emailRedirectTo: `${getOrigin()}/auth/callback`
+      emailRedirectTo: `${origin}/auth/callback`
     }
   });
 
@@ -75,12 +78,13 @@ export async function resendConfirmationEmail(formData: FormData) {
     redirect("/?auth=resend-error");
   }
 
-  const supabase = createSupabaseCookieClient();
+  const supabase = await createSupabaseCookieClient();
+  const origin = await getOrigin();
   const { error } = await supabase.auth.resend({
     type: "signup",
     email,
     options: {
-      emailRedirectTo: `${getOrigin()}/auth/callback`
+      emailRedirectTo: `${origin}/auth/callback`
     }
   });
 
@@ -98,9 +102,10 @@ export async function sendPasswordResetEmail(formData: FormData) {
     redirect("/?auth=password-reset-error");
   }
 
-  const supabase = createSupabaseCookieClient();
+  const supabase = await createSupabaseCookieClient();
+  const origin = await getOrigin();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getOrigin()}/auth/callback?next=/auth/update-password`
+    redirectTo: `${origin}/auth/callback?next=/auth/update-password`
   });
 
   if (error) {
@@ -117,7 +122,7 @@ export async function updatePassword(formData: FormData) {
     redirect("/auth/update-password?auth=password-update-error");
   }
 
-  const supabase = createSupabaseCookieClient();
+  const supabase = await createSupabaseCookieClient();
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
@@ -129,11 +134,12 @@ export async function updatePassword(formData: FormData) {
 }
 
 export async function signInWithGoogle() {
-  const supabase = createSupabaseCookieClient();
+  const supabase = await createSupabaseCookieClient();
+  const origin = await getOrigin();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${getOrigin()}/auth/callback`
+      redirectTo: `${origin}/auth/callback`
     }
   });
 
@@ -145,7 +151,7 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
-  const supabase = createSupabaseCookieClient();
+  const supabase = await createSupabaseCookieClient();
   await supabase.auth.signOut();
 
   redirect("/?auth=signed-out");
