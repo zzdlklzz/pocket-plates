@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
 import { SignOutButton } from "@/features/auth/sign-out-button";
+import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { useRecipeList } from "./recipe.queries";
 import { RecipeCard } from "./recipe-card";
@@ -92,7 +93,7 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         {isLoading ? <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading recipes...</p> : null}
         {error ? (
           <p className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-            We could not load your recipes. Please try again.
+            {getRecipeErrorMessage(error, "loadList")}
           </p>
         ) : null}
         {!isLoading && !error && recipes.length === 0 ? (

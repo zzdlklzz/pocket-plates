@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { useCreateRecipe, useUpdateRecipe } from "./recipe.queries";
 import type { RecipeFormValues } from "./recipe.types";
@@ -250,7 +251,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
 
         {mutation.error ? (
           <p className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-700">
-            We could not save this recipe. Please try again.
+            {getRecipeErrorMessage(mutation.error, "save")}
           </p>
         ) : null}
 

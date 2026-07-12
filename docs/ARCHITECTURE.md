@@ -178,6 +178,7 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_ingredients`, and `recipe_steps` child rows, and soft-archives recipes through `archived_at`.
 - Before writing ingredient rows, `recipe.repository.ts` parses accepted amount strings into numeric values for `recipe_ingredients.amount`. Blank optional fields are written as `null`, and step timers are written as `null`.
 - `recipe.queries.ts` exposes create, update, and archive mutations and invalidates recipe list/detail caches after successful writes.
+- `recipe.errors.ts` maps Supabase, PostgREST, Auth, Storage, network, and unknown failures into safe user-facing messages. Recipe list, detail, edit, save, and archive screens show the classified message without exposing raw table names, RLS policy details, constraint names, or backend error text.
 
 ## Local Setup
 

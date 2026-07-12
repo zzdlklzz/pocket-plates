@@ -3,6 +3,7 @@
 import { ArrowLeft, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_LABELS } from "./recipe-library.constants";
 import { useArchiveRecipe, useRecipeDetail } from "./recipe.queries";
 
@@ -32,7 +33,7 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
           Back
         </Link>
         <p className="mt-5 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-          We could not find this recipe.
+          {error ? getRecipeErrorMessage(error, "loadDetail") : "We could not find this recipe."}
         </p>
       </main>
     );
@@ -106,7 +107,7 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
 
       {archiveRecipe.error ? (
         <p className="mt-5 rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-700">
-          We could not archive this recipe. Please try again.
+          {getRecipeErrorMessage(archiveRecipe.error, "archive")}
         </p>
       ) : null}
 
