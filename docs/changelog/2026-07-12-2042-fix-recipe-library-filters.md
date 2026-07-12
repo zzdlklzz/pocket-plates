@@ -18,6 +18,7 @@ Flexible recipes were being hidden from specific meal type filters even though t
 - Created `docs/changelog/2026-07-12-2042-fix-recipe-library-filters.md`
 - Modified `docs/project-plan.md`
 - Modified `docs/recipe-form-fixes-todo.md`
+- Modified `package.json`
 - Created `src/features/recipes/__tests__/recipe.repository.test.ts`
 - Created `src/features/recipes/__tests__/recipe-library.test.tsx`
 - Modified `src/features/recipes/recipe-card.tsx`
@@ -35,6 +36,7 @@ Flexible recipes were being hidden from specific meal type filters even though t
 │   ├── recipe-form-fixes-todo.md
 │   └── changelog/
 │       └── 2026-07-12-2042-fix-recipe-library-filters.md
+├── package.json
 └── src/
     └── features/
         └── recipes/
@@ -65,6 +67,7 @@ Checks run:
 
 - `npx tsc --noEmit`
 - `npx vitest run src/features/recipes/__tests__/recipe-library.test.tsx src/features/recipes/__tests__/recipe.repository.test.ts`
+- `NODE_ENV=production npm run test -- src/features/recipes/__tests__/recipe-library.test.tsx`
 - `npm run verify`
 - `npm run build`
 - `curl -I http://127.0.0.1:3000`
