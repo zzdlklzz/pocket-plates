@@ -171,7 +171,12 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
 - `recipe-form.tsx` uses React Hook Form with `recipe.validation.ts` Zod rules for title, servings, meal types, ingredients, steps, optional source URL, optional image URL, notes, cost rating, and difficulty.
+- The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source URL, image URL, cost rating, and difficulty can be left blank.
+- Ingredient rows keep four editable fields: ingredient name, amount, unit, and notes. Ingredient names are required. Amounts are optional but, when present, must be positive numbers or simple fractions such as `1`, `1.5`, `1/2`, or `1 1/2`. Units are optional but must come from the supported unit picker. Ingredient notes stay available for preparation details like "finely chopped", "optional", or "to taste".
+- Step rows now contain only instruction text. Dedicated timer minutes are no longer edited or displayed; timing should be written directly into the instruction, such as "Simmer for 10 minutes."
+- Validation errors are shown next to the specific ingredient or step field that needs attention, and the form caps recipe size with practical limits for servings, ingredients, and steps.
 - `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_ingredients`, and `recipe_steps` child rows, and soft-archives recipes through `archived_at`.
+- Before writing ingredient rows, `recipe.repository.ts` parses accepted amount strings into numeric values for `recipe_ingredients.amount`. Blank optional fields are written as `null`, and step timers are written as `null`.
 - `recipe.queries.ts` exposes create, update, and archive mutations and invalidates recipe list/detail caches after successful writes.
 
 ## Local Setup

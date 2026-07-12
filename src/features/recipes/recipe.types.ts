@@ -22,7 +22,6 @@ export type RecipeIngredientDto = {
 
 export type RecipeStepDto = {
   instruction: string;
-  timerMinutes: number | null;
 };
 
 export type RecipeDetailDto = RecipeCardDto & {
@@ -50,7 +49,6 @@ export type RecipeFormValues = {
   }[];
   steps: {
     instruction: string;
-    timerMinutes: string;
   }[];
 };
 

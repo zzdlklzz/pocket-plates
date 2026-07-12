@@ -28,7 +28,7 @@ Any implementation slice involving Supabase schema, migrations, RLS policies, st
 
 ## Priority Order And Status
 
-- [ ] Add stronger form validation and simplify ingredient inputs.
+- [x] Add stronger form validation and simplify ingredient inputs.
 - [ ] Improve save and load error feedback without exposing sensitive details.
 - [ ] Add consistent pending/loading feedback for slow actions and redirects.
 - [ ] Fix meal type filtering so flexible recipes appear in all meal type filters.
@@ -345,9 +345,9 @@ The exact thresholds should be confirmed before implementation. A reasonable sta
 
 Implement priorities 1, 2, and 3 together only if the diff stays small. Otherwise split them into:
 
-- A1: validation and row-level errors.
-- A2: safe error messages.
-- A3: loading and pending states.
+- [x] A1: validation and row-level errors.
+- [ ] A2: safe error messages.
+- [ ] A3: loading and pending states.
 
 ### Slice B: Meal Type Semantics
 

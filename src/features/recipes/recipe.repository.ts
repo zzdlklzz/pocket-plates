@@ -2,6 +2,7 @@ import type { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
 import type { RecipeDetailRow, RecipeListRow } from "./recipe.mappers";
 import type { RecipeFormValues, RecipeListFilters } from "./recipe.types";
+import { parseIngredientAmount } from "./recipe.validation";
 
 type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient>;
 type RecipeInsert = Database["public"]["Tables"]["recipes"]["Insert"];
@@ -12,16 +13,11 @@ type RecipeStepInsert = Database["public"]["Tables"]["recipe_steps"]["Insert"];
 
 const RECIPE_LIST_SELECT = "id,title,cost_rating,difficulty,image_url,created_at,recipe_meal_types(meal_type)";
 const RECIPE_DETAIL_SELECT =
-  "id,title,cost_rating,difficulty,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,timer_minutes,sort_order)";
+  "id,title,cost_rating,difficulty,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,sort_order)";
 
 function emptyToNull(value: string) {
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
-}
-
-function numberOrNull(value: string) {
-  const trimmed = value.trim();
-  return trimmed ? Number(trimmed) : null;
 }
 
 export async function listRecipes(
@@ -114,7 +110,7 @@ async function replaceRecipeChildren(supabase: SupabaseBrowserClient, recipeId: 
   const ingredientRows: RecipeIngredientInsert[] = values.ingredients.map((ingredient, sortOrder) => ({
     recipe_id: recipeId,
     name: ingredient.name.trim(),
-    amount: numberOrNull(ingredient.amount),
+    amount: parseIngredientAmount(ingredient.amount),
     unit: emptyToNull(ingredient.unit),
     notes: emptyToNull(ingredient.notes),
     sort_order: sortOrder
@@ -122,7 +118,7 @@ async function replaceRecipeChildren(supabase: SupabaseBrowserClient, recipeId: 
   const stepRows: RecipeStepInsert[] = values.steps.map((step, sortOrder) => ({
     recipe_id: recipeId,
     instruction: step.instruction.trim(),
-    timer_minutes: numberOrNull(step.timerMinutes),
+    timer_minutes: null,
     sort_order: sortOrder
   }));
 

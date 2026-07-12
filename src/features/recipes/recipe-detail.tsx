@@ -98,10 +98,7 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
           {recipe.steps.map((step, index) => (
             <li className="flex gap-3" key={`${step.instruction}-${index}`}>
               <span className="font-semibold text-leaf-700">{index + 1}</span>
-              <span>
-                {step.instruction}
-                {step.timerMinutes ? <span className="text-slate-400"> ({step.timerMinutes} min)</span> : null}
-              </span>
+              <span>{step.instruction}</span>
             </li>
           ))}
         </ol>

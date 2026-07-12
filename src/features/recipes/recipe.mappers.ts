@@ -23,7 +23,6 @@ export type RecipeDetailRow = RecipeListRow & {
   recipe_steps?: {
     instruction: string;
     sort_order: number;
-    timer_minutes: number | null;
   }[] | null;
 };
 
@@ -53,7 +52,7 @@ export function toRecipeDetailDto(row: RecipeDetailRow): RecipeDetailDto {
       row.recipe_steps
         ?.slice()
         .sort((left, right) => left.sort_order - right.sort_order)
-        .map(({ instruction, timer_minutes }) => ({ instruction, timerMinutes: timer_minutes })) ?? []
+        .map(({ instruction }) => ({ instruction })) ?? []
   };
 }
 
@@ -74,8 +73,7 @@ export function toRecipeFormValues(recipe: RecipeDetailDto): RecipeFormValues {
       notes: ingredient.notes ?? ""
     })),
     steps: recipe.steps.map((step) => ({
-      instruction: step.instruction,
-      timerMinutes: step.timerMinutes?.toString() ?? ""
+      instruction: step.instruction
     }))
   };
 }

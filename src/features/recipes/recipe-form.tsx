@@ -8,7 +8,7 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { useCreateRecipe, useUpdateRecipe } from "./recipe.queries";
 import type { RecipeFormValues } from "./recipe.types";
-import { DEFAULT_RECIPE_FORM_VALUES, recipeFormSchema } from "./recipe.validation";
+import { DEFAULT_RECIPE_FORM_VALUES, INGREDIENT_UNITS, MAX_INGREDIENTS, MAX_SERVINGS, MAX_STEPS, recipeFormSchema } from "./recipe.validation";
 
 type RecipeFormProps = {
   initialValues?: RecipeFormValues;
@@ -74,6 +74,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
             <input
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-base text-slate-900 outline-none focus:border-leaf-700"
               min={1}
+              max={MAX_SERVINGS}
               type="number"
               {...register("servings", { valueAsNumber: true })}
             />
@@ -151,7 +152,8 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-800">Ingredients</h2>
             <button
-              className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
+              disabled={ingredients.fields.length >= MAX_INGREDIENTS}
               onClick={() => ingredients.append({ name: "", amount: "", unit: "", notes: "" })}
               type="button"
             >
@@ -161,12 +163,47 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
           </div>
           {ingredients.fields.map((field, index) => (
             <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
-              <input className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Ingredient" {...register(`ingredients.${index}.name`)} />
+              <input
+                aria-invalid={errors.ingredients?.[index]?.name ? "true" : "false"}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Ingredient"
+                {...register(`ingredients.${index}.name`)}
+              />
+              {errors.ingredients?.[index]?.name ? <p className="text-xs text-red-700">{errors.ingredients[index]?.name?.message}</p> : null}
               <div className="grid grid-cols-2 gap-2">
-                <input className="rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Amount" {...register(`ingredients.${index}.amount`)} />
-                <input className="rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Unit" {...register(`ingredients.${index}.unit`)} />
+                <div>
+                  <input
+                    aria-invalid={errors.ingredients?.[index]?.amount ? "true" : "false"}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    inputMode="decimal"
+                    placeholder="Amount"
+                    {...register(`ingredients.${index}.amount`)}
+                  />
+                  {errors.ingredients?.[index]?.amount ? <p className="mt-1 text-xs text-red-700">{errors.ingredients[index]?.amount?.message}</p> : null}
+                </div>
+                <div>
+                  <select
+                    aria-invalid={errors.ingredients?.[index]?.unit ? "true" : "false"}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    {...register(`ingredients.${index}.unit`)}
+                  >
+                    <option value="">Unit</option>
+                    {INGREDIENT_UNITS.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {unit}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.ingredients?.[index]?.unit ? <p className="mt-1 text-xs text-red-700">{errors.ingredients[index]?.unit?.message}</p> : null}
+                </div>
               </div>
-              <input className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Notes" {...register(`ingredients.${index}.notes`)} />
+              <input
+                aria-invalid={errors.ingredients?.[index]?.notes ? "true" : "false"}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Notes"
+                {...register(`ingredients.${index}.notes`)}
+              />
+              {errors.ingredients?.[index]?.notes ? <p className="text-xs text-red-700">{errors.ingredients[index]?.notes?.message}</p> : null}
               {ingredients.fields.length > 1 ? (
                 <button className="inline-flex items-center gap-1 text-xs font-semibold text-red-700" onClick={() => ingredients.remove(index)} type="button">
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -182,8 +219,9 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-800">Steps</h2>
             <button
-              className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700"
-              onClick={() => steps.append({ instruction: "", timerMinutes: "" })}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
+              disabled={steps.fields.length >= MAX_STEPS}
+              onClick={() => steps.append({ instruction: "" })}
               type="button"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
@@ -192,8 +230,13 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
           </div>
           {steps.fields.map((field, index) => (
             <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
-              <textarea className="min-h-20 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder={`Step ${index + 1}`} {...register(`steps.${index}.instruction`)} />
-              <input className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Timer minutes" {...register(`steps.${index}.timerMinutes`)} />
+              <textarea
+                aria-invalid={errors.steps?.[index]?.instruction ? "true" : "false"}
+                className="min-h-20 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                placeholder={`Step ${index + 1}`}
+                {...register(`steps.${index}.instruction`)}
+              />
+              {errors.steps?.[index]?.instruction ? <p className="text-xs text-red-700">{errors.steps[index]?.instruction?.message}</p> : null}
               {steps.fields.length > 1 ? (
                 <button className="inline-flex items-center gap-1 text-xs font-semibold text-red-700" onClick={() => steps.remove(index)} type="button">
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />

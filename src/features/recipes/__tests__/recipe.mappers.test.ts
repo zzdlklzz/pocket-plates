@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toRecipeCardDto, toRecipeDetailDto, toRecipeFormValues } from "../recipe.mappers";
-import { recipeFormSchema } from "../recipe.validation";
+import { parseIngredientAmount, recipeFormSchema } from "../recipe.validation";
 
 describe("toRecipeCardDto", () => {
   it("maps database row names to app DTO names", () => {
@@ -42,8 +42,8 @@ describe("toRecipeDetailDto", () => {
           { amount: 2, name: "Rice", notes: "cooked", sort_order: 0, unit: "cups" }
         ],
         recipe_steps: [
-          { instruction: "Serve warm.", sort_order: 1, timer_minutes: null },
-          { instruction: "Fry everything.", sort_order: 0, timer_minutes: 8 }
+          { instruction: "Serve warm.", sort_order: 1 },
+          { instruction: "Fry everything for 8 minutes.", sort_order: 0 }
         ]
       })
     ).toMatchObject({
@@ -55,8 +55,8 @@ describe("toRecipeDetailDto", () => {
         { amount: 1, name: "Egg", notes: null, unit: null }
       ],
       steps: [
-        { instruction: "Fry everything.", timerMinutes: 8 },
-        { instruction: "Serve warm.", timerMinutes: null }
+        { instruction: "Fry everything for 8 minutes." },
+        { instruction: "Serve warm." }
       ]
     });
   });
@@ -76,7 +76,7 @@ describe("toRecipeFormValues", () => {
         notes: null,
         sourceUrl: null,
         ingredients: [{ amount: 2, name: "Rice", notes: null, unit: "cups" }],
-        steps: [{ instruction: "Cook rice.", timerMinutes: null }]
+        steps: [{ instruction: "Cook rice." }]
       })
     ).toEqual({
       title: "Rice Bowl",
@@ -88,7 +88,7 @@ describe("toRecipeFormValues", () => {
       sourceUrl: "",
       notes: "",
       ingredients: [{ amount: "2", name: "Rice", notes: "", unit: "cups" }],
-      steps: [{ instruction: "Cook rice.", timerMinutes: "" }]
+      steps: [{ instruction: "Cook rice." }]
     });
   });
 });
@@ -131,10 +131,57 @@ describe("recipeFormSchema", () => {
       sourceUrl: "",
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
-      steps: [{ instruction: "Cook rice.", timerMinutes: "" }]
+      steps: [{ instruction: "Cook rice." }]
     };
 
     expect(recipeFormSchema.safeParse(baseValues).success).toBe(true);
     expect(recipeFormSchema.safeParse({ ...baseValues, sourceUrl: "example.com" }).success).toBe(false);
+  });
+
+  it("validates ingredient amounts and units", () => {
+    const baseValues = {
+      title: "Rice Bowl",
+      servings: 2,
+      mealTypes: ["dinner"],
+      costRating: "",
+      difficulty: "",
+      imageUrl: "",
+      sourceUrl: "",
+      notes: "",
+      ingredients: [{ amount: "1 1/2", name: "Rice", notes: "cooked", unit: "cup" }],
+      steps: [{ instruction: "Cook rice for 12 minutes." }]
+    };
+
+    expect(recipeFormSchema.safeParse(baseValues).success).toBe(true);
+    expect(recipeFormSchema.safeParse({ ...baseValues, ingredients: [{ ...baseValues.ingredients[0], amount: "abc" }] }).success).toBe(false);
+    expect(recipeFormSchema.safeParse({ ...baseValues, ingredients: [{ ...baseValues.ingredients[0], unit: "random" }] }).success).toBe(false);
+  });
+
+  it("limits servings to a practical whole number", () => {
+    const baseValues = {
+      title: "Rice Bowl",
+      servings: 2,
+      mealTypes: ["dinner"],
+      costRating: "",
+      difficulty: "",
+      imageUrl: "",
+      sourceUrl: "",
+      notes: "",
+      ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
+      steps: [{ instruction: "Cook rice." }]
+    };
+
+    expect(recipeFormSchema.safeParse({ ...baseValues, servings: 1.5 }).success).toBe(false);
+    expect(recipeFormSchema.safeParse({ ...baseValues, servings: 101 }).success).toBe(false);
+  });
+});
+
+describe("parseIngredientAmount", () => {
+  it("parses blank, decimal, fraction, and mixed fraction amounts", () => {
+    expect(parseIngredientAmount("")).toBeNull();
+    expect(parseIngredientAmount("1.5")).toBe(1.5);
+    expect(parseIngredientAmount("1/2")).toBe(0.5);
+    expect(parseIngredientAmount("1 1/2")).toBe(1.5);
+    expect(parseIngredientAmount("abc")).toBeNull();
   });
 });
