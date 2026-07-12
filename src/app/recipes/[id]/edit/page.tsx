@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { RecipeEdit } from "@/features/recipes/recipe-edit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 type EditRecipePageProps = {
   params: Promise<{
     id: string;

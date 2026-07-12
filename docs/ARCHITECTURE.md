@@ -16,7 +16,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Auth: Supabase Auth with open email sign-up and planned Google OAuth.
 - Storage: Supabase Storage for future recipe images.
 - Hosting: Vercel.
-- CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments.
+- CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments that run lightweight verification before building.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
 - Testing: Vitest 4 for unit/integration tests and Playwright for E2E tests.
 
@@ -39,7 +39,7 @@ flowchart TD
     J --> L["Private owner-scoped recipe library"]
     M["GitHub Actions on Node.js 24"] --> N["ESLint, typecheck, Vitest, build, Playwright"]
     M --> O["Supabase migration deploy"]
-    P["Vercel"] --> B
+    P["Vercel verify + build"] --> B
 ```
 
 ## Data Model
@@ -129,6 +129,7 @@ src/
       server.ts
 proxy.ts
 eslint.config.mjs
+vercel.json
 vitest.config.mts
 ```
 
@@ -197,7 +198,7 @@ SUPABASE_SECRET_KEY=
 npm run dev
 ```
 
-4. Run checks. CI runs these checks on Node.js 24. Playwright starts the local Next.js server on `127.0.0.1:3000` so E2E tests use a deterministic base URL:
+4. Run checks. CI runs these checks on Node.js 24 with placeholder public Supabase values because GitHub Actions does not inherit Vercel environment variables. Playwright starts the local Next.js server on `127.0.0.1:3000` so E2E tests use a deterministic base URL:
 
 ```bash
 npm run lint
@@ -206,6 +207,8 @@ npm run test
 npm run build
 npm run test:e2e
 ```
+
+Vercel deployments use `vercel.json` to run `npm run verify && npm run build`, so lint, typecheck, and unit tests must pass before Vercel produces a deployment build. GitHub branch protection is still required if production deploys should be limited to commits whose full GitHub Actions CI, including Playwright E2E, has passed.
 
 If Playwright browsers are missing:
 

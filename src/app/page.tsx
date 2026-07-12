@@ -3,6 +3,8 @@ import { AUTH_MODE_SEARCH_PARAM, AUTH_SEARCH_PARAM, getAuthMessage, getAuthMode 
 import { RecipeLibrary } from "@/features/recipes/recipe-library";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 type HomePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };

@@ -5,6 +5,8 @@ import { AuthSubmitButton } from "@/features/auth/auth-submit-button";
 import { AUTH_SEARCH_PARAM, getAuthMessage } from "@/features/auth/auth.constants";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 type UpdatePasswordPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };

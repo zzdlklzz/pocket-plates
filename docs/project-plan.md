@@ -52,7 +52,7 @@ Product angle:
 - Storage: Supabase Storage for recipe images, with pasted image URLs allowed for the MVP.
 - Deployment: Vercel.
 - Source control: GitHub.
-- CI/CD: GitHub Actions on Node.js 24 for checks, tests, type generation, and database migration deployment.
+- CI/CD: GitHub Actions on Node.js 24 for checks, tests, type generation, and database migration deployment, plus Vercel builds that run lightweight verification before deployment.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
 - Testing: Vitest 4 for unit/integration tests and Playwright for end-to-end tests.
 - Auth email: Supabase custom SMTP, initially using a dedicated Gmail or Google Workspace mailbox if acceptable for the project scale.
@@ -108,7 +108,7 @@ Goal: create a deployable skeleton before building feature depth.
 - Add Supabase client setup and document the required `.env.local` values.
 - Add TanStack Query provider, query key conventions, and repository-backed query/mutation hooks.
 - Add CI checks for install, lint, type check, tests, and build.
-- [x] Refresh GitHub Actions workflows for Node.js 24 action runtimes, patched framework/test dependencies, ESLint 9 linting, deterministic Playwright startup, and a pinned Supabase CLI deploy action.
+- [x] Refresh GitHub Actions workflows for Node.js 24 action runtimes, patched framework/test dependencies, ESLint 9 linting, deterministic Playwright startup, explicit CI Supabase public placeholders, Vercel pre-build verification, and a pinned Supabase CLI deploy action.
 - Add Vercel deployment configuration.
 
 ### Stage 1: True MVP - Private Recipe Library
@@ -291,7 +291,7 @@ Avoid changing production tables manually in the Supabase dashboard once migrati
 
 Use GitHub Actions for repository checks and database safety:
 
-- `ci.yml`: runs install, ESLint, type check, unit tests, integration tests, build, and Playwright E2E tests on Node.js 24.
+- `ci.yml`: runs install, ESLint, type check, unit tests, integration tests, build, and Playwright E2E tests on Node.js 24. It supplies placeholder public Supabase values for build and signed-out E2E checks because GitHub Actions does not receive Vercel environment variables.
 - `supabase-types.yml`: optionally checks that generated Supabase TypeScript types are up to date.
 - `database-deploy.yml`: lists linked migrations, runs Supabase migrations on `main` after CI passes, then lists linked migrations again for audit visibility.
 
@@ -299,6 +299,9 @@ Use Vercel's GitHub integration for application deployment:
 
 - Pull request: Vercel creates a preview deployment.
 - Merge to `main`: Vercel creates a production deployment.
+- `vercel.json` runs `npm run verify && npm run build` so Vercel deployments fail before build output if lint, typecheck, or unit tests fail.
+
+To prevent production deployments from unverified commits, protect the production branch in GitHub and require the CI `checks` job before merging or pushing to `main`.
 
 Required GitHub secrets later:
 
