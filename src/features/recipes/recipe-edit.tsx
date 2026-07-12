@@ -5,6 +5,7 @@ import { getRecipeErrorMessage } from "./recipe.errors";
 import { toRecipeFormValues } from "./recipe.mappers";
 import { useRecipeDetail } from "./recipe.queries";
 import { RecipeForm } from "./recipe-form";
+import { RecipeFormSkeleton } from "./recipe-skeletons";
 
 type RecipeEditProps = {
   id: string;
@@ -14,7 +15,7 @@ export function RecipeEdit({ id }: RecipeEditProps) {
   const { data: recipe, error, isLoading } = useRecipeDetail(id);
 
   if (isLoading) {
-    return <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 py-8 shadow-sm">Loading recipe...</main>;
+    return <RecipeFormSkeleton />;
   }
 
   if (error || !recipe) {

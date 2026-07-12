@@ -7,6 +7,7 @@ import { useTransition } from "react";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_LABELS } from "./recipe-library.constants";
 import { useArchiveRecipe, useRecipeDetail } from "./recipe.queries";
+import { RecipeDetailSkeleton } from "./recipe-skeletons";
 
 type RecipeDetailProps = {
   id: string;
@@ -31,7 +32,7 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
   }
 
   if (isLoading) {
-    return <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 py-8 shadow-sm">Loading recipe...</main>;
+    return <RecipeDetailSkeleton />;
   }
 
   if (error || !recipe) {

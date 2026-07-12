@@ -9,6 +9,7 @@ import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { useRecipeList } from "./recipe.queries";
 import { RecipeCard } from "./recipe-card";
+import { RecipeGridSkeleton } from "./recipe-skeletons";
 import type { MealType } from "./recipe.types";
 
 type RecipeLibraryProps = {
@@ -90,7 +91,11 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
       </section>
 
       <section className="mt-5" aria-label="Recipe library">
-        {isLoading ? <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading recipes...</p> : null}
+        {isLoading ? (
+          <div role="status" aria-label="Loading recipes">
+            <RecipeGridSkeleton />
+          </div>
+        ) : null}
         {error ? (
           <p className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
             {getRecipeErrorMessage(error, "loadList")}

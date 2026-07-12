@@ -140,7 +140,7 @@ Stage 1 implementation slices:
 - [x] Recipe write path: detail page, add/edit form, ingredients and steps, and create/update/archive mutations.
 - [x] Recipe form validation hardening: stricter ingredient amounts and units, row-level field errors, practical form limits, and removal of the dedicated step timer input.
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
-- [x] Recipe action pending states: spinner-backed save/archive/sign-out buttons and disabled form controls during recipe save.
+- [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
 

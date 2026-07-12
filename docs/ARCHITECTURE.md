@@ -179,7 +179,7 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - Before writing ingredient rows, `recipe.repository.ts` parses accepted amount strings into numeric values for `recipe_ingredients.amount`. Blank optional fields are written as `null`, and step timers are written as `null`.
 - `recipe.queries.ts` exposes create, update, and archive mutations and invalidates recipe list/detail caches after successful writes.
 - `recipe.errors.ts` maps Supabase, PostgREST, Auth, Storage, network, and unknown failures into safe user-facing messages. Recipe list, detail, edit, save, and archive screens show the classified message without exposing raw table names, RLS policy details, constraint names, or backend error text.
-- Save and archive actions show spinner-backed pending labels, disable repeat clicks while the mutation runs, and stay busy through the redirect handoff. The recipe form also disables its editable fields and row controls while saving so a user cannot change the recipe mid-submit.
+- Save and archive actions show spinner-backed pending labels, disable repeat clicks while the mutation runs, and stay busy through the redirect handoff. The recipe form also disables its editable fields and row controls while saving so a user cannot change the recipe mid-submit. Route-level and query-level loading states reuse recipe skeleton components for the library, detail, and form screens so mobile navigation gives immediate visual feedback instead of plain loading text.
 
 ## Local Setup
 
