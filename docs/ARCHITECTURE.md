@@ -151,16 +151,16 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI.
 
-Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title and one or more meal types. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a sign-out action.
+Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title, one or more meal types, cost rating, and difficulty. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a sign-out action.
 
 ## Recipe Read Path
 
 The recipe read path keeps database rows, DTOs, and UI state separate:
 
-- `recipe.repository.ts` queries `recipes` and `recipe_meal_types` through the browser Supabase client.
+- `recipe.repository.ts` queries `recipes` and `recipe_meal_types` through the browser Supabase client. When the user filters by breakfast, lunch, dinner, or snack, the repository also includes recipes tagged `flexible`; filtering by Flexible itself stays exact.
 - `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects.
 - `recipe.queries.ts` exposes `useRecipeList` and `useRecipeDetail` for TanStack Query caching.
-- `recipe-library.tsx` owns search and meal-type filter UI state.
+- `recipe-library.tsx` owns search and filter UI state. Meal type chips stay visible in the library for quick access, and the bottom Filter button opens a lightweight dialog with meal type, cost rating, and difficulty controls so filtering does not require a separate page load.
 - `recipe-card.tsx` renders compact mobile-friendly recipe cards.
 
 ## Recipe Write Path

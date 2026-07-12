@@ -1,16 +1,16 @@
 "use client";
 
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
 import { SignOutButton } from "@/features/auth/sign-out-button";
 import { getRecipeErrorMessage } from "./recipe.errors";
-import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
+import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { useRecipeList } from "./recipe.queries";
 import { RecipeCard } from "./recipe-card";
 import { RecipeGridSkeleton } from "./recipe-skeletons";
-import type { MealType } from "./recipe.types";
+import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
 
 type RecipeLibraryProps = {
   profileLabel: string;
@@ -19,19 +19,37 @@ type RecipeLibraryProps = {
 export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
   const [search, setSearch] = useState("");
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
+  const [costRatings, setCostRatings] = useState<CostRating[]>([]);
+  const [difficulty, setDifficulty] = useState<DifficultyLevel | undefined>();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filters = useMemo(
     () => ({
       search,
-      mealTypes
+      mealTypes,
+      costRatings,
+      difficulty
     }),
-    [mealTypes, search]
+    [costRatings, difficulty, mealTypes, search]
   );
   const { data: recipes = [], error, isLoading } = useRecipeList(filters);
+  const activeFilterCount = mealTypes.length + costRatings.length + (difficulty ? 1 : 0);
 
   function toggleMealType(mealType: MealType) {
     setMealTypes((current) =>
       current.includes(mealType) ? current.filter((selected) => selected !== mealType) : [...current, mealType]
     );
+  }
+
+  function toggleCostRating(costRating: CostRating) {
+    setCostRatings((current) =>
+      current.includes(costRating) ? current.filter((selected) => selected !== costRating) : [...current, costRating]
+    );
+  }
+
+  function clearFilters() {
+    setMealTypes([]);
+    setCostRatings([]);
+    setDifficulty(undefined);
   }
 
   return (
@@ -90,6 +108,134 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         })}
       </section>
 
+      {isFilterOpen ? (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 px-4 pb-4" role="presentation">
+          <section
+            aria-label="Recipe filters"
+            aria-modal="true"
+            className="w-full max-w-md rounded-lg bg-white p-4 shadow-xl"
+            role="dialog"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-slate-900">Filters</h2>
+              <button
+                aria-label="Close filters"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600"
+                onClick={() => setIsFilterOpen(false)}
+                type="button"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-5">
+              <section>
+                <h3 className="text-sm font-semibold text-slate-800">Meal type</h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    className={
+                      mealTypes.length === 0
+                        ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
+                        : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
+                    }
+                    onClick={() => setMealTypes([])}
+                    type="button"
+                  >
+                    All
+                  </button>
+                  {MEAL_TYPE_FILTERS.map((filter) => {
+                    const isSelected = mealTypes.includes(filter.value);
+
+                    return (
+                      <button
+                        aria-pressed={isSelected}
+                        className={
+                          isSelected
+                            ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
+                            : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
+                        }
+                        key={filter.value}
+                        onClick={() => toggleMealType(filter.value)}
+                        type="button"
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-semibold text-slate-800">Cost</h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {COST_RATING_FILTERS.map((filter) => {
+                    const isSelected = costRatings.includes(filter.value);
+
+                    return (
+                      <button
+                        aria-pressed={isSelected}
+                        className={
+                          isSelected
+                            ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
+                            : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
+                        }
+                        key={filter.value}
+                        onClick={() => toggleCostRating(filter.value)}
+                        type="button"
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-semibold text-slate-800">Difficulty</h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {DIFFICULTY_FILTERS.map((filter) => {
+                    const isSelected = difficulty === filter.value;
+
+                    return (
+                      <button
+                        aria-pressed={isSelected}
+                        className={
+                          isSelected
+                            ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
+                            : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
+                        }
+                        key={filter.value}
+                        onClick={() => setDifficulty(isSelected ? undefined : filter.value)}
+                        type="button"
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600"
+                onClick={clearFilters}
+                type="button"
+              >
+                Clear
+              </button>
+              <button
+                className="rounded-lg bg-leaf-700 px-4 py-3 text-sm font-semibold text-white"
+                onClick={() => setIsFilterOpen(false)}
+                type="button"
+              >
+                Done
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       <section className="mt-5" aria-label="Recipe library">
         {isLoading ? (
           <div role="status" aria-label="Loading recipes">
@@ -127,9 +273,14 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         <Link className="rounded-full bg-leaf-700 p-3 text-white" href="/recipes/new" aria-label="Add recipe">
           <Plus className="h-5 w-5" aria-hidden="true" />
         </Link>
-        <button className="flex items-center gap-1" type="button">
+        <button
+          aria-haspopup="dialog"
+          className={activeFilterCount ? "flex items-center gap-1 font-semibold text-leaf-700" : "flex items-center gap-1"}
+          onClick={() => setIsFilterOpen(true)}
+          type="button"
+        >
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-          Filter
+          Filter{activeFilterCount ? ` ${activeFilterCount}` : ""}
         </button>
       </nav>
     </main>

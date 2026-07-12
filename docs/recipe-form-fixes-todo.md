@@ -31,7 +31,7 @@ Any implementation slice involving Supabase schema, migrations, RLS policies, st
 - [x] Add stronger form validation and simplify ingredient inputs.
 - [x] Improve save and load error feedback without exposing sensitive details.
 - [x] Add consistent pending/loading feedback for slow actions and redirects.
-- [ ] Fix meal type filtering so flexible recipes appear in all meal type filters.
+- [x] Fix meal type filtering so flexible recipes appear in all meal type filters.
 - [ ] Support multiple source URLs, up to a reasonable limit.
 - [ ] Replace image URL entry with Supabase Storage image upload.
 - [ ] Rework cost entry so cost rating can be generated from total SGD cost and servings.
@@ -351,7 +351,7 @@ Implement priorities 1, 2, and 3 together only if the diff stays small. Otherwis
 
 ### Slice B: Meal Type Semantics
 
-- [ ] Slice complete.
+- [x] Slice complete.
 
 Implement priority 4 separately because it is a focused repository/filtering behavior change.
 

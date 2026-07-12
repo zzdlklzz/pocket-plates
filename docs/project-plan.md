@@ -141,14 +141,15 @@ Stage 1 implementation slices:
 - [x] Recipe form validation hardening: stricter ingredient amounts and units, row-level field errors, practical form limits, and removal of the dedicated step timer input.
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
+- [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
 
 Goal: make saved recipes easier to choose when budget, effort, and equipment matter.
 
-- Keep meal type filters from Stage 1 as a core browsing dimension: breakfast, lunch, dinner, snack, and flexible. These are multi-select because a recipe can belong to more than one meal.
-- Add cost rating, such as very cheap, cheap, moderate, or splurge.
-- Add one difficulty rating per recipe, such as easy, medium, hard, or beginner-friendly.
+- [x] Keep meal type filters from Stage 1 as a core browsing dimension: breakfast, lunch, dinner, snack, and flexible. These are multi-select because a recipe can belong to more than one meal, and flexible recipes appear when filtering by a specific meal type.
+- [x] Add cost rating, such as very cheap, cheap, moderate, or splurge.
+- [x] Add one difficulty rating per recipe, such as easy, medium, hard, or beginner-friendly.
 - Add effort/time filters, such as quick, make-ahead, one-pot, and low-cleanup.
 - Add equipment filters, such as microwave, rice cooker, stovetop, oven, no oven, and blender.
 - Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep.

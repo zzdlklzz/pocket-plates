@@ -1,7 +1,7 @@
 import type { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
 import type { RecipeDetailRow, RecipeListRow } from "./recipe.mappers";
-import type { RecipeFormValues, RecipeListFilters } from "./recipe.types";
+import type { MealType, RecipeFormValues, RecipeListFilters } from "./recipe.types";
 import { parseIngredientAmount } from "./recipe.validation";
 
 type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -20,11 +20,22 @@ function emptyToNull(value: string) {
   return trimmed ? trimmed : null;
 }
 
+export function getMealTypeFilterValues(selectedMealTypes: MealType[]) {
+  const selected = new Set(selectedMealTypes);
+  const hasAnySpecificMealType = selectedMealTypes.some((mealType) => mealType !== "flexible");
+
+  if (hasAnySpecificMealType) {
+    selected.add("flexible");
+  }
+
+  return Array.from(selected);
+}
+
 export async function listRecipes(
   supabase: SupabaseBrowserClient,
   filters: RecipeListFilters
 ) {
-  const mealTypes = filters.mealTypes?.length ? filters.mealTypes : null;
+  const mealTypes = filters.mealTypes?.length ? getMealTypeFilterValues(filters.mealTypes) : null;
   let recipeIds: string[] | null = null;
 
   if (mealTypes) {

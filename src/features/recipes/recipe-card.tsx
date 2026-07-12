@@ -1,27 +1,13 @@
 import { ChefHat, CircleDollarSign, Gauge } from "lucide-react";
-import { MEAL_TYPE_LABELS } from "./recipe-library.constants";
+import { COST_RATING_LABELS, DIFFICULTY_LABELS, MEAL_TYPE_LABELS } from "./recipe-library.constants";
 import type { RecipeCardDto } from "./recipe.types";
-
-const COST_LABELS: Record<NonNullable<RecipeCardDto["costRating"]>, string> = {
-  very_cheap: "$",
-  cheap: "$$",
-  moderate: "$$$",
-  splurge: "$$$$"
-};
-
-const DIFFICULTY_LABELS: Record<NonNullable<RecipeCardDto["difficulty"]>, string> = {
-  beginner_friendly: "Beginner",
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard"
-};
 
 type RecipeCardProps = {
   recipe: RecipeCardDto;
 };
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
-  const costLabel = recipe.costRating ? COST_LABELS[recipe.costRating] : "Cost";
+  const costLabel = recipe.costRating ? COST_RATING_LABELS[recipe.costRating] : "Cost";
   const difficultyLabel = recipe.difficulty ? DIFFICULTY_LABELS[recipe.difficulty] : "Difficulty";
 
   return (
