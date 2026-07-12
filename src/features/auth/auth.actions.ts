@@ -31,6 +31,10 @@ function getEmail(formData: FormData) {
   return email;
 }
 
+function isAuthServiceError(error: { status?: number } | null) {
+  return typeof error?.status === "number" && error.status >= 500;
+}
+
 export async function signInWithEmail(formData: FormData) {
   const credentials = getCredentials(formData);
 
@@ -65,6 +69,10 @@ export async function signUpWithEmail(formData: FormData) {
   });
 
   if (error) {
+    if (isAuthServiceError(error)) {
+      redirect("/?auth=signup-email-error");
+    }
+
     redirect("/?auth=signup-error");
   }
 

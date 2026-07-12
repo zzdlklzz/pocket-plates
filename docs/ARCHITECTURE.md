@@ -149,7 +149,7 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 ## Auth Boundary
 
-Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI.
+Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI. Supabase 5xx failures during email signup are treated as confirmation-email delivery failures in the UI because account creation depends on the configured Supabase Auth email provider.
 
 Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title, one or more meal types, cost rating, and difficulty. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a sign-out action.
 
@@ -248,7 +248,9 @@ npm run supabase:db:push
 npm run supabase:types
 ```
 
-9. Confirm Row Level Security policies are enabled, target the `authenticated` role, and signup creates `profiles` rows.
+9. Confirm Row Level Security policies are enabled, target the `authenticated` role, and signup creates `profiles` rows. The `handle_new_user` trigger is idempotent and is not callable by browser roles; if email signup returns a Supabase Auth 500 without creating a user, check Auth logs and custom SMTP/template settings before changing app code.
+
+10. Confirm email signup works against the linked project after SMTP is configured. A successful unconfirmed signup should create an auth user and return without a session until the user clicks the confirmation link.
 
 ## Email And SMTP Setup
 
@@ -266,10 +268,12 @@ Recommended Gmail or Google Workspace setup:
 ```txt
 Host: smtp.gmail.com
 Port: 587
-Username: your sender email
-Password: Google app password
+Username: full sender email address, such as pocketplates@gmail.com
+Password: 16-character Google app password, not the normal Google password
 Sender: same mailbox or verified sender
 ```
+
+The SMTP username must be the full Gmail or Google Workspace email address that owns the app password. Do not use the Google Cloud OAuth client ID, OAuth client secret, display name, or a partial mailbox name for SMTP. If signup returns a Supabase Auth 500 while custom SMTP is enabled, check Supabase Auth logs for SMTP or template errors, then verify the SMTP host, port, sender, username, app password, and confirmation email template. A Gmail `535 5.7.8 Username and Password not accepted` error means the configured SMTP username/password is invalid or the Google app password needs to be recreated.
 
 For a larger public release, prefer a transactional provider such as Resend, Postmark, SendGrid, Brevo, or AWS SES.
 

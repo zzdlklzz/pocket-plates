@@ -142,6 +142,8 @@ Stage 1 implementation slices:
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
+- [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
+- [ ] Supabase SMTP repair: replace the rejected Gmail SMTP credentials or app password in the Supabase dashboard, then retest email signup.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
 
@@ -364,16 +366,18 @@ For a dedicated Gmail or Google Workspace mailbox:
 - Create a Google app password for SMTP use.
 - In Supabase, enable custom SMTP under Authentication settings.
 - Use the Gmail SMTP host and the app password, not the normal Google account password.
+- Set the SMTP username to the full Gmail or Google Workspace email address that owns the app password. Do not use the Google Cloud OAuth client ID, OAuth client secret, display name, or a partial mailbox name.
 - Set the sender email to the mailbox being used, such as `no-reply@your-domain.com` or the dedicated Gmail address.
 - Test sign-up, password reset, and magic link delivery.
+- If sign-up returns a Supabase Auth 500 and no user row is created, inspect Supabase Auth logs for SMTP or template failures before changing the application code. A Gmail `535 5.7.8 Username and Password not accepted` error means the configured SMTP username/password is invalid or the Google app password needs to be recreated.
 
 Typical Gmail SMTP values:
 
 ```txt
 Host: smtp.gmail.com
 Port: 587
-User: your Gmail or Google Workspace email
-Password: Google app password
+User: full Gmail or Google Workspace email address
+Password: 16-character Google app password
 Sender: same mailbox or verified sender
 ```
 

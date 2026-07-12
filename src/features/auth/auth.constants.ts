@@ -16,6 +16,7 @@ export const AUTH_MESSAGES = {
   "password-updated": "Your password has been updated. Please sign in with the new password.",
   "resend-error": "We could not resend the confirmation email. Please try again.",
   "signed-out": "You have been signed out.",
+  "signup-email-error": "We could not send the confirmation email. Please try again later.",
   "signup-error": "We could not create your account. Please try again."
 } as const;
 
