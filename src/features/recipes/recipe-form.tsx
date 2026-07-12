@@ -1,9 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
@@ -18,6 +19,7 @@ type RecipeFormProps = {
 
 export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
   const router = useRouter();
+  const [isRedirecting, startRedirect] = useTransition();
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe(recipeId ?? "");
   const {
@@ -34,10 +36,13 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
   const steps = useFieldArray({ control, name: "steps" });
   const selectedMealTypes = useWatch({ control, name: "mealTypes" }) ?? [];
   const mutation = recipeId ? updateRecipe : createRecipe;
+  const isSaving = mutation.isPending || isRedirecting;
 
   async function onSubmit(values: RecipeFormValues) {
     const id = await mutation.mutateAsync(values);
-    router.push(`/recipes/${id}`);
+    startRedirect(() => {
+      router.push(`/recipes/${id}`);
+    });
   }
 
   function toggleMealType(mealType: RecipeFormValues["mealTypes"][number]) {
@@ -59,7 +64,8 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
         </Link>
       </div>
 
-      <form className="mt-5 space-y-5" onSubmit={handleSubmit(onSubmit)}>
+      <form aria-busy={isSaving} className="mt-5" onSubmit={handleSubmit(onSubmit)}>
+        <fieldset className="m-0 space-y-5 border-0 p-0 disabled:opacity-80" disabled={isSaving}>
         <section className="space-y-3 rounded-b-3xl bg-leaf-100 px-4 pb-5 pt-4">
           <h1 className="text-2xl font-bold text-slate-900">{recipeId ? "Edit recipe" : "Add recipe"}</h1>
           <label className="block text-sm font-medium text-slate-700">
@@ -97,6 +103,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
                       ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
                       : "rounded-full border border-leaf-100 bg-leaf-50 px-3 py-2 text-xs font-medium text-slate-600"
                   }
+                  disabled={isSaving}
                   key={filter.value}
                   onClick={() => toggleMealType(filter.value)}
                   type="button"
@@ -154,7 +161,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
             <h2 className="text-sm font-semibold text-slate-800">Ingredients</h2>
             <button
               className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
-              disabled={ingredients.fields.length >= MAX_INGREDIENTS}
+              disabled={isSaving || ingredients.fields.length >= MAX_INGREDIENTS}
               onClick={() => ingredients.append({ name: "", amount: "", unit: "", notes: "" })}
               type="button"
             >
@@ -206,7 +213,12 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
               />
               {errors.ingredients?.[index]?.notes ? <p className="text-xs text-red-700">{errors.ingredients[index]?.notes?.message}</p> : null}
               {ingredients.fields.length > 1 ? (
-                <button className="inline-flex items-center gap-1 text-xs font-semibold text-red-700" onClick={() => ingredients.remove(index)} type="button">
+                <button
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 disabled:text-slate-400"
+                  disabled={isSaving}
+                  onClick={() => ingredients.remove(index)}
+                  type="button"
+                >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Remove
                 </button>
@@ -221,7 +233,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
             <h2 className="text-sm font-semibold text-slate-800">Steps</h2>
             <button
               className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
-              disabled={steps.fields.length >= MAX_STEPS}
+              disabled={isSaving || steps.fields.length >= MAX_STEPS}
               onClick={() => steps.append({ instruction: "" })}
               type="button"
             >
@@ -239,7 +251,12 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
               />
               {errors.steps?.[index]?.instruction ? <p className="text-xs text-red-700">{errors.steps[index]?.instruction?.message}</p> : null}
               {steps.fields.length > 1 ? (
-                <button className="inline-flex items-center gap-1 text-xs font-semibold text-red-700" onClick={() => steps.remove(index)} type="button">
+                <button
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 disabled:text-slate-400"
+                  disabled={isSaving}
+                  onClick={() => steps.remove(index)}
+                  type="button"
+                >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Remove
                 </button>
@@ -257,12 +274,13 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
 
         <button
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-leaf-700 px-4 py-3 text-sm font-semibold text-white disabled:bg-slate-300"
-          disabled={mutation.isPending}
+          disabled={isSaving}
           type="submit"
         >
-          <Save className="h-4 w-4" aria-hidden="true" />
-          {mutation.isPending ? "Saving..." : "Save recipe"}
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}
+          {isSaving ? "Saving..." : "Save recipe"}
         </button>
+        </fieldset>
       </form>
     </main>
   );

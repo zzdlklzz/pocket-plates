@@ -30,7 +30,7 @@ Any implementation slice involving Supabase schema, migrations, RLS policies, st
 
 - [x] Add stronger form validation and simplify ingredient inputs.
 - [x] Improve save and load error feedback without exposing sensitive details.
-- [ ] Add consistent pending/loading feedback for slow actions and redirects.
+- [x] Add consistent pending/loading feedback for slow actions and redirects.
 - [ ] Fix meal type filtering so flexible recipes appear in all meal type filters.
 - [ ] Support multiple source URLs, up to a reasonable limit.
 - [ ] Replace image URL entry with Supabase Storage image upload.
@@ -341,13 +341,13 @@ The exact thresholds should be confirmed before implementation. A reasonable sta
 
 ### Slice A: Validation And Form Feedback
 
-- [ ] Slice complete.
+- [x] Slice complete.
 
 Implement priorities 1, 2, and 3 together only if the diff stays small. Otherwise split them into:
 
 - [x] A1: validation and row-level errors.
 - [x] A2: safe error messages.
-- [ ] A3: loading and pending states.
+- [x] A3: loading and pending states.
 
 ### Slice B: Meal Type Semantics
 

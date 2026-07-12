@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_LABELS } from "./recipe-library.constants";
 import { useArchiveRecipe, useRecipeDetail } from "./recipe.queries";
@@ -13,12 +14,20 @@ type RecipeDetailProps = {
 
 export function RecipeDetail({ id }: RecipeDetailProps) {
   const router = useRouter();
+  const [isRedirecting, startRedirect] = useTransition();
   const { data: recipe, error, isLoading } = useRecipeDetail(id);
   const archiveRecipe = useArchiveRecipe();
+  const isArchiving = archiveRecipe.isPending || isRedirecting;
 
   async function handleArchive() {
+    if (isArchiving) {
+      return;
+    }
+
     await archiveRecipe.mutateAsync(id);
-    router.push("/");
+    startRedirect(() => {
+      router.push("/");
+    });
   }
 
   if (isLoading) {
@@ -113,12 +122,13 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
 
       <button
         className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-100 bg-white px-4 py-3 text-sm font-semibold text-red-700 disabled:text-slate-400"
-        disabled={archiveRecipe.isPending}
+        aria-busy={isArchiving}
+        disabled={isArchiving}
         onClick={handleArchive}
         type="button"
       >
-        <Trash2 className="h-4 w-4" aria-hidden="true" />
-        {archiveRecipe.isPending ? "Archiving..." : "Archive recipe"}
+        {isArchiving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+        {isArchiving ? "Archiving..." : "Archive recipe"}
       </button>
     </main>
   );
