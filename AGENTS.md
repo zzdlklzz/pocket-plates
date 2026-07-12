@@ -41,6 +41,14 @@ Do not rewrite an already-applied migration unless the user confirms it is safe.
 - Do not execute commits unless the user explicitly approves. Follow the global commit-draft guidance when preparing staged changes.
 - If asked to draft or create a pull request, follow the global PR-draft guidance.
 
+## Commit Message Drafts
+
+- After every completed codebase change, include a detailed commit message draft in the final response unless the user explicitly says not to.
+- Base the draft on the actual changed or staged diff, and follow the global Conventional Commits commit-draft rules.
+- Keep the subject under 72 characters, then use the body to explain what changed and why when the change is more than a trivial single-purpose edit.
+- Mention verification that was actually run. If checks were not run, say so outside the commit message and do not invent a testing footer or body line.
+- If the working tree contains both staged and unstaged changes, clearly state which scope the draft covers and warn when the message would need to change after staging more files.
+
 ## Post-Change Documentation
 
 After every code, database, configuration, dependency, or feature change, complete these steps before marking work done:
