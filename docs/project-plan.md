@@ -109,6 +109,7 @@ Goal: create a deployable skeleton before building feature depth.
 - Add TanStack Query provider, query key conventions, and repository-backed query/mutation hooks.
 - Add CI checks for install, lint, type check, tests, and build.
 - [x] Refresh GitHub Actions workflows for Node.js 24 action runtimes, patched framework/test dependencies, ESLint 9 linting, deterministic Playwright startup, explicit CI Supabase public placeholders, Vercel pre-build verification, and a pinned Supabase CLI deploy action.
+- [x] Document Docker-backed local Supabase startup, clean migration reset, migration history, schema linting, status inspection, and shutdown.
 - Add Vercel deployment configuration.
 
 ### Stage 1: True MVP - Private Recipe Library
@@ -285,12 +286,16 @@ Database schema changes should go through migration files under `supabase/migrat
 Recommended workflow:
 
 1. Create or edit a migration locally.
-2. Reset the local Supabase database to prove migrations apply from scratch.
-3. Generate TypeScript database types from the current schema.
-4. Run linting, type checks, unit tests, integration tests, and E2E tests.
-5. Merge to `main`.
-6. GitHub Actions applies migrations to the linked Supabase project.
-7. Vercel deploys the app.
+2. Start Docker and the local Supabase stack with `npx supabase start`.
+3. Run `npx supabase db reset --local` to prove every migration applies from scratch.
+4. Run `npx supabase migration list --local` and `npx supabase db lint --local --level error --fail-on error`.
+5. Generate TypeScript database types from the current schema.
+6. Run linting, type checks, unit tests, integration tests, and E2E tests.
+7. Merge to `main`.
+8. GitHub Actions applies migrations to the linked Supabase project.
+9. Vercel deploys the app.
+
+A clean local reset, migration list, and lint result means the migration chain applies to a fresh local Postgres database and no schema lint errors were found. Hosted credentials, remote migration state, RLS behavior, and application workflows still require their own deployment and integration checks.
 
 Avoid changing production tables manually in the Supabase dashboard once migrations are in use. Dashboard experiments should happen locally or be captured back into migration files before deployment.
 

@@ -172,12 +172,12 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - `/recipes/new` checks the server auth session before rendering the client recipe form.
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
-- `recipe-form.tsx` uses React Hook Form with `recipe.validation.ts` Zod rules for title, servings, meal types, ingredients, steps, optional source URL, optional image URL, notes, cost rating, and difficulty.
-- The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source URL, image URL, cost rating, and difficulty can be left blank.
+- `recipe-form.tsx` uses React Hook Form with `recipe.validation.ts` Zod rules for title, servings, meal types, ingredients, steps, up to five optional source links with optional labels, optional image URL, notes, cost rating, and difficulty.
+- The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source links, image URL, cost rating, and difficulty can be left blank.
 - Ingredient rows keep four editable fields: ingredient name, amount, unit, and notes. Ingredient names are required. Amounts are optional but, when present, must be positive numbers or simple fractions such as `1`, `1.5`, `1/2`, or `1 1/2`. Units are optional but must come from the supported unit picker. Ingredient notes stay available for preparation details like "finely chopped", "optional", or "to taste".
 - Step rows now contain only instruction text. Dedicated timer minutes are no longer edited or displayed; timing should be written directly into the instruction, such as "Simmer for 10 minutes."
-- Validation errors are shown next to the specific ingredient or step field that needs attention, and the form caps recipe size with practical limits for servings, ingredients, and steps.
-- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_ingredients`, and `recipe_steps` child rows, and soft-archives recipes through `archived_at`.
+- Validation errors are shown next to the specific source, ingredient, or step field that needs attention. Source URLs must be complete HTTP(S) URLs and cannot be duplicated, and the form caps recipe size with practical limits for sources, servings, ingredients, and steps.
+- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_links`, `recipe_ingredients`, and `recipe_steps` child rows, and soft-archives recipes through `archived_at`. Existing `recipes.source_url` values remain readable as a legacy fallback until the recipe is saved into `recipe_links`.
 - Before writing ingredient rows, `recipe.repository.ts` parses accepted amount strings into numeric values for `recipe_ingredients.amount`. Blank optional fields are written as `null`, and step timers are written as `null`.
 - `recipe.queries.ts` exposes create, update, and archive mutations and invalidates recipe list/detail caches after successful writes.
 - `recipe.errors.ts` maps Supabase, PostgREST, Auth, Storage, network, and unknown failures into safe user-facing messages. Recipe list, detail, edit, save, and archive screens show the classified message without exposing raw table names, RLS policy details, constraint names, or backend error text.
@@ -223,6 +223,40 @@ If Playwright browsers are missing:
 
 ```bash
 npx playwright install
+```
+
+### Local Supabase Database Verification
+
+Local Supabase requires Docker Desktop. Start Docker before running the CLI commands below. The project already contains `supabase/config.toml`; only run `npx supabase init` in a new checkout if that file is missing.
+
+Start the local Supabase stack:
+
+```bash
+npx supabase start
+```
+
+Recreate the local database from the committed migration chain:
+
+```bash
+npx supabase db reset --local
+```
+
+This is the primary migration verification. A successful reset proves that a clean local Postgres database can apply every migration in order. It deletes local database data, but it does not reset the linked hosted project.
+
+Confirm migration history and lint the resulting schema:
+
+```bash
+npx supabase migration list --local
+npx supabase db lint --local --level error --fail-on error
+npx supabase status
+```
+
+A clean result means the local migration chain applies and the schema linter found no errors. It does not by itself prove hosted deployment credentials, production migration state, application behavior, or every RLS access path. Run the application checks as well, and verify the linked migration list during deployment.
+
+Supabase Studio is available at the Studio URL printed by `npx supabase status`, usually `http://127.0.0.1:54323`. Stop the local containers when they are no longer needed:
+
+```bash
+npx supabase stop
 ```
 
 ## Supabase Setup
