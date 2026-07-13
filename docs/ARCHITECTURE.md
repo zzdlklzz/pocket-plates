@@ -108,6 +108,7 @@ src/
       recipe-detail.tsx
       recipe-edit.tsx
       recipe-filters.tsx
+      recipe-form-fields.tsx
       recipe-form.tsx
       recipe-library.tsx
       recipe-library.constants.ts
@@ -174,7 +175,9 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - `/recipes/new` checks the server auth session before rendering the client recipe form.
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
-- `recipe-form.tsx` uses React Hook Form with `recipe.validation.ts` Zod rules for title, servings, meal types, ingredients, steps, up to five optional source links with optional labels, optional image URL, notes, cost rating, and difficulty.
+- `recipe-form.tsx` owns React Hook Form setup, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
+- `recipe-form-fields.tsx` owns the basic, meal-type, optional metadata, source, ingredient, and step controls. Each section reads the shared form context and keeps its own dynamic field-array behavior close to its markup.
+- `recipe.validation.ts` defines the Zod rules for title, servings, meal types, ingredients, steps, up to five optional source links with optional labels, optional image URL, notes, cost rating, and difficulty.
 - The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source links, image URL, cost rating, and difficulty can be left blank.
 - Ingredient rows keep four editable fields: ingredient name, amount, unit, and notes. Ingredient names are required. Amounts are optional but, when present, must be positive numbers or simple fractions such as `1`, `1.5`, `1/2`, or `1 1/2`. Units are optional but must come from the supported unit picker. Ingredient notes stay available for preparation details like "finely chopped", "optional", or "to taste".
 - Step rows now contain only instruction text. Dedicated timer minutes are no longer edited or displayed; timing should be written directly into the instruction, such as "Simmer for 10 minutes."
