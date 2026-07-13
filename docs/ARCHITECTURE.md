@@ -13,7 +13,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Forms and validation: React Hook Form and Zod.
 - Backend platform: Supabase.
 - Database: Supabase Postgres with migration files.
-- Auth: Supabase Auth with open email sign-up and planned Google OAuth.
+- Auth: Supabase Auth with open email sign-up and Google OAuth.
 - Storage: Supabase Storage for future recipe images.
 - Hosting: Vercel.
 - CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments that run lightweight verification before building.

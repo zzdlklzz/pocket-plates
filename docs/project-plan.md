@@ -49,7 +49,7 @@ Product angle:
 - Backend platform: Supabase.
 - Database: Supabase Postgres.
 - Auth: Supabase Auth with email/password and Google OAuth.
-- Storage: Supabase Storage for recipe images, with pasted image URLs allowed for the MVP.
+- Storage: Supabase Storage is planned for recipe image uploads; the current MVP accepts pasted image URLs.
 - Deployment: Vercel.
 - Source control: GitHub.
 - CI/CD: GitHub Actions on Node.js 24 for checks, tests, type generation, and database migration deployment, plus Vercel builds that run lightweight verification before deployment.
@@ -74,7 +74,7 @@ The app has five main layers:
 
 - Mobile PWA frontend hosted on Vercel.
 - Supabase client integration inside the Next.js app.
-- Supabase services for Auth, Postgres, Storage, and Row Level Security.
+- Supabase services for Auth, Postgres, future Storage uploads, and Row Level Security.
 - GitHub Actions pipeline for checks, tests, type generation, and migration deployment.
 - Supabase custom SMTP for production-ready auth emails, plus Google Cloud Console OAuth credentials for Google login.
 
@@ -84,7 +84,7 @@ Main runtime flow:
 2. The Next.js UI loads from Vercel.
 3. The app signs you up or signs you in through Supabase Auth.
 4. Recipe data is read and written to Supabase Postgres.
-5. Uploaded images are stored in Supabase Storage.
+5. Recipe image URLs are stored with recipe data; a future upload flow will store image files in Supabase Storage.
 6. Row Level Security keeps each user's private recipes visible only to that user.
 
 Architecture files:
@@ -162,7 +162,7 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 - Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep.
 - Search by ingredient name.
 - [x] Support multiple source links per recipe.
-- Support uploaded images through Supabase Storage.
+- [ ] Replace pasted image URLs with Supabase Storage uploads, including file validation, previews, owner-scoped storage policies, and cleanup behavior.
 
 ### Stage 3: Meal Prep Utilities
 
@@ -172,7 +172,7 @@ Goal: help users turn recipes into weekly cooking decisions.
 - Grocery list generated from selected recipes.
 - Serving scaler.
 - Pantry and staple-item tracking.
-- Estimated cost per serving.
+- Estimated cost per serving, with cost rating derived from total SGD cost and servings.
 - Recipe duplication, archiving, and favorites.
 
 ### Stage 4: Community Recipe Discovery
@@ -203,7 +203,7 @@ Primary screens:
 
 - Home / Recipe Library: app header, search, multi-select meal-type quick filters, recipe cards, bottom navigation.
 - Recipe Detail: image, title, meal types, servings, tags, source links, ingredients, steps, edit action.
-- Add/Edit Recipe: title, servings, meal types, image upload or URL, links, ingredients, steps, notes, save/cancel actions.
+- Add/Edit Recipe: title, servings, meal types, image URL, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types, cost rating, single-select difficulty, effort/time tags, equipment, ingredient search, clear filters, done action.
 
 Visual reference:
@@ -226,7 +226,7 @@ Design direction:
 Core MVP tables:
 
 - `profiles`: app profile for each Supabase Auth user, created automatically when a user signs up.
-- `recipes`: main recipe record with owner, title, notes, servings, times, image, cost rating, single difficulty rating, and visibility.
+- `recipes`: main recipe record with owner, title, notes, servings, times, image URL/storage fields, cost rating, estimated total cost, single difficulty rating, and visibility.
 - `recipe_meal_types`: recipe-to-meal-type join table so a recipe can be breakfast, lunch, dinner, snack, and/or flexible.
 - `recipe_links`: up to five ordered source links per recipe with optional labels.
 - `recipe_ingredients`: ordered ingredients.
@@ -264,13 +264,14 @@ src/lib/supabase/database.types.ts
 src/lib/query/query-client.ts
 src/lib/query/query-keys.ts
 src/features/recipes/recipe.types.ts
+src/features/recipes/recipe.validation.ts
+src/features/recipes/recipe.errors.ts
 src/features/recipes/recipe.mappers.ts
 src/features/recipes/recipe.repository.ts
 src/features/recipes/recipe.queries.ts
-src/features/recipes/recipe.service.ts
 ```
 
-The repository talks to Supabase. The mapper converts rows into DTOs. TanStack Query hooks call repository functions and expose loading, error, cached data, and mutation states to the UI. Components should not make ad hoc server-state API calls in `useEffect`; `useEffect` should be reserved for true side effects such as focus management, subscriptions, or browser APIs. This keeps future migrations manageable because database changes are absorbed at the repository and mapper boundary.
+The repository talks to Supabase. The mapper converts rows into DTOs. Validation keeps user input constraints explicit, and recipe errors map backend failures into safe UI messages. TanStack Query hooks call repository functions and expose loading, error, cached data, and mutation states to the UI. Components should not make ad hoc server-state API calls in `useEffect`; `useEffect` should be reserved for true side effects such as focus management, subscriptions, or browser APIs. This keeps future migrations manageable because database changes are absorbed at the repository and mapper boundary.
 
 ## Delivery Environments
 
@@ -414,12 +415,41 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 - Weekly meal prep planner.
 - Grocery list generated from selected recipes.
 - Serving scaler.
-- Cost estimate per serving.
+- Cost estimate per serving, derived from optional total SGD cost and serving count.
 - Pantry tracking.
 - Dorm/exchange filters.
 - Icon-based recipe placeholders using Lucide React and meal/tag-based color treatments.
 - Nutrition/macros.
 - Recipe import from pasted text or supported links.
+
+## Upcoming Recipe Form Slices
+
+These are the remaining recipe-form improvements after the completed validation, error feedback, pending-state, filter, component-refactor, public Supabase config, and multiple-source-link slices.
+
+### Supabase Storage Image Upload
+
+Replace the current pasted Image URL field with an upload flow. The intended implementation should:
+
+- Use a file input for common image formats such as JPEG, PNG, and WebP.
+- Enforce a practical size limit, such as 5 MB, before upload.
+- Show a selected-image preview and allow remove or replace actions.
+- Store image files in a Supabase Storage bucket such as `recipe-images`.
+- Keep images private to the recipe owner unless public recipe sharing is intentionally added.
+- Store the durable storage path in `recipes.image_storage_path`; use `recipes.image_url` only for legacy pasted URLs or derived display URLs if needed.
+- Add owner-scoped storage policies and verify them with the database change protocol before release.
+- Handle upload lifecycle carefully: create the recipe first when needed, upload after a recipe ID exists, replace old files only after a new upload succeeds, and define cleanup behavior for partial failures.
+
+### Dynamic Cost Entry And Cost Rating
+
+Replace manual cost rating entry with optional total-cost entry once the product is ready for cost-aware planning. The intended implementation should:
+
+- Add an optional Total cost (SGD) input with two-decimal currency validation.
+- Use servings to compute an estimated cost per serving in the form.
+- Derive the existing cost rating from cost per serving instead of trusting a manually selected label.
+- Use `recipes.estimated_total_cost` for the entered total and keep `recipes.cost_rating` as the derived stored value for filtering.
+- Add a shared domain helper such as `deriveCostRating(totalCost, servings)`.
+- Preserve existing recipes that only have a `cost_rating`.
+- Confirm student-friendly SGD thresholds before implementation; a starting point is very cheap under S$2.00 per serving, cheap from S$2.00 to S$3.99, moderate from S$4.00 to S$6.99, and splurge from S$7.00 upward.
 
 ## Assumptions
 
