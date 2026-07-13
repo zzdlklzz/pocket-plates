@@ -13,6 +13,11 @@ export type RecipeDetailRow = RecipeListRow & {
   servings: number;
   notes: string | null;
   source_url: string | null;
+  recipe_links?: {
+    label: string | null;
+    sort_order: number;
+    url: string;
+  }[] | null;
   recipe_ingredients?: {
     amount: number | null;
     name: string;
@@ -42,7 +47,14 @@ export function toRecipeDetailDto(row: RecipeDetailRow): RecipeDetailDto {
     ...toRecipeCardDto(row),
     servings: row.servings,
     notes: row.notes,
-    sourceUrl: row.source_url,
+    sourceLinks: row.recipe_links?.length
+      ? row.recipe_links
+          .slice()
+          .sort((left, right) => left.sort_order - right.sort_order)
+          .map(({ label, url }) => ({ label, url }))
+      : row.source_url
+        ? [{ label: null, url: row.source_url }]
+        : [],
     ingredients:
       row.recipe_ingredients
         ?.slice()
@@ -64,7 +76,7 @@ export function toRecipeFormValues(recipe: RecipeDetailDto): RecipeFormValues {
     costRating: recipe.costRating ?? "",
     difficulty: recipe.difficulty ?? "",
     imageUrl: recipe.imageUrl ?? "",
-    sourceUrl: recipe.sourceUrl ?? "",
+    sourceLinks: recipe.sourceLinks.map(({ label, url }) => ({ label: label ?? "", url })),
     notes: recipe.notes ?? "",
     ingredients: recipe.ingredients.map((ingredient) => ({
       name: ingredient.name,

@@ -10,7 +10,7 @@ import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { useCreateRecipe, useUpdateRecipe } from "./recipe.queries";
 import type { RecipeFormValues } from "./recipe.types";
-import { DEFAULT_RECIPE_FORM_VALUES, INGREDIENT_UNITS, MAX_INGREDIENTS, MAX_SERVINGS, MAX_STEPS, recipeFormSchema } from "./recipe.validation";
+import { DEFAULT_RECIPE_FORM_VALUES, INGREDIENT_UNITS, MAX_INGREDIENTS, MAX_SERVINGS, MAX_SOURCE_LINKS, MAX_STEPS, recipeFormSchema } from "./recipe.validation";
 
 type RecipeFormProps = {
   initialValues?: RecipeFormValues;
@@ -33,6 +33,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
     resolver: zodResolver(recipeFormSchema)
   });
   const ingredients = useFieldArray({ control, name: "ingredients" });
+  const sourceLinks = useFieldArray({ control, name: "sourceLinks" });
   const steps = useFieldArray({ control, name: "steps" });
   const selectedMealTypes = useWatch({ control, name: "mealTypes" }) ?? [];
   const mutation = recipeId ? updateRecipe : createRecipe;
@@ -140,11 +141,48 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
         </section>
 
         <section className="space-y-3">
-          <label className="block text-sm font-medium text-slate-700">
-            Source URL
-            <input className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-base text-slate-900" {...register("sourceUrl")} />
-          </label>
-          {errors.sourceUrl ? <p className="text-sm text-red-700">{errors.sourceUrl.message}</p> : null}
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-slate-800">Sources</h2>
+            <button
+              className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
+              disabled={isSaving || sourceLinks.fields.length >= MAX_SOURCE_LINKS}
+              onClick={() => sourceLinks.append({ label: "", url: "" })}
+              type="button"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add
+            </button>
+          </div>
+          {sourceLinks.fields.map((field, index) => (
+            <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
+              <input
+                aria-invalid={errors.sourceLinks?.[index]?.label ? "true" : "false"}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Label (optional)"
+                {...register(`sourceLinks.${index}.label`)}
+              />
+              {errors.sourceLinks?.[index]?.label ? <p className="text-xs text-red-700">{errors.sourceLinks[index]?.label?.message}</p> : null}
+              <input
+                aria-invalid={errors.sourceLinks?.[index]?.url ? "true" : "false"}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                inputMode="url"
+                placeholder="https://example.com/recipe"
+                type="url"
+                {...register(`sourceLinks.${index}.url`)}
+              />
+              {errors.sourceLinks?.[index]?.url ? <p className="text-xs text-red-700">{errors.sourceLinks[index]?.url?.message}</p> : null}
+              <button
+                className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 disabled:text-slate-400"
+                disabled={isSaving}
+                onClick={() => sourceLinks.remove(index)}
+                type="button"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Remove
+              </button>
+            </div>
+          ))}
+          {errors.sourceLinks?.root ? <p className="text-sm text-red-700">{errors.sourceLinks.root.message}</p> : null}
           <label className="block text-sm font-medium text-slate-700">
             Image URL
             <input className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-base text-slate-900" {...register("imageUrl")} />

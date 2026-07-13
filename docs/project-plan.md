@@ -122,7 +122,7 @@ Goal: any visitor can create an account, then save and retrieve their own privat
 - [x] Recipe detail page.
 - [x] Add/edit recipe form.
 - [x] Required recipe fields: title, servings, one or more meal types, ingredients, and steps.
-- [x] Optional recipe fields: notes, one source URL, and image URL.
+- [x] Optional recipe fields: notes, up to five source URLs with optional labels, and image URL.
 - [x] Basic search by recipe title.
 - [x] Basic filter by meal types, allowing more than one meal type to be selected.
 - [x] Supabase persistence with Row Level Security. Initial owner-scoped schema and RLS migrations are in place.
@@ -143,6 +143,7 @@ Stage 1 implementation slices:
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
 - [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
+- [x] Multiple recipe sources: add, edit, order, label, validate, persist, and display up to five source URLs while preserving legacy single-source reads.
 - [ ] Supabase SMTP repair: replace the rejected Gmail SMTP credentials or app password in the Supabase dashboard, then retest email signup.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
@@ -156,7 +157,7 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 - Add equipment filters, such as microwave, rice cooker, stovetop, oven, no oven, and blender.
 - Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep.
 - Search by ingredient name.
-- Support multiple source links per recipe.
+- [x] Support multiple source links per recipe.
 - Support uploaded images through Supabase Storage.
 
 ### Stage 3: Meal Prep Utilities
@@ -223,7 +224,7 @@ Core MVP tables:
 - `profiles`: app profile for each Supabase Auth user, created automatically when a user signs up.
 - `recipes`: main recipe record with owner, title, notes, servings, times, image, cost rating, single difficulty rating, and visibility.
 - `recipe_meal_types`: recipe-to-meal-type join table so a recipe can be breakfast, lunch, dinner, snack, and/or flexible.
-- `recipe_links`: source links for each recipe.
+- `recipe_links`: up to five ordered source links per recipe with optional labels.
 - `recipe_ingredients`: ordered ingredients.
 - `recipe_steps`: ordered cooking steps.
 - `tags`: reusable user-owned tags.

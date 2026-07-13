@@ -8,6 +8,8 @@ export const MAX_INGREDIENT_NOTES_LENGTH = 180;
 export const MAX_STEPS = 40;
 export const MAX_STEP_INSTRUCTION_LENGTH = 1000;
 export const MAX_SERVINGS = 100;
+export const MAX_SOURCE_LINKS = 5;
+export const MAX_SOURCE_LABEL_LENGTH = 100;
 
 export const INGREDIENT_UNITS = [
   "g",
@@ -93,7 +95,32 @@ export const recipeFormSchema = z.object({
   costRating: z.union([z.enum(["very_cheap", "cheap", "moderate", "splurge"]), z.literal("")]),
   difficulty: z.union([z.enum(["easy", "medium", "hard", "beginner_friendly"]), z.literal("")]),
   imageUrl: optionalUrl,
-  sourceUrl: optionalUrl,
+  sourceLinks: z
+    .array(
+      z.object({
+        label: z.string().trim().max(MAX_SOURCE_LABEL_LENGTH, `Keep source labels under ${MAX_SOURCE_LABEL_LENGTH} characters.`),
+        url: z.string().trim().min(1, "Source URL is required.").url("Enter a full URL starting with http:// or https://.").refine(
+          (value) => value.startsWith("http://") || value.startsWith("https://"),
+          "Enter a full URL starting with http:// or https://."
+        )
+      })
+    )
+    .max(MAX_SOURCE_LINKS, `Add ${MAX_SOURCE_LINKS} sources or fewer.`)
+    .superRefine((links, context) => {
+      const seenUrls = new Set<string>();
+
+      links.forEach((link, index) => {
+        const normalizedUrl = link.url.trim();
+        if (seenUrls.has(normalizedUrl)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "This source URL is already added.",
+            path: [index, "url"]
+          });
+        }
+        seenUrls.add(normalizedUrl);
+      });
+    }),
   notes: z.string().max(MAX_RECIPE_NOTES_LENGTH, `Keep notes under ${MAX_RECIPE_NOTES_LENGTH} characters.`),
   ingredients: z
     .array(
@@ -123,7 +150,7 @@ export const DEFAULT_RECIPE_FORM_VALUES = {
   costRating: "",
   difficulty: "",
   imageUrl: "",
-  sourceUrl: "",
+  sourceLinks: [],
   notes: "",
   ingredients: [{ name: "", amount: "", unit: "", notes: "" }],
   steps: [{ instruction: "" }]

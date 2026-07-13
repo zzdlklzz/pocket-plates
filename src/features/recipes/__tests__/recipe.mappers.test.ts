@@ -36,6 +36,10 @@ describe("toRecipeDetailDto", () => {
         notes: "Use leftover rice.",
         servings: 2,
         source_url: "https://example.com/rice-bowl",
+        recipe_links: [
+          { label: null, sort_order: 1, url: "https://example.com/variation" },
+          { label: "Original", sort_order: 0, url: "https://example.com/original" }
+        ],
         recipe_meal_types: [{ meal_type: "dinner" }],
         recipe_ingredients: [
           { amount: 1, name: "Egg", notes: null, sort_order: 1, unit: null },
@@ -49,7 +53,10 @@ describe("toRecipeDetailDto", () => {
     ).toMatchObject({
       title: "Rice Bowl",
       servings: 2,
-      sourceUrl: "https://example.com/rice-bowl",
+      sourceLinks: [
+        { label: "Original", url: "https://example.com/original" },
+        { label: null, url: "https://example.com/variation" }
+      ],
       ingredients: [
         { amount: 2, name: "Rice", notes: "cooked", unit: "cups" },
         { amount: 1, name: "Egg", notes: null, unit: null }
@@ -59,6 +66,24 @@ describe("toRecipeDetailDto", () => {
         { instruction: "Serve warm." }
       ]
     });
+  });
+
+  it("falls back to the legacy source URL when no source links exist", () => {
+    const recipe = toRecipeDetailDto({
+      id: "recipe-1",
+      title: "Rice Bowl",
+      cost_rating: null,
+      difficulty: null,
+      image_url: null,
+      notes: null,
+      servings: 2,
+      source_url: "https://example.com/legacy",
+      recipe_links: [],
+      recipe_ingredients: [],
+      recipe_steps: []
+    });
+
+    expect(recipe.sourceLinks).toEqual([{ label: null, url: "https://example.com/legacy" }]);
   });
 });
 
@@ -74,7 +99,7 @@ describe("toRecipeFormValues", () => {
         mealTypes: ["dinner"],
         servings: 2,
         notes: null,
-        sourceUrl: null,
+        sourceLinks: [],
         ingredients: [{ amount: 2, name: "Rice", notes: null, unit: "cups" }],
         steps: [{ instruction: "Cook rice." }]
       })
@@ -85,7 +110,7 @@ describe("toRecipeFormValues", () => {
       costRating: "",
       difficulty: "",
       imageUrl: "",
-      sourceUrl: "",
+      sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "2", name: "Rice", notes: "", unit: "cups" }],
       steps: [{ instruction: "Cook rice." }]
@@ -102,7 +127,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       imageUrl: "",
-      sourceUrl: "",
+      sourceLinks: [],
       notes: "",
       ingredients: [],
       steps: []
@@ -128,14 +153,29 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       imageUrl: "",
-      sourceUrl: "",
+      sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
       steps: [{ instruction: "Cook rice." }]
     };
 
     expect(recipeFormSchema.safeParse(baseValues).success).toBe(true);
-    expect(recipeFormSchema.safeParse({ ...baseValues, sourceUrl: "example.com" }).success).toBe(false);
+    expect(recipeFormSchema.safeParse({ ...baseValues, sourceLinks: [{ label: "", url: "example.com" }] }).success).toBe(false);
+    expect(
+      recipeFormSchema.safeParse({
+        ...baseValues,
+        sourceLinks: [
+          { label: "Original", url: "https://example.com/recipe" },
+          { label: "Variation", url: "https://example.com/recipe" }
+        ]
+      }).success
+    ).toBe(false);
+    expect(
+      recipeFormSchema.safeParse({
+        ...baseValues,
+        sourceLinks: Array.from({ length: 6 }, (_, index) => ({ label: "", url: `https://example.com/${index}` }))
+      }).success
+    ).toBe(false);
   });
 
   it("validates ingredient amounts and units", () => {
@@ -146,7 +186,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       imageUrl: "",
-      sourceUrl: "",
+      sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "1 1/2", name: "Rice", notes: "cooked", unit: "cup" }],
       steps: [{ instruction: "Cook rice for 12 minutes." }]
@@ -165,7 +205,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       imageUrl: "",
-      sourceUrl: "",
+      sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
       steps: [{ instruction: "Cook rice." }]

@@ -184,7 +184,7 @@ Treat `flexible` as "works for any meal type" during filtering, while still allo
 - Add unit tests for the filter helper or repository behavior if the repository is testable with a mock.
 - Manually confirm flexible recipes appear under Breakfast, Lunch, Dinner, and Snack filters.
 
-## 5. Multiple Source URLs
+## 5. Multiple Source URLs (Completed 2026-07-13)
 
 ### Goal
 
@@ -195,7 +195,7 @@ Support up to 5 source links per recipe so a recipe can reference variants, insp
 - Replace the single Source URL field with a "Sources" section.
 - Allow adding up to 5 links.
 - Keep URL required only for rows the user adds.
-- Optionally support a label/name per source, but defer it unless the detail page needs meaningful display text.
+- Support an optional label/name per source and fall back to numbered source text on the detail page.
 - Show each source as a separate link on recipe detail.
 
 ### Code Changes
@@ -231,6 +231,8 @@ Support up to 5 source links per recipe so a recipe can reference variants, insp
 - Run lint, typecheck, unit tests, build, and a manual create/edit/detail check.
 - Verify 6th link cannot be added or submitted.
 - Verify existing recipes with one `source_url` still display correctly.
+
+Implemented with ordered `recipe_links` child rows, optional labels, a five-link form and validation limit, duplicate URL validation, and legacy `recipes.source_url` fallback mapping.
 
 ## 6. Supabase Storage Image Upload
 

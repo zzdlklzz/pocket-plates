@@ -74,11 +74,21 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
             </span>
           ))}
         </div>
-        {recipe.sourceUrl ? (
-          <a className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-leaf-700" href={recipe.sourceUrl} rel="noreferrer" target="_blank">
-            Source
-            <ExternalLink className="h-4 w-4" aria-hidden="true" />
-          </a>
+        {recipe.sourceLinks.length ? (
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+            {recipe.sourceLinks.map((source, index) => (
+              <a
+                className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700"
+                href={source.url}
+                key={`${source.url}-${index}`}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {source.label || `Source ${index + 1}`}
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              </a>
+            ))}
+          </div>
         ) : null}
       </section>
 

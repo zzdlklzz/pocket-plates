@@ -93,7 +93,7 @@ Table recipe_meal_types {
 Table recipe_links {
   id uuid [pk, default: `gen_random_uuid()`]
   recipe_id uuid [not null, ref: > recipes.id]
-  label text [not null]
+  label text
   url text [not null]
   sort_order int [not null, default: 0]
   created_at timestamptz [not null, default: `now()`]

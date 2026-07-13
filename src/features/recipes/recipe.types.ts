@@ -24,10 +24,15 @@ export type RecipeStepDto = {
   instruction: string;
 };
 
+export type RecipeSourceLinkDto = {
+  label: string | null;
+  url: string;
+};
+
 export type RecipeDetailDto = RecipeCardDto & {
   servings: number;
   notes: string | null;
-  sourceUrl: string | null;
+  sourceLinks: RecipeSourceLinkDto[];
   ingredients: RecipeIngredientDto[];
   steps: RecipeStepDto[];
 };
@@ -39,7 +44,10 @@ export type RecipeFormValues = {
   costRating: CostRating | "";
   difficulty: DifficultyLevel | "";
   imageUrl: string;
-  sourceUrl: string;
+  sourceLinks: {
+    label: string;
+    url: string;
+  }[];
   notes: string;
   ingredients: {
     name: string;

@@ -377,7 +377,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          label: string
+          label: string | null
           recipe_id: string
           sort_order: number
           url: string
@@ -385,7 +385,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          label: string
+          label?: string | null
           recipe_id: string
           sort_order?: number
           url: string
@@ -393,7 +393,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          label?: string
+          label?: string | null
           recipe_id?: string
           sort_order?: number
           url?: string

@@ -57,7 +57,7 @@ Core entities:
 - `recipe_meal_types`: multi-select meal categories for each recipe.
 - `recipe_ingredients`: ordered ingredients.
 - `recipe_steps`: ordered instructions.
-- `recipe_links`: source URLs.
+- `recipe_links`: up to five ordered source URLs per recipe, each with an optional display label.
 - `tags` and `recipe_tags`: user-owned tags and recipe/tag joins.
 - `equipment` and `recipe_equipment`: user-owned equipment labels and recipe/equipment joins.
 
@@ -68,6 +68,8 @@ Future-ready entities:
 - `meal_plan_entries`
 - `grocery_lists`
 - `grocery_list_items`
+
+Recipe create and edit flows write sources to `recipe_links`. The legacy `recipes.source_url` column remains readable as a fallback for recipes created before multi-source support, but new saves clear it and use the child rows. Source rows follow recipe ownership through existing Row Level Security policies.
 
 ## Code Organization
 

@@ -10,10 +10,11 @@ type RecipeUpdate = Database["public"]["Tables"]["recipes"]["Update"];
 type RecipeMealTypeInsert = Database["public"]["Tables"]["recipe_meal_types"]["Insert"];
 type RecipeIngredientInsert = Database["public"]["Tables"]["recipe_ingredients"]["Insert"];
 type RecipeStepInsert = Database["public"]["Tables"]["recipe_steps"]["Insert"];
+type RecipeLinkInsert = Database["public"]["Tables"]["recipe_links"]["Insert"];
 
 const RECIPE_LIST_SELECT = "id,title,cost_rating,difficulty,image_url,created_at,recipe_meal_types(meal_type)";
 const RECIPE_DETAIL_SELECT =
-  "id,title,cost_rating,difficulty,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,sort_order)";
+  "id,title,cost_rating,difficulty,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_links(label,url,sort_order),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,sort_order)";
 
 function emptyToNull(value: string) {
   const trimmed = value.trim();
@@ -104,13 +105,15 @@ export async function getRecipe(supabase: SupabaseBrowserClient, id: string) {
 }
 
 async function replaceRecipeChildren(supabase: SupabaseBrowserClient, recipeId: string, values: RecipeFormValues) {
-  const [{ error: mealDeleteError }, { error: ingredientDeleteError }, { error: stepDeleteError }] = await Promise.all([
+  const [{ error: mealDeleteError }, { error: linkDeleteError }, { error: ingredientDeleteError }, { error: stepDeleteError }] = await Promise.all([
     supabase.from("recipe_meal_types").delete().eq("recipe_id", recipeId),
+    supabase.from("recipe_links").delete().eq("recipe_id", recipeId),
     supabase.from("recipe_ingredients").delete().eq("recipe_id", recipeId),
     supabase.from("recipe_steps").delete().eq("recipe_id", recipeId)
   ]);
 
   if (mealDeleteError) throw mealDeleteError;
+  if (linkDeleteError) throw linkDeleteError;
   if (ingredientDeleteError) throw ingredientDeleteError;
   if (stepDeleteError) throw stepDeleteError;
 
@@ -126,6 +129,12 @@ async function replaceRecipeChildren(supabase: SupabaseBrowserClient, recipeId: 
     notes: emptyToNull(ingredient.notes),
     sort_order: sortOrder
   }));
+  const linkRows: RecipeLinkInsert[] = values.sourceLinks.map((link, sortOrder) => ({
+    recipe_id: recipeId,
+    label: emptyToNull(link.label),
+    url: link.url.trim(),
+    sort_order: sortOrder
+  }));
   const stepRows: RecipeStepInsert[] = values.steps.map((step, sortOrder) => ({
     recipe_id: recipeId,
     instruction: step.instruction.trim(),
@@ -133,14 +142,16 @@ async function replaceRecipeChildren(supabase: SupabaseBrowserClient, recipeId: 
     sort_order: sortOrder
   }));
 
-  const [{ error: mealInsertError }, { error: ingredientInsertError }, { error: stepInsertError }] = await Promise.all([
+  const [{ error: mealInsertError }, { error: linkInsertError }, { error: ingredientInsertError }, { error: stepInsertError }] = await Promise.all([
     // The @supabase/ssr browser client currently narrows table write payloads to never.
     supabase.from("recipe_meal_types").insert(mealRows as never[]),
+    linkRows.length ? supabase.from("recipe_links").insert(linkRows as never[]) : Promise.resolve({ error: null }),
     supabase.from("recipe_ingredients").insert(ingredientRows as never[]),
     supabase.from("recipe_steps").insert(stepRows as never[])
   ]);
 
   if (mealInsertError) throw mealInsertError;
+  if (linkInsertError) throw linkInsertError;
   if (ingredientInsertError) throw ingredientInsertError;
   if (stepInsertError) throw stepInsertError;
 }
@@ -155,7 +166,7 @@ function toRecipeRow(values: RecipeFormValues, ownerId?: string): RecipeInsert |
     cost_rating: values.costRating || null,
     difficulty: values.difficulty || null,
     image_url: emptyToNull(values.imageUrl),
-    source_url: emptyToNull(values.sourceUrl),
+    source_url: null,
     notes: emptyToNull(values.notes)
   };
 }
