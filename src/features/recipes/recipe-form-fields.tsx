@@ -1,10 +1,26 @@
 "use client";
 
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from "@dnd-kit/sortable";
 import { Plus, Trash2 } from "lucide-react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
+import { SortableIngredientRow } from "./sortable-ingredient-row";
 import type { RecipeFormValues } from "./recipe.types";
-import { INGREDIENT_UNITS, MAX_INGREDIENTS, MAX_SERVINGS, MAX_SOURCE_LINKS, MAX_STEPS } from "./recipe.validation";
+import { MAX_INGREDIENTS, MAX_SERVINGS, MAX_SOURCE_LINKS, MAX_STEPS } from "./recipe.validation";
 
 type RecipeFormFieldsProps = {
   isEditing: boolean;
@@ -201,63 +217,53 @@ function RecipeNotesFields() {
 }
 
 function RecipeIngredientFields() {
-  const {
-    control,
-    formState: { errors },
-    register
-  } = useFormContext<RecipeFormValues>();
+  const { control } = useFormContext<RecipeFormValues>();
   const ingredients = useFieldArray({ control, name: "ingredients" });
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 8 }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 }
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates
+    })
+  );
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const currentIndex = ingredients.fields.findIndex((field) => field.id === active.id);
+    const nextIndex = ingredients.fields.findIndex((field) => field.id === over.id);
+
+    if (currentIndex !== -1 && nextIndex !== -1) {
+      ingredients.move(currentIndex, nextIndex);
+    }
+  }
 
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-slate-800">Ingredients</h2>
-      {ingredients.fields.map((field, index) => (
-        <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
-          <input
-            aria-invalid={errors.ingredients?.[index]?.name ? "true" : "false"}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Ingredient"
-            {...register(`ingredients.${index}.name`)}
-          />
-          {errors.ingredients?.[index]?.name ? <p className="text-xs text-red-700">{errors.ingredients[index]?.name?.message}</p> : null}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <input
-                aria-invalid={errors.ingredients?.[index]?.amount ? "true" : "false"}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                inputMode="decimal"
-                placeholder="Amount"
-                {...register(`ingredients.${index}.amount`)}
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} sensors={sensors}>
+        <SortableContext items={ingredients.fields} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {ingredients.fields.map((field, index) => (
+              <SortableIngredientRow
+                count={ingredients.fields.length}
+                fieldId={field.id}
+                index={index}
+                key={field.id}
+                onMove={ingredients.move}
+                onRemove={ingredients.remove}
               />
-              {errors.ingredients?.[index]?.amount ? <p className="mt-1 text-xs text-red-700">{errors.ingredients[index]?.amount?.message}</p> : null}
-            </div>
-            <div>
-              <select
-                aria-invalid={errors.ingredients?.[index]?.unit ? "true" : "false"}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                {...register(`ingredients.${index}.unit`)}
-              >
-                <option value="">Unit</option>
-                {INGREDIENT_UNITS.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {unit}
-                  </option>
-                ))}
-              </select>
-              {errors.ingredients?.[index]?.unit ? <p className="mt-1 text-xs text-red-700">{errors.ingredients[index]?.unit?.message}</p> : null}
-            </div>
+            ))}
           </div>
-          <input
-            aria-invalid={errors.ingredients?.[index]?.notes ? "true" : "false"}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Notes"
-            {...register(`ingredients.${index}.notes`)}
-          />
-          {errors.ingredients?.[index]?.notes ? <p className="text-xs text-red-700">{errors.ingredients[index]?.notes?.message}</p> : null}
-          {ingredients.fields.length > 1 ? <RemoveRowButton onClick={() => ingredients.remove(index)} /> : null}
-        </div>
-      ))}
-      {errors.ingredients ? <p className="text-sm text-red-700">{errors.ingredients.message}</p> : null}
+        </SortableContext>
+      </DndContext>
+      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Drag ingredients or use the arrow buttons to change their order.</p> : null}
       <AddRowButton
         disabled={ingredients.fields.length >= MAX_INGREDIENTS}
         label="Add ingredient"

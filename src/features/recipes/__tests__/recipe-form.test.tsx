@@ -63,4 +63,21 @@ describe("RecipeForm", () => {
     fireEvent.click(steps.getAllByRole("button", { name: "Remove" })[0]);
     expect(steps.queryByPlaceholderText("Step 2")).not.toBeInTheDocument();
   });
+
+  it("reorders ingredients with accessible move controls", () => {
+    renderRecipeForm();
+
+    const ingredients = getSection("Ingredients");
+    const firstIngredient = ingredients.getByPlaceholderText("Ingredient");
+    fireEvent.change(firstIngredient, { target: { value: "Rice" } });
+    fireEvent.click(ingredients.getByRole("button", { name: "Add ingredient" }));
+
+    const ingredientNames = ingredients.getAllByPlaceholderText("Ingredient");
+    fireEvent.change(ingredientNames[1], { target: { value: "Egg" } });
+    fireEvent.click(ingredients.getByRole("button", { name: "Move ingredient 2 up" }));
+
+    expect(ingredients.getAllByPlaceholderText("Ingredient").map((input) => (input as HTMLInputElement).value)).toEqual(["Egg", "Rice"]);
+    expect(ingredients.getByRole("button", { name: "Move ingredient 1 up" })).toBeDisabled();
+    expect(ingredients.getByRole("button", { name: "Move ingredient 2 down" })).toBeDisabled();
+  });
 });

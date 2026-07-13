@@ -143,6 +143,7 @@ Stage 1 implementation slices:
 - [x] Recipe form validation hardening: stricter ingredient amounts and units, row-level field errors, practical form limits, and removal of the dedicated step timer input.
 - [x] Recipe form component refactor: keep submission orchestration in `RecipeForm` and move cohesive field sections and dynamic row controls behind shared form context.
 - [x] Mobile repeating-row workflow: place source, ingredient, and step add actions after their lists and focus newly appended fields for continuous downward entry.
+- [x] Ingredient reordering: support touch, mouse, and keyboard dragging with accessible move controls while preserving saved ingredient order.
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
