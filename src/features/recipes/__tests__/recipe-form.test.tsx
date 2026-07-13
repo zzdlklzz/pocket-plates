@@ -42,20 +42,24 @@ describe("RecipeForm", () => {
     renderRecipeForm();
 
     const sources = getSection("Sources");
-    fireEvent.click(sources.getByRole("button", { name: "Add" }));
-    expect(sources.getByPlaceholderText("https://example.com/recipe")).toBeInTheDocument();
+    fireEvent.click(sources.getByRole("button", { name: "Add source" }));
+    const sourceUrl = sources.getByPlaceholderText("https://example.com/recipe");
+    expect(sourceUrl).toHaveFocus();
     fireEvent.click(sources.getByRole("button", { name: "Remove" }));
     expect(sources.queryByPlaceholderText("https://example.com/recipe")).not.toBeInTheDocument();
 
     const ingredients = getSection("Ingredients");
-    fireEvent.click(ingredients.getByRole("button", { name: "Add" }));
-    expect(ingredients.getAllByPlaceholderText("Ingredient")).toHaveLength(2);
+    fireEvent.click(ingredients.getByRole("button", { name: "Add ingredient" }));
+    const ingredientNames = ingredients.getAllByPlaceholderText("Ingredient");
+    expect(ingredientNames).toHaveLength(2);
+    expect(ingredientNames[1]).toHaveFocus();
     fireEvent.click(ingredients.getAllByRole("button", { name: "Remove" })[0]);
     expect(ingredients.getAllByPlaceholderText("Ingredient")).toHaveLength(1);
 
     const steps = getSection("Steps");
-    fireEvent.click(steps.getByRole("button", { name: "Add" }));
-    expect(steps.getByPlaceholderText("Step 2")).toBeInTheDocument();
+    fireEvent.click(steps.getByRole("button", { name: "Add step" }));
+    const secondStep = steps.getByPlaceholderText("Step 2");
+    expect(secondStep).toHaveFocus();
     fireEvent.click(steps.getAllByRole("button", { name: "Remove" })[0]);
     expect(steps.queryByPlaceholderText("Step 2")).not.toBeInTheDocument();
   });

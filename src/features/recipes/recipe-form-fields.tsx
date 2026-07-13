@@ -141,18 +141,7 @@ function RecipeSourceFields() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-800">Sources</h2>
-        <button
-          className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
-          disabled={sourceLinks.fields.length >= MAX_SOURCE_LINKS}
-          onClick={() => sourceLinks.append({ label: "", url: "" })}
-          type="button"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Add
-        </button>
-      </div>
+      <h2 className="text-sm font-semibold text-slate-800">Sources</h2>
       {sourceLinks.fields.map((field, index) => (
         <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
           <input
@@ -175,6 +164,16 @@ function RecipeSourceFields() {
         </div>
       ))}
       {errors.sourceLinks?.root ? <p className="text-sm text-red-700">{errors.sourceLinks.root.message}</p> : null}
+      <AddRowButton
+        disabled={sourceLinks.fields.length >= MAX_SOURCE_LINKS}
+        label="Add source"
+        onClick={() =>
+          sourceLinks.append(
+            { label: "", url: "" },
+            { focusName: `sourceLinks.${sourceLinks.fields.length}.url` }
+          )
+        }
+      />
       <RecipeNotesFields />
     </section>
   );
@@ -211,18 +210,7 @@ function RecipeIngredientFields() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-800">Ingredients</h2>
-        <button
-          className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
-          disabled={ingredients.fields.length >= MAX_INGREDIENTS}
-          onClick={() => ingredients.append({ name: "", amount: "", unit: "", notes: "" })}
-          type="button"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Add
-        </button>
-      </div>
+      <h2 className="text-sm font-semibold text-slate-800">Ingredients</h2>
       {ingredients.fields.map((field, index) => (
         <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
           <input
@@ -270,6 +258,16 @@ function RecipeIngredientFields() {
         </div>
       ))}
       {errors.ingredients ? <p className="text-sm text-red-700">{errors.ingredients.message}</p> : null}
+      <AddRowButton
+        disabled={ingredients.fields.length >= MAX_INGREDIENTS}
+        label="Add ingredient"
+        onClick={() =>
+          ingredients.append(
+            { name: "", amount: "", unit: "", notes: "" },
+            { focusName: `ingredients.${ingredients.fields.length}.name` }
+          )
+        }
+      />
     </section>
   );
 }
@@ -284,18 +282,7 @@ function RecipeStepFields() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-800">Steps</h2>
-        <button
-          className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700 disabled:text-slate-400"
-          disabled={steps.fields.length >= MAX_STEPS}
-          onClick={() => steps.append({ instruction: "" })}
-          type="button"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Add
-        </button>
-      </div>
+      <h2 className="text-sm font-semibold text-slate-800">Steps</h2>
       {steps.fields.map((field, index) => (
         <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
           <textarea
@@ -309,7 +296,31 @@ function RecipeStepFields() {
         </div>
       ))}
       {errors.steps ? <p className="text-sm text-red-700">{errors.steps.message}</p> : null}
+      <AddRowButton
+        disabled={steps.fields.length >= MAX_STEPS}
+        label="Add step"
+        onClick={() =>
+          steps.append(
+            { instruction: "" },
+            { focusName: `steps.${steps.fields.length}.instruction` }
+          )
+        }
+      />
     </section>
+  );
+}
+
+function AddRowButton({ disabled, label, onClick }: { disabled: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-leaf-100 bg-leaf-50 px-4 py-3 text-sm font-semibold text-leaf-700 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      <Plus className="h-4 w-4" aria-hidden="true" />
+      {label}
+    </button>
   );
 }
 
