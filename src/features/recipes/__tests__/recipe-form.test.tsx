@@ -68,10 +68,47 @@ describe("RecipeForm", () => {
     const secondStep = steps.getByPlaceholderText("Step 2");
     expect(secondStep).toHaveFocus();
     expect(steps.getByRole("heading", { name: "Steps" })).toHaveTextContent("Steps · 2");
-    fireEvent.click(steps.getByRole("button", { name: "Step 2 actions" }));
     fireEvent.click(steps.getByRole("button", { name: "Remove step 2" }));
     expect(steps.queryByPlaceholderText("Step 2")).not.toBeInTheDocument();
     expect(steps.getByRole("heading", { name: "Steps" })).toHaveTextContent("Steps · 1");
+  });
+
+  it("restores removed repeating rows at their original positions", () => {
+    renderRecipeForm();
+
+    const sources = getSection("Sources");
+    fireEvent.click(sources.getByRole("button", { name: "Add source" }));
+    fireEvent.change(sources.getByPlaceholderText("https://example.com/recipe"), {
+      target: { value: "https://example.com/rice" }
+    });
+    fireEvent.click(sources.getByRole("button", { name: "Remove" }));
+    fireEvent.click(sources.getByRole("button", { name: "Undo" }));
+    expect(sources.getByPlaceholderText("https://example.com/recipe")).toHaveValue("https://example.com/rice");
+
+    const ingredients = getSection("Ingredients");
+    fireEvent.change(ingredients.getByPlaceholderText("Ingredient"), { target: { value: "Rice" } });
+    fireEvent.click(ingredients.getByRole("button", { name: "Done" }));
+    fireEvent.click(ingredients.getByRole("button", { name: "Add ingredient" }));
+    fireEvent.change(ingredients.getByPlaceholderText("Ingredient"), { target: { value: "Egg" } });
+    fireEvent.click(ingredients.getByRole("button", { name: "Done" }));
+    fireEvent.click(ingredients.getByRole("button", { name: "Ingredient 1 actions" }));
+    fireEvent.click(ingredients.getByRole("button", { name: "Remove ingredient 1" }));
+    fireEvent.click(ingredients.getByRole("button", { name: "Undo" }));
+    expect(ingredients.getAllByRole("button", { name: /Edit ingredient/ }).map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Edit ingredient 1: Rice",
+      "Edit ingredient 2: Egg"
+    ]);
+
+    const steps = getSection("Steps");
+    fireEvent.change(steps.getByPlaceholderText("Step 1"), { target: { value: "Cook rice." } });
+    fireEvent.click(steps.getByRole("button", { name: "Done" }));
+    fireEvent.click(steps.getByRole("button", { name: "Add step" }));
+    fireEvent.change(steps.getByPlaceholderText("Step 2"), { target: { value: "Serve." } });
+    fireEvent.click(steps.getByRole("button", { name: "Done" }));
+    fireEvent.click(steps.getByRole("button", { name: "Remove step 1" }));
+    fireEvent.click(steps.getByRole("button", { name: "Undo" }));
+    expect(steps.getByRole("button", { name: "Edit step 1: Cook rice." })).toBeInTheDocument();
+    expect(steps.getByRole("button", { name: "Edit step 2: Serve." })).toBeInTheDocument();
   });
 
   it("reorders ingredients with accessible move controls", () => {

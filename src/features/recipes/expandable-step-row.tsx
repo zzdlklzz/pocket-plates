@@ -1,7 +1,6 @@
 "use client";
 
-import { Check, Ellipsis, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Check, Trash2 } from "lucide-react";
 import { useFormContext, useWatch } from "react-hook-form";
 import type { RecipeFormValues } from "./recipe.types";
 
@@ -21,14 +20,8 @@ export function ExpandableStepRow({ count, index, isExpanded, onDone, onEdit, on
     register
   } = useFormContext<RecipeFormValues>();
   const instruction = useWatch({ control, name: `steps.${index}.instruction` });
-  const [isActionsOpen, setIsActionsOpen] = useState(false);
   const stepNumber = index + 1;
   const summary = instruction?.trim() || "New step";
-
-  function remove() {
-    setIsActionsOpen(false);
-    onRemove(index);
-  }
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-2">
@@ -62,13 +55,12 @@ export function ExpandableStepRow({ count, index, isExpanded, onDone, onEdit, on
 
         {count > 1 ? (
           <button
-            aria-expanded={isActionsOpen}
-            aria-label={`Step ${stepNumber} actions`}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 active:bg-leaf-50"
-            onClick={() => setIsActionsOpen((current) => !current)}
+            aria-label={`Remove step ${stepNumber}`}
+            className="inline-flex h-11 w-10 shrink-0 items-center justify-center rounded-lg text-red-700 active:bg-red-50"
+            onClick={() => onRemove(index)}
             type="button"
           >
-            <Ellipsis className="h-5 w-5" aria-hidden="true" />
+            <Trash2 className="h-5 w-5" aria-hidden="true" />
           </button>
         ) : null}
       </div>
@@ -85,20 +77,6 @@ export function ExpandableStepRow({ count, index, isExpanded, onDone, onEdit, on
             />
           </label>
           {errors.steps?.[index]?.instruction ? <p className="text-xs text-red-700">{errors.steps[index]?.instruction?.message}</p> : null}
-        </div>
-      ) : null}
-
-      {isActionsOpen ? (
-        <div className="border-t border-slate-100 py-2">
-          <button
-            aria-label={`Remove step ${stepNumber}`}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold text-red-700 active:bg-red-50"
-            onClick={remove}
-            type="button"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-            Remove
-          </button>
         </div>
       ) : null}
     </div>

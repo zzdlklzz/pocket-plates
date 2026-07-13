@@ -153,9 +153,25 @@ function RecipeSourceFields() {
   const {
     control,
     formState: { errors },
+    getValues,
     register
   } = useFormContext<RecipeFormValues>();
   const sourceLinks = useFieldArray({ control, name: "sourceLinks" });
+  const [removedSource, setRemovedSource] = useState<RemovedRow<RecipeFormValues["sourceLinks"][number]> | null>(null);
+
+  function removeSource(index: number) {
+    setRemovedSource({ index, value: getValues(`sourceLinks.${index}`) });
+    sourceLinks.remove(index);
+  }
+
+  function undoRemoveSource() {
+    if (!removedSource) {
+      return;
+    }
+
+    sourceLinks.insert(Math.min(removedSource.index, sourceLinks.fields.length), removedSource.value);
+    setRemovedSource(null);
+  }
 
   return (
     <section className="space-y-3">
@@ -178,9 +194,10 @@ function RecipeSourceFields() {
             {...register(`sourceLinks.${index}.url`)}
           />
           {errors.sourceLinks?.[index]?.url ? <p className="text-xs text-red-700">{errors.sourceLinks[index]?.url?.message}</p> : null}
-          <RemoveRowButton onClick={() => sourceLinks.remove(index)} />
+          <RemoveRowButton onClick={() => removeSource(index)} />
         </div>
       ))}
+      {removedSource ? <UndoRemovalNotice label="Source removed." onUndo={undoRemoveSource} /> : null}
       {errors.sourceLinks?.root ? <p className="text-sm text-red-700">{errors.sourceLinks.root.message}</p> : null}
       <AddRowButton
         disabled={sourceLinks.fields.length >= MAX_SOURCE_LINKS}
@@ -221,12 +238,14 @@ function RecipeNotesFields() {
 function RecipeIngredientFields() {
   const {
     control,
-    formState: { errors }
+    formState: { errors },
+    getValues
   } = useFormContext<RecipeFormValues>();
   const ingredients = useFieldArray({ control, name: "ingredients" });
   const [expandedIngredientIndex, setExpandedIngredientIndex] = useState<number | null>(() =>
     ingredients.fields.length === 1 && !ingredients.fields[0]?.name ? 0 : null
   );
+  const [removedIngredient, setRemovedIngredient] = useState<RemovedExpandableRow<RecipeFormValues["ingredients"][number]> | null>(null);
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: 8 }
@@ -258,8 +277,26 @@ function RecipeIngredientFields() {
   }
 
   function removeIngredient(index: number) {
+    setRemovedIngredient({
+      index,
+      value: getValues(`ingredients.${index}`),
+      wasExpanded: expandedIngredientIndex === index
+    });
     ingredients.remove(index);
     setExpandedIngredientIndex((current) => getIndexAfterRemoval(current, index));
+  }
+
+  function undoRemoveIngredient() {
+    if (!removedIngredient) {
+      return;
+    }
+
+    const restoredIndex = Math.min(removedIngredient.index, ingredients.fields.length);
+    ingredients.insert(restoredIndex, removedIngredient.value);
+    setExpandedIngredientIndex((current) =>
+      removedIngredient.wasExpanded ? restoredIndex : getIndexAfterInsertion(current, restoredIndex)
+    );
+    setRemovedIngredient(null);
   }
 
   function addIngredient() {
@@ -295,8 +332,9 @@ function RecipeIngredientFields() {
           </div>
         </SortableContext>
       </DndContext>
+      {removedIngredient ? <UndoRemovalNotice label="Ingredient removed." onUndo={undoRemoveIngredient} /> : null}
       {errors.ingredients?.message ? <p className="text-sm text-red-700">{errors.ingredients.message}</p> : null}
-      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Drag ingredients or open the row menu to change their order.</p> : null}
+      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Drag ingredients or open the row menu to move them up or down.</p> : null}
       <AddRowButton
         disabled={ingredients.fields.length >= MAX_INGREDIENTS}
         label="Add ingredient"
@@ -309,16 +347,36 @@ function RecipeIngredientFields() {
 function RecipeStepFields() {
   const {
     control,
-    formState: { errors }
+    formState: { errors },
+    getValues
   } = useFormContext<RecipeFormValues>();
   const steps = useFieldArray({ control, name: "steps" });
   const [expandedStepIndex, setExpandedStepIndex] = useState<number | null>(() =>
     steps.fields.length === 1 && !steps.fields[0]?.instruction ? 0 : null
   );
+  const [removedStep, setRemovedStep] = useState<RemovedExpandableRow<RecipeFormValues["steps"][number]> | null>(null);
 
   function removeStep(index: number) {
+    setRemovedStep({
+      index,
+      value: getValues(`steps.${index}`),
+      wasExpanded: expandedStepIndex === index
+    });
     steps.remove(index);
     setExpandedStepIndex((current) => getIndexAfterRemoval(current, index));
+  }
+
+  function undoRemoveStep() {
+    if (!removedStep) {
+      return;
+    }
+
+    const restoredIndex = Math.min(removedStep.index, steps.fields.length);
+    steps.insert(restoredIndex, removedStep.value);
+    setExpandedStepIndex((current) =>
+      removedStep.wasExpanded ? restoredIndex : getIndexAfterInsertion(current, restoredIndex)
+    );
+    setRemovedStep(null);
   }
 
   function addStep() {
@@ -348,6 +406,7 @@ function RecipeStepFields() {
           />
         ))}
       </div>
+      {removedStep ? <UndoRemovalNotice label="Step removed." onUndo={undoRemoveStep} /> : null}
       {errors.steps?.message ? <p className="text-sm text-red-700">{errors.steps.message}</p> : null}
       <AddRowButton
         disabled={steps.fields.length >= MAX_STEPS}
@@ -386,6 +445,23 @@ function getIndexAfterRemoval(current: number | null, removed: number) {
   return current === removed ? null : current - 1;
 }
 
+function getIndexAfterInsertion(current: number | null, inserted: number) {
+  if (current === null || current < inserted) {
+    return current;
+  }
+
+  return current + 1;
+}
+
+type RemovedRow<T> = {
+  index: number;
+  value: T;
+};
+
+type RemovedExpandableRow<T> = RemovedRow<T> & {
+  wasExpanded: boolean;
+};
+
 function AddRowButton({ disabled, label, onClick }: { disabled: boolean; label: string; onClick: () => void }) {
   return (
     <button
@@ -406,5 +482,18 @@ function RemoveRowButton({ onClick }: { onClick: () => void }) {
       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
       Remove
     </button>
+  );
+}
+
+function UndoRemovalNotice({ label, onUndo }: { label: string; onUndo: () => void }) {
+  return (
+    <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+      <span aria-live="polite" role="status">
+        {label}
+      </span>
+      <button className="shrink-0 rounded-lg px-2 py-1 font-semibold text-leaf-700 active:bg-leaf-100" onClick={onUndo} type="button">
+        Undo
+      </button>
+    </div>
   );
 }

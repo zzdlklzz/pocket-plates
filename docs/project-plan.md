@@ -145,6 +145,8 @@ Stage 1 implementation slices:
 - [x] Mobile repeating-row workflow: place source, ingredient, and step add actions after their lists and focus newly appended fields for continuous downward entry.
 - [x] Ingredient reordering: support touch, mouse, and keyboard dragging with accessible move controls while preserving saved ingredient order.
 - [x] Compact recipe form rows: collapse completed ingredients and steps into summaries while expanding active, newly added, and invalid rows.
+- [x] Reversible repeating-row removal: expose the step row's only destructive action directly and allow removed sources, ingredients, and steps to be restored at their original positions before save.
+- [ ] iPhone recipe form input zoom: keep editable controls at 16px or larger on mobile, verify narrow grids with the keyboard open, and preserve browser zoom accessibility.
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
