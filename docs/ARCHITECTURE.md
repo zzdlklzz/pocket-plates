@@ -323,7 +323,13 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SECRET_KEY
 ```
 
-4. Add GitHub secrets for migration workflows:
+4. Add GitHub environment secrets for migration workflows to the `Production` environment:
+
+GitHub path:
+
+```txt
+Repository > Settings > Environments > Production > Environment secrets
+```
 
 ```txt
 SUPABASE_ACCESS_TOKEN
@@ -331,8 +337,12 @@ SUPABASE_PROJECT_REF
 SUPABASE_DB_PASSWORD
 ```
 
+Use a Supabase personal access token for `SUPABASE_ACCESS_TOKEN`, the project reference string from the Supabase project dashboard URL for `SUPABASE_PROJECT_REF`, and the project's database password for `SUPABASE_DB_PASSWORD`. Store the values only as GitHub environment secrets; do not commit them to the repository or add them to browser-exposed environment variables.
+
+The database deployment workflow declares the `Production` environment before running Supabase CLI commands. If any of these secrets are missing, the workflow stops during preflight with the missing secret name instead of continuing to a vague Supabase authentication error.
+
 5. Let Vercel deploy previews for pull requests and production from `main`.
-6. Let GitHub Actions run CI and migration deployment. The database deployment workflow lists linked migrations before and after `supabase db push` so migration state is visible in the workflow logs.
+6. Let GitHub Actions run CI and migration deployment. The database deployment workflow validates required Supabase secrets, lists linked migrations before and after `supabase db push`, and keeps migration state visible in the workflow logs.
 
 ## PWA Support
 

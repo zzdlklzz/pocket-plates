@@ -299,7 +299,7 @@ Use GitHub Actions for repository checks and database safety:
 
 - `ci.yml`: runs install, ESLint, type check, unit tests, integration tests, build, and Playwright E2E tests on Node.js 24. It supplies placeholder public Supabase values for build and signed-out E2E checks because GitHub Actions does not receive Vercel environment variables.
 - `supabase-types.yml`: optionally checks that generated Supabase TypeScript types are up to date.
-- `database-deploy.yml`: lists linked migrations, runs Supabase migrations on `main` after CI passes, then lists linked migrations again for audit visibility.
+- `database-deploy.yml`: uses the GitHub `Production` environment, validates required Supabase deployment secrets, lists linked migrations, runs Supabase migrations on `main`, then lists linked migrations again for audit visibility.
 
 Use Vercel's GitHub integration for application deployment:
 
@@ -309,14 +309,13 @@ Use Vercel's GitHub integration for application deployment:
 
 To prevent production deployments from unverified commits, protect the production branch in GitHub and require the CI `checks` job before merging or pushing to `main`.
 
-Required GitHub secrets later:
+Required GitHub `Production` environment secrets for migration deployment:
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SECRET_KEY`
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_PROJECT_REF`
 - `SUPABASE_DB_PASSWORD`
+
+Add these in GitHub under `Settings > Environments > Production > Environment secrets`. `SUPABASE_ACCESS_TOKEN` is a Supabase personal access token, `SUPABASE_PROJECT_REF` is the project reference from the Supabase dashboard URL, and `SUPABASE_DB_PASSWORD` is the database password for that Supabase project.
 
 Vercel will also need the public Supabase URL and publishable key as environment variables. Keep `SUPABASE_SECRET_KEY` server-only and use it only for future backend/admin operations that require elevated Supabase access.
 
