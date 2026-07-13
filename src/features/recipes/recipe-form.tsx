@@ -47,7 +47,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
 
       <FormProvider {...form}>
         <form aria-busy={isSaving} className="mt-5" onSubmit={form.handleSubmit(onSubmit)}>
-          <fieldset className="m-0 space-y-5 border-0 p-0 disabled:opacity-80" disabled={isSaving}>
+          <fieldset className="m-0 min-w-0 w-full space-y-5 border-0 p-0 disabled:opacity-80" disabled={isSaving}>
             <RecipeFormFields isEditing={Boolean(recipeId)} />
 
             {mutation.error ? (

@@ -16,7 +16,9 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { ExpandableStepRow } from "./expandable-step-row";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { SortableIngredientRow } from "./sortable-ingredient-row";
 import type { RecipeFormValues } from "./recipe.types";
@@ -217,8 +219,14 @@ function RecipeNotesFields() {
 }
 
 function RecipeIngredientFields() {
-  const { control } = useFormContext<RecipeFormValues>();
+  const {
+    control,
+    formState: { errors }
+  } = useFormContext<RecipeFormValues>();
   const ingredients = useFieldArray({ control, name: "ingredients" });
+  const [expandedIngredientIndex, setExpandedIngredientIndex] = useState<number | null>(() =>
+    ingredients.fields.length === 1 && !ingredients.fields[0]?.name ? 0 : null
+  );
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: 8 }
@@ -240,39 +248,59 @@ function RecipeIngredientFields() {
     const nextIndex = ingredients.fields.findIndex((field) => field.id === over.id);
 
     if (currentIndex !== -1 && nextIndex !== -1) {
-      ingredients.move(currentIndex, nextIndex);
+      moveIngredient(currentIndex, nextIndex);
     }
+  }
+
+  function moveIngredient(from: number, to: number) {
+    ingredients.move(from, to);
+    setExpandedIngredientIndex((current) => getIndexAfterMove(current, from, to));
+  }
+
+  function removeIngredient(index: number) {
+    ingredients.remove(index);
+    setExpandedIngredientIndex((current) => getIndexAfterRemoval(current, index));
+  }
+
+  function addIngredient() {
+    const nextIndex = ingredients.fields.length;
+    setExpandedIngredientIndex(nextIndex);
+    ingredients.append(
+      { name: "", amount: "", unit: "", notes: "" },
+      { focusName: `ingredients.${nextIndex}.name` }
+    );
   }
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold text-slate-800">Ingredients</h2>
+      <h2 className="text-sm font-semibold text-slate-800">
+        Ingredients<span aria-hidden="true"> · {ingredients.fields.length}</span>
+      </h2>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} sensors={sensors}>
         <SortableContext items={ingredients.fields} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {ingredients.fields.map((field, index) => (
               <SortableIngredientRow
                 count={ingredients.fields.length}
                 fieldId={field.id}
                 index={index}
+                isExpanded={expandedIngredientIndex === index || Boolean(errors.ingredients?.[index])}
                 key={field.id}
-                onMove={ingredients.move}
-                onRemove={ingredients.remove}
+                onDone={() => setExpandedIngredientIndex(null)}
+                onEdit={() => setExpandedIngredientIndex(index)}
+                onMove={moveIngredient}
+                onRemove={removeIngredient}
               />
             ))}
           </div>
         </SortableContext>
       </DndContext>
-      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Drag ingredients or use the arrow buttons to change their order.</p> : null}
+      {errors.ingredients?.message ? <p className="text-sm text-red-700">{errors.ingredients.message}</p> : null}
+      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Drag ingredients or open the row menu to change their order.</p> : null}
       <AddRowButton
         disabled={ingredients.fields.length >= MAX_INGREDIENTS}
         label="Add ingredient"
-        onClick={() =>
-          ingredients.append(
-            { name: "", amount: "", unit: "", notes: "" },
-            { focusName: `ingredients.${ingredients.fields.length}.name` }
-          )
-        }
+        onClick={addIngredient}
       />
     </section>
   );
@@ -281,39 +309,81 @@ function RecipeIngredientFields() {
 function RecipeStepFields() {
   const {
     control,
-    formState: { errors },
-    register
+    formState: { errors }
   } = useFormContext<RecipeFormValues>();
   const steps = useFieldArray({ control, name: "steps" });
+  const [expandedStepIndex, setExpandedStepIndex] = useState<number | null>(() =>
+    steps.fields.length === 1 && !steps.fields[0]?.instruction ? 0 : null
+  );
+
+  function removeStep(index: number) {
+    steps.remove(index);
+    setExpandedStepIndex((current) => getIndexAfterRemoval(current, index));
+  }
+
+  function addStep() {
+    const nextIndex = steps.fields.length;
+    setExpandedStepIndex(nextIndex);
+    steps.append(
+      { instruction: "" },
+      { focusName: `steps.${nextIndex}.instruction` }
+    );
+  }
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold text-slate-800">Steps</h2>
-      {steps.fields.map((field, index) => (
-        <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
-          <textarea
-            aria-invalid={errors.steps?.[index]?.instruction ? "true" : "false"}
-            className="min-h-20 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            placeholder={`Step ${index + 1}`}
-            {...register(`steps.${index}.instruction`)}
+      <h2 className="text-sm font-semibold text-slate-800">
+        Steps<span aria-hidden="true"> · {steps.fields.length}</span>
+      </h2>
+      <div className="space-y-2">
+        {steps.fields.map((field, index) => (
+          <ExpandableStepRow
+            count={steps.fields.length}
+            index={index}
+            isExpanded={expandedStepIndex === index || Boolean(errors.steps?.[index])}
+            key={field.id}
+            onDone={() => setExpandedStepIndex(null)}
+            onEdit={() => setExpandedStepIndex(index)}
+            onRemove={removeStep}
           />
-          {errors.steps?.[index]?.instruction ? <p className="text-xs text-red-700">{errors.steps[index]?.instruction?.message}</p> : null}
-          {steps.fields.length > 1 ? <RemoveRowButton onClick={() => steps.remove(index)} /> : null}
-        </div>
-      ))}
-      {errors.steps ? <p className="text-sm text-red-700">{errors.steps.message}</p> : null}
+        ))}
+      </div>
+      {errors.steps?.message ? <p className="text-sm text-red-700">{errors.steps.message}</p> : null}
       <AddRowButton
         disabled={steps.fields.length >= MAX_STEPS}
         label="Add step"
-        onClick={() =>
-          steps.append(
-            { instruction: "" },
-            { focusName: `steps.${steps.fields.length}.instruction` }
-          )
-        }
+        onClick={addStep}
       />
     </section>
   );
+}
+
+function getIndexAfterMove(current: number | null, from: number, to: number) {
+  if (current === null || from === to) {
+    return current;
+  }
+
+  if (current === from) {
+    return to;
+  }
+
+  if (from < current && to >= current) {
+    return current - 1;
+  }
+
+  if (from > current && to <= current) {
+    return current + 1;
+  }
+
+  return current;
+}
+
+function getIndexAfterRemoval(current: number | null, removed: number) {
+  if (current === null || current < removed) {
+    return current;
+  }
+
+  return current === removed ? null : current - 1;
 }
 
 function AddRowButton({ disabled, label, onClick }: { disabled: boolean; label: string; onClick: () => void }) {
