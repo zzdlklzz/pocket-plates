@@ -110,6 +110,7 @@ Goal: create a deployable skeleton before building feature depth.
 - Add CI checks for install, lint, type check, tests, and build.
 - [x] Refresh GitHub Actions workflows for Node.js 24 action runtimes, patched framework/test dependencies, ESLint 9 linting, deterministic Playwright startup, explicit CI Supabase public placeholders, Vercel pre-build verification, and a pinned Supabase CLI deploy action.
 - [x] Document Docker-backed local Supabase startup, clean migration reset, migration history, schema linting, status inspection, and shutdown.
+- [x] Centralize browser-safe Supabase environment validation while preserving separate browser, server, cookie, and middleware client factories.
 - Add Vercel deployment configuration.
 
 ### Stage 1: True MVP - Private Recipe Library

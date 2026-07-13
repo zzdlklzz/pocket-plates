@@ -121,6 +121,8 @@ src/
         recipe.mappers.test.ts
   lib/
     env/
+      __tests__/
+        env.constants.test.ts
       env.constants.ts
     query/
       query-client.ts
@@ -150,6 +152,10 @@ vitest.config.mts
 ## Server-State Rule
 
 Use TanStack Query for server state from the start. Components should consume feature-level query hooks, such as `useRecipeList`, instead of making ad hoc API calls in `useEffect`. Keep `useEffect` for true browser-side effects such as focus handling, subscriptions, or direct browser APIs.
+
+## Supabase Client Boundary
+
+`getSupabasePublicConfig` in `env.constants.ts` validates the public Supabase URL and publishable key once for all client factories. The browser, server-rendered, cookie-writing, and middleware factories remain separate because each has different cookie and request behavior. The shared helper never returns `SUPABASE_SECRET_KEY`; that value remains reserved for future server-only administrative work.
 
 ## Auth Boundary
 
