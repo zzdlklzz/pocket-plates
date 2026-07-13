@@ -143,6 +143,7 @@ Stage 1 implementation slices:
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
+- [x] Recipe filter UI refactor: extract reusable meal-type controls and the filter dialog while keeping query and filter state in the recipe library.
 - [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
 - [x] Multiple recipe sources: add, edit, order, label, validate, persist, and display up to five source URLs while preserving legacy single-source reads.
 - [ ] Supabase SMTP repair: replace the rejected Gmail SMTP credentials or app password in the Supabase dashboard, then retest email signup.

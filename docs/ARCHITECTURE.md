@@ -107,6 +107,7 @@ src/
       recipe-card.tsx
       recipe-detail.tsx
       recipe-edit.tsx
+      recipe-filters.tsx
       recipe-form.tsx
       recipe-library.tsx
       recipe-library.constants.ts
@@ -162,7 +163,8 @@ The recipe read path keeps database rows, DTOs, and UI state separate:
 - `recipe.repository.ts` queries `recipes` and `recipe_meal_types` through the browser Supabase client. When the user filters by breakfast, lunch, dinner, or snack, the repository also includes recipes tagged `flexible`; filtering by Flexible itself stays exact.
 - `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects.
 - `recipe.queries.ts` exposes `useRecipeList` and `useRecipeDetail` for TanStack Query caching.
-- `recipe-library.tsx` owns search and filter UI state. Meal type chips stay visible in the library for quick access, and the bottom Filter button opens a lightweight dialog with meal type, cost rating, and difficulty controls so filtering does not require a separate page load.
+- `recipe-library.tsx` owns search and filter state, query results, and library navigation.
+- `recipe-filters.tsx` renders the persistent meal-type chips and filter dialog from that shared state, keeping filter controls separate from recipe result rendering without introducing another state owner.
 - `recipe-card.tsx` renders compact mobile-friendly recipe cards.
 
 ## Recipe Write Path

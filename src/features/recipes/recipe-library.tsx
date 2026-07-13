@@ -1,12 +1,12 @@
 "use client";
 
-import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
 import { SignOutButton } from "@/features/auth/sign-out-button";
 import { getRecipeErrorMessage } from "./recipe.errors";
-import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
+import { RecipeFilterDialog, RecipeMealTypeFilters } from "./recipe-filters";
 import { useRecipeList } from "./recipe.queries";
 import { RecipeCard } from "./recipe-card";
 import { RecipeGridSkeleton } from "./recipe-skeletons";
@@ -75,165 +75,19 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         </label>
       </header>
 
-      <section className="mt-5 flex gap-2 overflow-x-auto" aria-label="Meal type filters">
-        <button
-          className={
-            mealTypes.length === 0
-              ? "shrink-0 rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
-              : "shrink-0 rounded-full border border-leaf-100 bg-leaf-50 px-3 py-2 text-xs font-medium text-slate-600"
-          }
-          onClick={() => setMealTypes([])}
-          type="button"
-        >
-          All
-        </button>
-        {MEAL_TYPE_FILTERS.map((filter) => {
-          const isSelected = mealTypes.includes(filter.value);
-
-          return (
-            <button
-              aria-pressed={isSelected}
-              className={
-                isSelected
-                  ? "shrink-0 rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
-                  : "shrink-0 rounded-full border border-leaf-100 bg-leaf-50 px-3 py-2 text-xs font-medium text-slate-600"
-              }
-              key={filter.value}
-              onClick={() => toggleMealType(filter.value)}
-              type="button"
-            >
-              {filter.label}
-            </button>
-          );
-        })}
-      </section>
+      <RecipeMealTypeFilters mealTypes={mealTypes} onClear={() => setMealTypes([])} onToggle={toggleMealType} />
 
       {isFilterOpen ? (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 px-4 pb-4" role="presentation">
-          <section
-            aria-label="Recipe filters"
-            aria-modal="true"
-            className="w-full max-w-md rounded-lg bg-white p-4 shadow-xl"
-            role="dialog"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-slate-900">Filters</h2>
-              <button
-                aria-label="Close filters"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600"
-                onClick={() => setIsFilterOpen(false)}
-                type="button"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-5">
-              <section>
-                <h3 className="text-sm font-semibold text-slate-800">Meal type</h3>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    className={
-                      mealTypes.length === 0
-                        ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
-                        : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
-                    }
-                    onClick={() => setMealTypes([])}
-                    type="button"
-                  >
-                    All
-                  </button>
-                  {MEAL_TYPE_FILTERS.map((filter) => {
-                    const isSelected = mealTypes.includes(filter.value);
-
-                    return (
-                      <button
-                        aria-pressed={isSelected}
-                        className={
-                          isSelected
-                            ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
-                            : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
-                        }
-                        key={filter.value}
-                        onClick={() => toggleMealType(filter.value)}
-                        type="button"
-                      >
-                        {filter.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-sm font-semibold text-slate-800">Cost</h3>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {COST_RATING_FILTERS.map((filter) => {
-                    const isSelected = costRatings.includes(filter.value);
-
-                    return (
-                      <button
-                        aria-pressed={isSelected}
-                        className={
-                          isSelected
-                            ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
-                            : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
-                        }
-                        key={filter.value}
-                        onClick={() => toggleCostRating(filter.value)}
-                        type="button"
-                      >
-                        {filter.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-sm font-semibold text-slate-800">Difficulty</h3>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {DIFFICULTY_FILTERS.map((filter) => {
-                    const isSelected = difficulty === filter.value;
-
-                    return (
-                      <button
-                        aria-pressed={isSelected}
-                        className={
-                          isSelected
-                            ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
-                            : "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600"
-                        }
-                        key={filter.value}
-                        onClick={() => setDifficulty(isSelected ? undefined : filter.value)}
-                        type="button"
-                      >
-                        {filter.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <button
-                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600"
-                onClick={clearFilters}
-                type="button"
-              >
-                Clear
-              </button>
-              <button
-                className="rounded-lg bg-leaf-700 px-4 py-3 text-sm font-semibold text-white"
-                onClick={() => setIsFilterOpen(false)}
-                type="button"
-              >
-                Done
-              </button>
-            </div>
-          </section>
-        </div>
+        <RecipeFilterDialog
+          costRatings={costRatings}
+          difficulty={difficulty}
+          mealTypes={mealTypes}
+          onClear={clearFilters}
+          onClose={() => setIsFilterOpen(false)}
+          onCostRatingToggle={toggleCostRating}
+          onDifficultyChange={setDifficulty}
+          onMealTypeToggle={toggleMealType}
+        />
       ) : null}
 
       <section className="mt-5" aria-label="Recipe library">
