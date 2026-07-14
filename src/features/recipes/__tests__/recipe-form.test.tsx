@@ -109,6 +109,54 @@ describe("RecipeForm", () => {
     expect(steps.getByRole("button", { name: "Edit step 2: Serve." })).toBeInTheDocument();
   });
 
+  it("shows undo in the deleted row's former position", () => {
+    const initialValues: RecipeFormValues = {
+      title: "Pancakes",
+      servings: 4,
+      mealTypes: ["breakfast"],
+      costRating: "cheap",
+      difficulty: "easy",
+      imageUrl: "",
+      sourceLinks: [
+        { label: "First source", url: "https://example.com/first" },
+        { label: "Second source", url: "https://example.com/second" }
+      ],
+      notes: "",
+      ingredients: [
+        { name: "Milk", amount: "1", unit: "cups", notes: "" },
+        { name: "Egg", amount: "1", unit: "pcs", notes: "" },
+        { name: "Flour", amount: "1", unit: "cups", notes: "" }
+      ],
+      steps: [
+        { instruction: "Whisk the milk and egg." },
+        { instruction: "Mix in the flour." },
+        { instruction: "Cook the pancakes." }
+      ]
+    };
+
+    renderRecipeForm(initialValues);
+
+    const sources = getSection("Sources");
+    fireEvent.click(sources.getAllByRole("button", { name: "Remove" })[0]);
+    const sourceNotice = sources.getByText("Source removed.").parentElement;
+    expect(sourceNotice?.nextElementSibling).toContainElement(sources.getByDisplayValue("Second source"));
+
+    const ingredients = getSection("Ingredients");
+    fireEvent.click(ingredients.getByRole("button", { name: "Remove ingredient 2" }));
+    const ingredientNotice = ingredients.getByText("Ingredient removed.").parentElement;
+    expect(ingredientNotice?.nextElementSibling).toContainElement(
+      ingredients.getByRole("button", { name: "Edit ingredient 2: 1 cups Flour" })
+    );
+
+    const steps = getSection("Steps");
+    fireEvent.click(steps.getByRole("button", { name: "Remove step 3" }));
+    const stepNotice = steps.getByText("Step removed.").parentElement;
+    expect(stepNotice?.previousElementSibling).toContainElement(
+      steps.getByRole("button", { name: "Edit step 2: Mix in the flour." })
+    );
+    expect(stepNotice?.nextElementSibling).toBeNull();
+  });
+
   it("uses direct delete controls and drag handles for reorderable rows", () => {
     renderRecipeForm();
 

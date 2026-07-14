@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { ExpandableStepRow } from "./expandable-step-row";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
@@ -177,27 +177,32 @@ function RecipeSourceFields() {
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-slate-800">Sources</h2>
       {sourceLinks.fields.map((field, index) => (
-        <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" key={field.id}>
-          <input
-            aria-invalid={errors.sourceLinks?.[index]?.label ? "true" : "false"}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Label (optional)"
-            {...register(`sourceLinks.${index}.label`)}
-          />
-          {errors.sourceLinks?.[index]?.label ? <p className="text-xs text-red-700">{errors.sourceLinks[index]?.label?.message}</p> : null}
-          <input
-            aria-invalid={errors.sourceLinks?.[index]?.url ? "true" : "false"}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            inputMode="url"
-            placeholder="https://example.com/recipe"
-            type="url"
-            {...register(`sourceLinks.${index}.url`)}
-          />
-          {errors.sourceLinks?.[index]?.url ? <p className="text-xs text-red-700">{errors.sourceLinks[index]?.url?.message}</p> : null}
-          <RemoveRowButton onClick={() => removeSource(index)} />
-        </div>
+        <Fragment key={field.id}>
+          {removedSource?.index === index ? <UndoRemovalNotice label="Source removed." onUndo={undoRemoveSource} /> : null}
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+            <input
+              aria-invalid={errors.sourceLinks?.[index]?.label ? "true" : "false"}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Label (optional)"
+              {...register(`sourceLinks.${index}.label`)}
+            />
+            {errors.sourceLinks?.[index]?.label ? <p className="text-xs text-red-700">{errors.sourceLinks[index]?.label?.message}</p> : null}
+            <input
+              aria-invalid={errors.sourceLinks?.[index]?.url ? "true" : "false"}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              inputMode="url"
+              placeholder="https://example.com/recipe"
+              type="url"
+              {...register(`sourceLinks.${index}.url`)}
+            />
+            {errors.sourceLinks?.[index]?.url ? <p className="text-xs text-red-700">{errors.sourceLinks[index]?.url?.message}</p> : null}
+            <RemoveRowButton onClick={() => removeSource(index)} />
+          </div>
+        </Fragment>
       ))}
-      {removedSource ? <UndoRemovalNotice label="Source removed." onUndo={undoRemoveSource} /> : null}
+      {removedSource && removedSource.index >= sourceLinks.fields.length ? (
+        <UndoRemovalNotice label="Source removed." onUndo={undoRemoveSource} />
+      ) : null}
       {errors.sourceLinks?.root ? <p className="text-sm text-red-700">{errors.sourceLinks.root.message}</p> : null}
       <AddRowButton
         disabled={sourceLinks.fields.length >= MAX_SOURCE_LINKS}
@@ -307,21 +312,27 @@ function RecipeIngredientFields() {
         <SortableContext items={ingredients.fields} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
             {ingredients.fields.map((field, index) => (
-              <SortableIngredientRow
-                count={ingredients.fields.length}
-                fieldId={field.id}
-                index={index}
-                isExpanded={expandedIngredientIndex === index || Boolean(errors.ingredients?.[index])}
-                key={field.id}
-                onDone={() => setExpandedIngredientIndex(null)}
-                onEdit={() => setExpandedIngredientIndex(index)}
-                onRemove={removeIngredient}
-              />
+              <Fragment key={field.id}>
+                {removedIngredient?.index === index ? (
+                  <UndoRemovalNotice label="Ingredient removed." onUndo={undoRemoveIngredient} />
+                ) : null}
+                <SortableIngredientRow
+                  count={ingredients.fields.length}
+                  fieldId={field.id}
+                  index={index}
+                  isExpanded={expandedIngredientIndex === index || Boolean(errors.ingredients?.[index])}
+                  onDone={() => setExpandedIngredientIndex(null)}
+                  onEdit={() => setExpandedIngredientIndex(index)}
+                  onRemove={removeIngredient}
+                />
+              </Fragment>
             ))}
+            {removedIngredient && removedIngredient.index >= ingredients.fields.length ? (
+              <UndoRemovalNotice label="Ingredient removed." onUndo={undoRemoveIngredient} />
+            ) : null}
           </div>
         </SortableContext>
       </DndContext>
-      {removedIngredient ? <UndoRemovalNotice label="Ingredient removed." onUndo={undoRemoveIngredient} /> : null}
       {errors.ingredients?.message ? <p className="text-sm text-red-700">{errors.ingredients.message}</p> : null}
       {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Press and hold a drag handle to reorder ingredients.</p> : null}
       <AddRowButton
@@ -405,21 +416,25 @@ function RecipeStepFields() {
         <SortableContext items={steps.fields} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
             {steps.fields.map((field, index) => (
-              <ExpandableStepRow
-                count={steps.fields.length}
-                fieldId={field.id}
-                index={index}
-                isExpanded={expandedStepIndex === index || Boolean(errors.steps?.[index])}
-                key={field.id}
-                onDone={() => setExpandedStepIndex(null)}
-                onEdit={() => setExpandedStepIndex(index)}
-                onRemove={removeStep}
-              />
+              <Fragment key={field.id}>
+                {removedStep?.index === index ? <UndoRemovalNotice label="Step removed." onUndo={undoRemoveStep} /> : null}
+                <ExpandableStepRow
+                  count={steps.fields.length}
+                  fieldId={field.id}
+                  index={index}
+                  isExpanded={expandedStepIndex === index || Boolean(errors.steps?.[index])}
+                  onDone={() => setExpandedStepIndex(null)}
+                  onEdit={() => setExpandedStepIndex(index)}
+                  onRemove={removeStep}
+                />
+              </Fragment>
             ))}
+            {removedStep && removedStep.index >= steps.fields.length ? (
+              <UndoRemovalNotice label="Step removed." onUndo={undoRemoveStep} />
+            ) : null}
           </div>
         </SortableContext>
       </DndContext>
-      {removedStep ? <UndoRemovalNotice label="Step removed." onUndo={undoRemoveStep} /> : null}
       {errors.steps?.message ? <p className="text-sm text-red-700">{errors.steps.message}</p> : null}
       {steps.fields.length > 1 ? <p className="text-xs text-slate-500">Press and hold a drag handle to reorder steps.</p> : null}
       <AddRowButton

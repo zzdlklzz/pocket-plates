@@ -147,7 +147,7 @@ Stage 1 implementation slices:
 - [x] Compact recipe form rows: collapse completed ingredients and steps into summaries while expanding active, newly added, and invalid rows.
 - [x] Reversible repeating-row removal: expose the step row's only destructive action directly and allow removed sources, ingredients, and steps to be restored at their original positions before save.
 - [x] Handle-only row reordering: replace ingredient overflow actions with direct deletion, add step drag handles, and persist both ingredient and step array order through their existing sort order fields.
-- [ ] Positional removal undo: render each Undo action at the deleted source, ingredient, or step row's former position.
+- [x] Positional removal undo: render each Undo action at the deleted source, ingredient, or step row's former position.
 - [ ] iPhone recipe form input zoom: keep editable controls at 16px or larger on mobile, verify narrow grids with the keyboard open, and preserve browser zoom accessibility.
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
