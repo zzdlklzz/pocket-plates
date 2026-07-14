@@ -1,8 +1,7 @@
 "use client";
 
 import { useSortable } from "@dnd-kit/sortable";
-import { ArrowDown, ArrowUp, Check, Ellipsis, GripVertical, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Check, GripVertical, Trash2 } from "lucide-react";
 import { useFormContext, useWatch } from "react-hook-form";
 import type { RecipeFormValues } from "./recipe.types";
 import { INGREDIENT_UNITS } from "./recipe.validation";
@@ -14,7 +13,6 @@ type SortableIngredientRowProps = {
   isExpanded: boolean;
   onDone: () => void;
   onEdit: () => void;
-  onMove: (from: number, to: number) => void;
   onRemove: (index: number) => void;
 };
 
@@ -25,7 +23,6 @@ export function SortableIngredientRow({
   isExpanded,
   onDone,
   onEdit,
-  onMove,
   onRemove
 }: SortableIngredientRowProps) {
   const {
@@ -34,7 +31,6 @@ export function SortableIngredientRow({
     register
   } = useFormContext<RecipeFormValues>();
   const ingredient = useWatch({ control, name: `ingredients.${index}` });
-  const [isActionsOpen, setIsActionsOpen] = useState(false);
   const {
     attributes,
     isDragging,
@@ -49,16 +45,6 @@ export function SortableIngredientRow({
   const transformStyle = transform
     ? `translate3d(0, ${Math.round(transform.y)}px, 0) scaleX(${transform.scaleX}) scaleY(${transform.scaleY})`
     : undefined;
-
-  function move(to: number) {
-    setIsActionsOpen(false);
-    onMove(index, to);
-  }
-
-  function remove() {
-    setIsActionsOpen(false);
-    onRemove(index);
-  }
 
   return (
     <div
@@ -112,13 +98,12 @@ export function SortableIngredientRow({
 
         {count > 1 ? (
           <button
-            aria-expanded={isActionsOpen}
-            aria-label={`Ingredient ${ingredientNumber} actions`}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 active:bg-leaf-50"
-            onClick={() => setIsActionsOpen((current) => !current)}
+            aria-label={`Remove ingredient ${ingredientNumber}`}
+            className="inline-flex h-11 w-10 shrink-0 items-center justify-center rounded-lg text-red-700 active:bg-red-50"
+            onClick={() => onRemove(index)}
             type="button"
           >
-            <Ellipsis className="h-5 w-5" aria-hidden="true" />
+            <Trash2 className="h-5 w-5" aria-hidden="true" />
           </button>
         ) : null}
       </div>
@@ -178,40 +163,6 @@ export function SortableIngredientRow({
             />
           </label>
           {errors.ingredients?.[index]?.notes ? <p className="text-xs text-red-700">{errors.ingredients[index]?.notes?.message}</p> : null}
-        </div>
-      ) : null}
-
-      {isActionsOpen ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 py-2">
-          <button
-            aria-label={`Move ingredient ${ingredientNumber} up`}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 enabled:active:bg-leaf-50 disabled:text-slate-300"
-            disabled={index === 0}
-            onClick={() => move(index - 1)}
-            type="button"
-          >
-            <ArrowUp className="h-4 w-4" aria-hidden="true" />
-            Move up
-          </button>
-          <button
-            aria-label={`Move ingredient ${ingredientNumber} down`}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 enabled:active:bg-leaf-50 disabled:text-slate-300"
-            disabled={index === count - 1}
-            onClick={() => move(index + 1)}
-            type="button"
-          >
-            <ArrowDown className="h-4 w-4" aria-hidden="true" />
-            Move down
-          </button>
-          <button
-            aria-label={`Remove ingredient ${ingredientNumber}`}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold text-red-700 active:bg-red-50"
-            onClick={remove}
-            type="button"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-            Remove
-          </button>
         </div>
       ) : null}
     </div>

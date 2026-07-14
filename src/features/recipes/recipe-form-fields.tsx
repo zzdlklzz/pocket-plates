@@ -246,17 +246,7 @@ function RecipeIngredientFields() {
     ingredients.fields.length === 1 && !ingredients.fields[0]?.name ? 0 : null
   );
   const [removedIngredient, setRemovedIngredient] = useState<RemovedExpandableRow<RecipeFormValues["ingredients"][number]> | null>(null);
-  const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: { distance: 8 }
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 5 }
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
-  );
+  const sensors = useSortableRowSensors();
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (!over || active.id === over.id) {
@@ -325,7 +315,6 @@ function RecipeIngredientFields() {
                 key={field.id}
                 onDone={() => setExpandedIngredientIndex(null)}
                 onEdit={() => setExpandedIngredientIndex(index)}
-                onMove={moveIngredient}
                 onRemove={removeIngredient}
               />
             ))}
@@ -334,7 +323,7 @@ function RecipeIngredientFields() {
       </DndContext>
       {removedIngredient ? <UndoRemovalNotice label="Ingredient removed." onUndo={undoRemoveIngredient} /> : null}
       {errors.ingredients?.message ? <p className="text-sm text-red-700">{errors.ingredients.message}</p> : null}
-      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Drag ingredients or open the row menu to move them up or down.</p> : null}
+      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Press and hold a drag handle to reorder ingredients.</p> : null}
       <AddRowButton
         disabled={ingredients.fields.length >= MAX_INGREDIENTS}
         label="Add ingredient"
@@ -355,6 +344,25 @@ function RecipeStepFields() {
     steps.fields.length === 1 && !steps.fields[0]?.instruction ? 0 : null
   );
   const [removedStep, setRemovedStep] = useState<RemovedExpandableRow<RecipeFormValues["steps"][number]> | null>(null);
+  const sensors = useSortableRowSensors();
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const currentIndex = steps.fields.findIndex((field) => field.id === active.id);
+    const nextIndex = steps.fields.findIndex((field) => field.id === over.id);
+
+    if (currentIndex !== -1 && nextIndex !== -1) {
+      moveStep(currentIndex, nextIndex);
+    }
+  }
+
+  function moveStep(from: number, to: number) {
+    steps.move(from, to);
+    setExpandedStepIndex((current) => getIndexAfterMove(current, from, to));
+  }
 
   function removeStep(index: number) {
     setRemovedStep({
@@ -393,21 +401,27 @@ function RecipeStepFields() {
       <h2 className="text-sm font-semibold text-slate-800">
         Steps<span aria-hidden="true"> · {steps.fields.length}</span>
       </h2>
-      <div className="space-y-2">
-        {steps.fields.map((field, index) => (
-          <ExpandableStepRow
-            count={steps.fields.length}
-            index={index}
-            isExpanded={expandedStepIndex === index || Boolean(errors.steps?.[index])}
-            key={field.id}
-            onDone={() => setExpandedStepIndex(null)}
-            onEdit={() => setExpandedStepIndex(index)}
-            onRemove={removeStep}
-          />
-        ))}
-      </div>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} sensors={sensors}>
+        <SortableContext items={steps.fields} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {steps.fields.map((field, index) => (
+              <ExpandableStepRow
+                count={steps.fields.length}
+                fieldId={field.id}
+                index={index}
+                isExpanded={expandedStepIndex === index || Boolean(errors.steps?.[index])}
+                key={field.id}
+                onDone={() => setExpandedStepIndex(null)}
+                onEdit={() => setExpandedStepIndex(index)}
+                onRemove={removeStep}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
       {removedStep ? <UndoRemovalNotice label="Step removed." onUndo={undoRemoveStep} /> : null}
       {errors.steps?.message ? <p className="text-sm text-red-700">{errors.steps.message}</p> : null}
+      {steps.fields.length > 1 ? <p className="text-xs text-slate-500">Press and hold a drag handle to reorder steps.</p> : null}
       <AddRowButton
         disabled={steps.fields.length >= MAX_STEPS}
         label="Add step"
@@ -461,6 +475,20 @@ type RemovedRow<T> = {
 type RemovedExpandableRow<T> = RemovedRow<T> & {
   wasExpanded: boolean;
 };
+
+function useSortableRowSensors() {
+  return useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 8 }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 }
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates
+    })
+  );
+}
 
 function AddRowButton({ disabled, label, onClick }: { disabled: boolean; label: string; onClick: () => void }) {
   return (

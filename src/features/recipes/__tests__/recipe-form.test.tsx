@@ -59,7 +59,6 @@ describe("RecipeForm", () => {
     fireEvent.click(ingredients.getByRole("button", { name: "Add ingredient" }));
     expect(ingredients.getByPlaceholderText("Ingredient")).toHaveFocus();
     expect(ingredients.getByRole("heading", { name: "Ingredients" })).toHaveTextContent("Ingredients · 2");
-    fireEvent.click(ingredients.getByRole("button", { name: "Ingredient 2 actions" }));
     fireEvent.click(ingredients.getByRole("button", { name: "Remove ingredient 2" }));
     expect(ingredients.getByRole("heading", { name: "Ingredients" })).toHaveTextContent("Ingredients · 1");
 
@@ -91,7 +90,6 @@ describe("RecipeForm", () => {
     fireEvent.click(ingredients.getByRole("button", { name: "Add ingredient" }));
     fireEvent.change(ingredients.getByPlaceholderText("Ingredient"), { target: { value: "Egg" } });
     fireEvent.click(ingredients.getByRole("button", { name: "Done" }));
-    fireEvent.click(ingredients.getByRole("button", { name: "Ingredient 1 actions" }));
     fireEvent.click(ingredients.getByRole("button", { name: "Remove ingredient 1" }));
     fireEvent.click(ingredients.getByRole("button", { name: "Undo" }));
     expect(ingredients.getAllByRole("button", { name: /Edit ingredient/ }).map((button) => button.getAttribute("aria-label"))).toEqual([
@@ -111,26 +109,21 @@ describe("RecipeForm", () => {
     expect(steps.getByRole("button", { name: "Edit step 2: Serve." })).toBeInTheDocument();
   });
 
-  it("reorders ingredients with accessible move controls", () => {
+  it("uses direct delete controls and drag handles for reorderable rows", () => {
     renderRecipeForm();
 
     const ingredients = getSection("Ingredients");
-    const firstIngredient = ingredients.getByPlaceholderText("Ingredient");
-    fireEvent.change(firstIngredient, { target: { value: "Rice" } });
-    fireEvent.click(ingredients.getByRole("button", { name: "Done" }));
     fireEvent.click(ingredients.getByRole("button", { name: "Add ingredient" }));
+    expect(ingredients.getByRole("button", { name: "Drag ingredient 1" })).toHaveAttribute("aria-roledescription", "sortable");
+    expect(ingredients.getByRole("button", { name: "Drag ingredient 2" })).toBeInTheDocument();
+    expect(ingredients.getByRole("button", { name: "Remove ingredient 2" })).toHaveClass("text-red-700");
+    expect(ingredients.queryByRole("button", { name: /Ingredient \d actions/ })).not.toBeInTheDocument();
 
-    fireEvent.change(ingredients.getByPlaceholderText("Ingredient"), { target: { value: "Egg" } });
-    fireEvent.click(ingredients.getByRole("button", { name: "Done" }));
-    fireEvent.click(ingredients.getByRole("button", { name: "Ingredient 2 actions" }));
-    fireEvent.click(ingredients.getByRole("button", { name: "Move ingredient 2 up" }));
-
-    expect(ingredients.getAllByRole("button", { name: /Edit ingredient/ }).map((button) => button.getAttribute("aria-label"))).toEqual([
-      "Edit ingredient 1: Egg",
-      "Edit ingredient 2: Rice"
-    ]);
-    fireEvent.click(ingredients.getByRole("button", { name: "Ingredient 1 actions" }));
-    expect(ingredients.getByRole("button", { name: "Move ingredient 1 up" })).toBeDisabled();
+    const steps = getSection("Steps");
+    fireEvent.click(steps.getByRole("button", { name: "Add step" }));
+    expect(steps.getByRole("button", { name: "Drag step 1" })).toHaveAttribute("aria-roledescription", "sortable");
+    expect(steps.getByRole("button", { name: "Drag step 2" })).toBeInTheDocument();
+    expect(steps.getByRole("button", { name: "Remove step 2" })).toHaveClass("text-red-700");
   });
 
   it("collapses completed rows and reopens them for editing", () => {
