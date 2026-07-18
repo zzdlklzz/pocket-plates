@@ -112,6 +112,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Document Docker-backed local Supabase startup, clean migration reset, migration history, schema linting, status inspection, and shutdown.
 - [x] Centralize browser-safe Supabase environment validation while preserving separate browser, server, cookie, and middleware client factories.
 - Add Vercel deployment configuration.
+- [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 
 ### Stage 1: True MVP - Private Recipe Library
 

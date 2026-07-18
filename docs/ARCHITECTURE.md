@@ -148,6 +148,7 @@ vitest.config.mts
 - `docs/database-schema.dbml`: DBML source for dbdiagram.io.
 - `docs/database-erd.mmd`: Mermaid ERD source.
 - `docs/assets/`: generated visual references and mockups.
+- `temp/aws-migration-plan.md`: SRE-first, cost-conscious AWS migration study plan for moving the app runtime from Vercel to AWS while initially retaining Supabase.
 
 ## Server-State Rule
 
