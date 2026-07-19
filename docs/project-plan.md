@@ -52,6 +52,7 @@ Product angle:
 - Storage: Supabase Storage is planned for recipe image uploads; the current MVP accepts pasted image URLs.
 - Deployment: Vercel.
 - AWS migration runtime: production Docker image built from Next.js standalone output, with Docker Compose/Caddy planned for the later EC2 server phase.
+- AWS migration infrastructure: Terraform project in `infra/aws` for the low-cost EC2 learning lab, including VPC networking, security group rules, IAM instance role, ECR, CloudWatch log groups, EC2, optional Elastic IP, and optional AWS Budget.
 - Source control: GitHub.
 - CI/CD: GitHub Actions on Node.js 24 for checks, tests, type generation, and database migration deployment, plus Vercel builds that run lightweight verification before deployment.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
@@ -116,6 +117,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.
 - [x] Align Supabase SSR cookie handling and Docker auth redirect notes for the self-hosted runtime path.
+- [x] Add the Phase 5 Terraform project for the low-cost AWS EC2 learning environment.
 
 ### Stage 1: True MVP - Private Recipe Library
 

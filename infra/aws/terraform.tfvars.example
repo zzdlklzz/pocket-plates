@@ -1,0 +1,16 @@
+project_name = "pocketplates"
+environment  = "dev"
+aws_region   = "ap-southeast-1"
+
+# Keep SSH closed by default. Prefer Session Manager after the instance appears
+# as a managed instance in AWS Systems Manager.
+ssh_key_name    = null
+ssh_cidr_blocks = []
+
+# Set this only if you want Terraform to create an AWS Budget in addition to the
+# manual billing alerts you already configured.
+budget_alert_email       = null
+monthly_budget_limit_usd = 5
+
+# A stable Elastic IP is useful for demos but still has public IPv4 cost.
+create_elastic_ip = false

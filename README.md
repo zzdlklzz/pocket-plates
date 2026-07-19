@@ -10,6 +10,7 @@ This project folder contains the project plan, architecture diagrams, database s
 - Forms/validation: React Hook Form and Zod
 - Data fetching/cache: TanStack Query from the start, backed by Supabase repository functions
 - Hosting: Vercel free/Hobby tier
+- AWS learning deployment: Terraform-managed EC2, ECR, IAM, networking, and CloudWatch log groups for the Docker migration path
 - Backend: Supabase free tier
 - Database: Supabase Postgres
 - Auth: Supabase Auth
@@ -32,7 +33,14 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `docs/database-schema.dbml`: relational schema source for dbdiagram.io
 - `docs/assets/architecture.svg`: generated architecture diagram image
 - `docs/assets/ui-mockups.svg`: generated mobile UI mockups
+- `infra/aws/`: Terraform project for the low-cost AWS EC2 learning deployment
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`: initial Supabase schema and RLS migration draft
+
+## AWS Terraform Lab
+
+The AWS migration path now has Phase 5 infrastructure code in `infra/aws/`. It provisions a small, destroyable AWS lab for the Dockerized app: a dedicated VPC, public subnet, internet routing, security group, EC2 Docker host, instance role, ECR repository, CloudWatch log groups, and an optional AWS Budget.
+
+Start with `infra/aws/README.md`. The Terraform stack does not deploy the PocketPlates container yet; later phases push the Docker image to ECR and run it on the EC2 host through Docker Compose and Caddy.
 
 ## MVP Screens
 

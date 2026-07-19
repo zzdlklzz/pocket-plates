@@ -17,6 +17,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Storage: Supabase Storage for future recipe images.
 - Hosting: Vercel.
 - Containerization: production Docker image for the AWS migration path, using Next.js standalone output.
+- AWS infrastructure lab: Terraform-managed VPC, public subnet, security group, EC2 Docker host, IAM instance profile, ECR repository, CloudWatch log groups, and optional AWS Budget under `infra/aws`.
 - CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments that run lightweight verification before building.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
 - Testing: Vitest 4 for unit/integration tests and Playwright for E2E tests.
@@ -144,6 +145,7 @@ vitest.config.mts
 
 - `README.md`: short repository entry point and file index.
 - `Dockerfile` and `.dockerignore`: production image build inputs for the AWS migration path.
+- `infra/aws/`: Phase 5 Terraform project for the low-cost AWS EC2 learning environment.
 - `docs/ARCHITECTURE.md`: authoritative system architecture, features, setup, and onboarding guide.
 - `docs/project-plan.md`: product plan, roadmap, and implementation priorities.
 - `docs/changelog/`: chronological implementation notes for each completed change slice.
@@ -277,6 +279,49 @@ http://localhost:3000/auth/callback
 ```
 
 If Google sign-in returns to the Vercel deployment instead, keep Google Cloud Console unchanged and add the Docker callback URL to Supabase Auth redirect URLs. Google redirects to Supabase first; Supabase redirects back to the app URL.
+
+### AWS Terraform Lab
+
+Phase 5 of the AWS migration path lives in `infra/aws/`. It creates the infrastructure needed for the first low-cost EC2 deployment lab, while Vercel remains the stable app host and Supabase remains the auth/database backend.
+
+Created Terraform files:
+
+| File | What it does |
+| --- | --- |
+| `versions.tf` | Requires Terraform 1.6+ and pins the AWS provider to the 5.x line for predictable behavior. |
+| `providers.tf` | Sets the AWS region and default tags shared by supported resources. |
+| `variables.tf` | Defines configurable inputs for naming, region, networking, EC2 size, SSH access, ECR behavior, log retention, and optional budget alerts. |
+| `main.tf` | Creates the VPC, public subnet, internet gateway, route table, security group, IAM role/profile, ECR repository/lifecycle policy, CloudWatch log groups, EC2 host, optional Elastic IP, and optional AWS Budget. |
+| `outputs.tf` | Prints the EC2 instance ID, public URL, ECR repository URL, log group names, and Session Manager command after apply. |
+| `user-data.sh` | Runs on first EC2 boot to install Docker, attempt CloudWatch agent installation, start Docker, and prepare `/opt/pocketplates`. |
+| `terraform.tfvars.example` | Shows safe local overrides without real account details or secrets. |
+| `README.md` | Documents the Terraform workflow, design choices, cost warnings, and destroy procedure. |
+
+The stack intentionally avoids NAT Gateway, Application Load Balancer, RDS, ECS, and EKS. The first AWS lab is one public EC2 instance running Docker, with Caddy and Compose added in the next deployment phase. SSH is closed by default; set `ssh_key_name` and `ssh_cidr_blocks` only if you intentionally want SSH from a specific IP. Otherwise, use AWS Systems Manager Session Manager after the instance registers.
+
+Run the Terraform review workflow from the repo:
+
+```bash
+cd infra/aws
+terraform init
+terraform fmt
+terraform validate
+terraform plan
+```
+
+Only create the lab after checking the plan:
+
+```bash
+terraform apply
+```
+
+Destroy the lab after a learning session:
+
+```bash
+terraform destroy
+```
+
+Keep local Terraform state and variable files out of Git. `.gitignore` excludes `.terraform/`, `*.tfstate`, `*.tfvars`, and crash logs while allowing `terraform.tfvars.example`.
 
 ### Local Supabase Database Verification
 

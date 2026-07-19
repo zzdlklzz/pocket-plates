@@ -8,6 +8,13 @@ dist/
 playwright-report/
 test-results/
 *.tsbuildinfo
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
 supabase/.temp/
 .codex/*
 !.codex/AGENTS.md
