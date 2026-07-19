@@ -51,6 +51,7 @@ Product angle:
 - Auth: Supabase Auth with email/password and Google OAuth.
 - Storage: Supabase Storage is planned for recipe image uploads; the current MVP accepts pasted image URLs.
 - Deployment: Vercel.
+- AWS migration runtime: production Docker image built from Next.js standalone output, with Docker Compose/Caddy planned for the later EC2 server phase.
 - Source control: GitHub.
 - CI/CD: GitHub Actions on Node.js 24 for checks, tests, type generation, and database migration deployment, plus Vercel builds that run lightweight verification before deployment.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
@@ -113,6 +114,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Centralize browser-safe Supabase environment validation while preserving separate browser, server, cookie, and middleware client factories.
 - Add Vercel deployment configuration.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
+- [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.
 
 ### Stage 1: True MVP - Private Recipe Library
 

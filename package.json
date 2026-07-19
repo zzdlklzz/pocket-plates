@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "docker:build": "set -a; . ./.env.local; set +a; docker build --build-arg NEXT_PUBLIC_SUPABASE_URL --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY -t pocketplates:local .",
+    "docker:run": "docker run --rm -p 3000:3000 --env-file .env.local pocketplates:local",
     "verify": "npm run lint && npm run typecheck && npm run test",
     "start": "next start",
     "lint": "eslint .",

@@ -16,6 +16,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Auth: Supabase Auth with open email sign-up and Google OAuth.
 - Storage: Supabase Storage for future recipe images.
 - Hosting: Vercel.
+- Containerization: production Docker image for the AWS migration path, using Next.js standalone output.
 - CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments that run lightweight verification before building.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
 - Testing: Vitest 4 for unit/integration tests and Playwright for E2E tests.
@@ -142,6 +143,7 @@ vitest.config.mts
 ## Documentation Organization
 
 - `README.md`: short repository entry point and file index.
+- `Dockerfile` and `.dockerignore`: production image build inputs for the AWS migration path.
 - `docs/ARCHITECTURE.md`: authoritative system architecture, features, setup, and onboarding guide.
 - `docs/project-plan.md`: product plan, roadmap, and implementation priorities.
 - `docs/changelog/`: chronological implementation notes for each completed change slice.
@@ -241,6 +243,32 @@ If Playwright browsers are missing:
 ```bash
 npx playwright install
 ```
+
+### Production Docker Image
+
+The AWS migration path uses a production Docker image built from Next.js standalone output. The image build requires:
+
+- `next.config.mjs` with `output: "standalone"`.
+- `Dockerfile`.
+- `.dockerignore`.
+
+Docker Compose and a dev container are not required for the first Phase 4 image build. Compose is introduced later for the EC2 server layout with Caddy.
+
+Build the local image with the browser-safe Supabase values as build arguments:
+
+Start Docker Desktop first. Then run:
+
+```bash
+npm run docker:build
+```
+
+Run the container with runtime environment variables:
+
+```bash
+npm run docker:run
+```
+
+The `docker:build` script reads the public Supabase values from `.env.local` and passes them as Docker build args. Open `http://localhost:3000` to verify the container responds. Do not copy `.env.local` into the image; `.dockerignore` excludes env files from the Docker build context.
 
 ### Local Supabase Database Verification
 
