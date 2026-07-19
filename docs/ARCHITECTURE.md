@@ -303,22 +303,29 @@ Run the Terraform review workflow from the repo:
 
 ```bash
 cd infra/aws
+aws configure set region ap-southeast-1
+aws login
+aws configure set profile.pocketplates-terraform.region ap-southeast-1
+aws configure set profile.pocketplates-terraform.credential_process "aws configure export-credentials --profile default --format process"
+AWS_PROFILE=pocketplates-terraform aws sts get-caller-identity
 terraform init
 terraform fmt
 terraform validate
-terraform plan
+AWS_PROFILE=pocketplates-terraform terraform plan
 ```
+
+Use `aws login` for the local Terraform workflow. It gives the AWS CLI temporary credentials from your AWS Console session and avoids long-lived access keys. `aws configure set region ap-southeast-1` sets the default region before login and planning. The `pocketplates-terraform` profile uses `credential_process` so Terraform can ask the AWS CLI for the same temporary credentials. Do not run `aws configure export-credentials` directly because it prints temporary credentials. `AWS_PROFILE=pocketplates-terraform aws sts get-caller-identity` confirms the signed-in AWS principal before Terraform talks to AWS.
 
 Only create the lab after checking the plan:
 
 ```bash
-terraform apply
+AWS_PROFILE=pocketplates-terraform terraform apply
 ```
 
 Destroy the lab after a learning session:
 
 ```bash
-terraform destroy
+AWS_PROFILE=pocketplates-terraform terraform destroy
 ```
 
 Keep local Terraform state and variable files out of Git. `.gitignore` excludes `.terraform/`, `*.tfstate`, `*.tfvars`, and crash logs while allowing `terraform.tfvars.example`.

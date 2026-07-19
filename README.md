@@ -40,7 +40,7 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 
 The AWS migration path now has Phase 5 infrastructure code in `infra/aws/`. It provisions a small, destroyable AWS lab for the Dockerized app: a dedicated VPC, public subnet, internet routing, security group, EC2 Docker host, instance role, ECR repository, CloudWatch log groups, and an optional AWS Budget.
 
-Start with `infra/aws/README.md`. The Terraform stack does not deploy the PocketPlates container yet; later phases push the Docker image to ECR and run it on the EC2 host through Docker Compose and Caddy.
+Start with `infra/aws/README.md`. The documented setup uses `aws configure set region ap-southeast-1`, `aws login`, and a local `pocketplates-terraform` process-credentials profile for Terraform review commands. The Terraform stack does not deploy the PocketPlates container yet; later phases push the Docker image to ECR and run it on the EC2 host through Docker Compose and Caddy.
 
 ## MVP Screens
 
