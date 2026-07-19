@@ -115,6 +115,7 @@ Goal: create a deployable skeleton before building feature depth.
 - Add Vercel deployment configuration.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.
+- [x] Align Supabase SSR cookie handling and Docker auth redirect notes for the self-hosted runtime path.
 
 ### Stage 1: True MVP - Private Recipe Library
 

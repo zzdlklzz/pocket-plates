@@ -8,6 +8,8 @@ The app now supports a Next.js standalone Docker build that can be run locally b
 
 The local Docker workflow is exposed through `npm run docker:build` and `npm run docker:run` so the browser-safe Supabase values can be read from `.env.local` instead of being typed into every build command.
 
+Supabase SSR cookie handling now provides `setAll` for the server client as well as the cookie-writing client, with Server Component cookie writes safely ignored because middleware refreshes sessions. The AWS migration plan also documents why Google sign-in can return to Vercel during Docker testing unless the Docker callback URL is added to Supabase Auth redirect URLs.
+
 ## Why
 
 The AWS migration plan needs a reproducible app runtime artifact before EC2, ECR, CI/CD, CloudWatch, and rollback work can be built safely around it. A standalone Next.js image keeps the runtime smaller and avoids copying local env files into the image.
@@ -24,6 +26,7 @@ Modified:
 
 - `package.json`
 - `next.config.mjs`
+- `src/lib/supabase/server.ts`
 - `docs/ARCHITECTURE.md`
 - `docs/project-plan.md`
 - `temp/aws-migration-plan.md`
@@ -45,6 +48,10 @@ Deleted:
 │   └── project-plan.md
 ├── next.config.mjs
 ├── package.json
+├── src
+│   └── lib
+│       └── supabase
+│           └── server.ts
 └── temp
     └── aws-migration-plan.md
 ```
@@ -59,4 +66,5 @@ flowchart LR
     env["Runtime env file"] --> run["Docker run"]
     image --> run
     run --> app["Next.js standalone server on port 3000"]
+    app --> auth["Supabase Auth callback allow list"]
 ```

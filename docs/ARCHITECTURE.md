@@ -270,6 +270,14 @@ npm run docker:run
 
 The `docker:build` script reads the public Supabase values from `.env.local` and passes them as Docker build args. Open `http://localhost:3000` to verify the container responds. Do not copy `.env.local` into the image; `.dockerignore` excludes env files from the Docker build context.
 
+For Docker auth testing, Supabase must allow the container callback URL:
+
+```txt
+http://localhost:3000/auth/callback
+```
+
+If Google sign-in returns to the Vercel deployment instead, keep Google Cloud Console unchanged and add the Docker callback URL to Supabase Auth redirect URLs. Google redirects to Supabase first; Supabase redirects back to the app URL.
+
 ### Local Supabase Database Verification
 
 Local Supabase requires Docker Desktop. Start Docker before running the CLI commands below. The project already contains `supabase/config.toml`; only run `npx supabase init` in a new checkout if that file is missing.
