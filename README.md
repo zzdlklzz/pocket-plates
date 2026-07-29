@@ -27,20 +27,21 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 ## Included Files
 
 - `docs/ARCHITECTURE.md`: current app architecture, feature, and setup guide
+- `docs/aws-migration-learning-plan.md`: AWS migration refresher, manual setup checklist, minimal learning architecture, and next steps
 - `docs/project-plan.md`: consolidated MVP, stack, CI/CD, testing, email, migration, DTO, and UI plan
 - `docs/architecture.mmd`: editable Mermaid architecture diagram source
 - `docs/database-erd.mmd`: editable Mermaid database ERD source
 - `docs/database-schema.dbml`: relational schema source for dbdiagram.io
-- `docs/assets/architecture.svg`: generated architecture diagram image
+- `docs/assets/architecture.svg`: generated current app architecture image
 - `docs/assets/ui-mockups.svg`: generated mobile UI mockups
 - `infra/aws/`: Terraform project for the low-cost AWS EC2 learning deployment
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`: initial Supabase schema and RLS migration draft
 
 ## AWS Terraform Lab
 
-The AWS migration path now has Phase 5 infrastructure code in `infra/aws/`. It provisions a small, destroyable AWS lab for the Dockerized app: a dedicated VPC, public subnet, internet routing, security group, EC2 Docker host, instance role, ECR repository, CloudWatch log groups, and an optional AWS Budget.
+Use `docs/aws-migration-learning-plan.md` as the AWS refresher. It tracks what is known to be complete, what must be verified manually in the AWS Console, and the minimal Terraform architecture to build first in `infra/test/`.
 
-Start with `infra/aws/README.md`. The documented setup uses `aws configure set region ap-southeast-1`, `aws login`, and a local `pocketplates-terraform` process-credentials profile for Terraform review commands. The Terraform stack does not deploy the PocketPlates container yet; later phases push the Docker image to ECR and run it on the EC2 host through Docker Compose and Caddy.
+The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implementation. Treat it as a future comparison point, not the beginner starting point. The beginner path is intentionally smaller: VPC, one public subnet, internet gateway, route table, security group, EC2, then IAM and CloudWatch when ready.
 
 ## MVP Screens
 

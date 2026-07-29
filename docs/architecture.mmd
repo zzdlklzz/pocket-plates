@@ -41,3 +41,21 @@ flowchart TD
 
     AC["Supabase custom SMTP"] --> H
     AD["Gmail / Google Workspace or transactional provider"] --> AC
+
+    subgraph AWSL["AWS learning path"]
+        AT["infra/test beginner Terraform sandbox"]
+        AV["Minimal VPC + public subnet"]
+        AI["Internet gateway + route table"]
+        AS["Security group"]
+        AE2["One EC2 instance"]
+        ACW["CloudWatch basics later"]
+        AR["infra/aws fuller reference implementation"]
+    end
+
+    AT --> AV
+    AV --> AI
+    AI --> AS
+    AS --> AE2
+    AE2 --> ACW
+    AT -.->|compare later| AR
+    AE2 --> H

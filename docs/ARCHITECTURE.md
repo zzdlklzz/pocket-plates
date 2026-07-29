@@ -17,7 +17,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Storage: Supabase Storage for future recipe images.
 - Hosting: Vercel.
 - Containerization: production Docker image for the AWS migration path, using Next.js standalone output.
-- AWS infrastructure lab: Terraform-managed VPC, public subnet, security group, EC2 Docker host, IAM instance profile, ECR repository, CloudWatch log groups, and optional AWS Budget under `infra/aws`.
+- AWS learning path: begin with a minimal Terraform sandbox in `infra/test`, then compare against the fuller reference implementation in `infra/aws`.
 - CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments that run lightweight verification before building.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
 - Testing: Vitest 4 for unit/integration tests and Playwright for E2E tests.
@@ -145,14 +145,15 @@ vitest.config.mts
 
 - `README.md`: short repository entry point and file index.
 - `Dockerfile` and `.dockerignore`: production image build inputs for the AWS migration path.
-- `infra/aws/`: Phase 5 Terraform project for the low-cost AWS EC2 learning environment.
+- `docs/aws-migration-learning-plan.md`: AWS migration refresher, manual setup checklist, minimal learning architecture, and next-step plan.
+- `infra/aws/`: fuller Phase 5 Terraform reference implementation for the low-cost AWS EC2 learning environment.
 - `docs/ARCHITECTURE.md`: authoritative system architecture, features, setup, and onboarding guide.
 - `docs/project-plan.md`: product plan, roadmap, and implementation priorities.
 - `docs/changelog/`: chronological implementation notes for each completed change slice.
 - `docs/database-schema.dbml`: DBML source for dbdiagram.io.
 - `docs/database-erd.mmd`: Mermaid ERD source.
 - `docs/assets/`: generated visual references and mockups.
-- `temp/aws-migration-plan.md`: SRE-first, cost-conscious AWS migration study plan for moving the app runtime from Vercel to AWS while initially retaining Supabase.
+- `infra/test/`: planned beginner Terraform sandbox. This folder is intentionally created by hand during the learning path.
 
 ## Server-State Rule
 
@@ -280,11 +281,58 @@ http://localhost:3000/auth/callback
 
 If Google sign-in returns to the Vercel deployment instead, keep Google Cloud Console unchanged and add the Docker callback URL to Supabase Auth redirect URLs. Google redirects to Supabase first; Supabase redirects back to the app URL.
 
-### AWS Terraform Lab
+### AWS Learning Deployment
 
-Phase 5 of the AWS migration path lives in `infra/aws/`. It creates the infrastructure needed for the first low-cost EC2 deployment lab, while Vercel remains the stable app host and Supabase remains the auth/database backend.
+The AWS migration is now documented as a learning path rather than an immediate production replacement. Vercel remains the stable app host and Supabase remains the auth/database backend.
 
-Created Terraform files:
+Start with `docs/aws-migration-learning-plan.md` when returning to this work. That file records what is known to be complete, what must be verified manually in the AWS Console, and what to build next.
+
+The intended beginner architecture is:
+
+```mermaid
+flowchart TD
+    user["Your browser"] --> internet["Internet"]
+
+    subgraph aws["AWS account"]
+        subgraph vpc["One VPC"]
+            igw["Internet Gateway"]
+            route["Public route table"]
+            subnet["One public subnet"]
+            sg["Security group"]
+            ec2["One EC2 instance"]
+        end
+
+        iam["Basic EC2 IAM role"]
+        logs["CloudWatch basics"]
+    end
+
+    internet --> sg
+    sg --> ec2
+    igw --> route
+    route --> subnet
+    subnet --> ec2
+    iam --> ec2
+    ec2 --> logs
+    ec2 --> supabase["Existing Supabase Auth + Postgres"]
+```
+
+Build this first in `infra/test/`:
+
+```txt
+infra/test/
+  versions.tf
+  providers.tf
+  main.tf
+  variables.tf
+  outputs.tf
+  README.md
+```
+
+Postpone ECR, Docker Compose, Caddy, HTTPS, Elastic IP, Route 53, GitHub Actions deployment, ALB, NAT Gateway, ECS, and EKS until the basic EC2/VPC path makes sense.
+
+`infra/aws/` still exists as a fuller Phase 5 reference implementation. It is useful for comparison later, but it is no longer the recommended first place to learn Terraform.
+
+The fuller reference implementation in `infra/aws/` contains:
 
 | File | What it does |
 | --- | --- |

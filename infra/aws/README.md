@@ -1,8 +1,10 @@
 # PocketPlates AWS Terraform Lab
 
-This folder contains the Phase 5 Terraform project for the PocketPlates AWS learning deployment. It creates the low-cost infrastructure needed to host the Dockerized Next.js app on one public EC2 instance while Supabase remains the auth and database backend.
+This folder contains the fuller Phase 5 Terraform reference implementation for the PocketPlates AWS learning deployment. It creates the low-cost infrastructure needed to host the Dockerized Next.js app on one public EC2 instance while Supabase remains the auth and database backend.
 
-The AWS stack is intended to be temporary and reproducible. Create it for a practice session, deploy and test the app in later phases, then destroy it when you are done.
+If you are learning Terraform from scratch, start with `docs/aws-migration-learning-plan.md` and create your own smaller `infra/test/` sandbox first. Treat this folder as a reference to compare against later, not as the first file set you need to understand.
+
+The AWS stack here is intended to be temporary and reproducible. Create it for a practice session, deploy and test the app in later phases, then destroy it when you are done.
 
 ## What Terraform Creates
 

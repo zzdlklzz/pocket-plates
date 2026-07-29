@@ -51,8 +51,8 @@ Product angle:
 - Auth: Supabase Auth with email/password and Google OAuth.
 - Storage: Supabase Storage is planned for recipe image uploads; the current MVP accepts pasted image URLs.
 - Deployment: Vercel.
-- AWS migration runtime: production Docker image built from Next.js standalone output, with Docker Compose/Caddy planned for the later EC2 server phase.
-- AWS migration infrastructure: Terraform project in `infra/aws` for the low-cost EC2 learning lab, including VPC networking, security group rules, IAM instance role, ECR, CloudWatch log groups, EC2, optional Elastic IP, and optional AWS Budget.
+- AWS migration runtime: production Docker image built from Next.js standalone output, with the first AWS work focused on learning the infrastructure basics before deploying the app.
+- AWS migration infrastructure: beginner Terraform sandbox planned for `infra/test`, starting with VPC, one public subnet, internet routing, security group, and one EC2 instance; `infra/aws` remains a fuller reference implementation for later comparison.
 - Source control: GitHub.
 - CI/CD: GitHub Actions on Node.js 24 for checks, tests, type generation, and database migration deployment, plus Vercel builds that run lightweight verification before deployment.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
@@ -92,7 +92,8 @@ Main runtime flow:
 Architecture files:
 
 - `docs/architecture.mmd`: editable Mermaid architecture source.
-- `docs/assets/architecture.svg`: generated architecture image.
+- `docs/assets/architecture.svg`: generated current app architecture image.
+- `docs/aws-migration-learning-plan.md`: AWS migration refresher, manual setup checklist, minimal learning architecture, and next-step plan.
 - `docs/database-erd.mmd`: editable Mermaid database ERD.
 - `docs/database-schema.dbml`: DBML schema source for dbdiagram.io.
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`: initial Supabase migration draft.
@@ -118,6 +119,8 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.
 - [x] Align Supabase SSR cookie handling and Docker auth redirect notes for the self-hosted runtime path.
 - [x] Add the Phase 5 Terraform project for the low-cost AWS EC2 learning environment.
+- [x] Reframe the AWS migration path around a minimal beginner Terraform sandbox and tracked manual setup checklist.
+- [ ] Create the `infra/test` beginner Terraform sandbox by hand and build the minimal AWS architecture one resource type at a time.
 
 ### Stage 1: True MVP - Private Recipe Library
 
