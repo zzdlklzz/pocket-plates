@@ -52,13 +52,20 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 
 ## Future Features
 
+- Archived recipe library with restore actions
+- Supabase Storage image uploads
+- Effort/time filters such as quick, make-ahead, one-pot, and low-cleanup
+- Equipment filters such as rice cooker, microwave, stovetop, and no oven
+- Student-friendly tags such as budget, high-protein, freezer-friendly, and dorm-friendly
+- Ingredient-name search
 - Weekly meal prep planner
 - Grocery list from selected recipes
 - Serving scaler
-- Cost estimate per serving
-- Beginner difficulty ratings
+- Optional total-cost entry and estimated cost per serving
+- Pantry and staple tracking
+- Recipe duplication and favorites
 - Public recipe discovery
-- Equipment filters such as rice cooker, microwave, stovetop, no oven
-- Exchange-friendly tags such as cheap, one-pot, freezer-friendly, dorm-friendly
-- Icon-based recipe placeholders
+- Recipe import from pasted text or supported links
 - Nutrition/macros
+- Personalized recommendations and beginner onboarding
+- Collections and themed recipe packs

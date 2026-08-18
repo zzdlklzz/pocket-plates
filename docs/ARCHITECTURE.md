@@ -205,6 +205,19 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - `recipe.errors.ts` maps Supabase, PostgREST, Auth, Storage, network, and unknown failures into safe user-facing messages. Recipe list, detail, edit, save, and archive screens show the classified message without exposing raw table names, RLS policy details, constraint names, or backend error text.
 - Save and archive actions show spinner-backed pending labels, disable repeat clicks while the mutation runs, and stay busy through the redirect handoff. The recipe form also disables its editable fields and row controls while saving so a user cannot change the recipe mid-submit. Route-level and query-level loading states reuse recipe skeleton components for the library, detail, and form screens so mobile navigation gives immediate visual feedback instead of plain loading text.
 
+## Archive Lifecycle
+
+The current archive action is reversible at the data level: `recipe.repository.ts` sets `recipes.archived_at`, while active recipe list and detail queries require `archived_at` to be null. Archiving does not delete the recipe row or its child records. However, the current UI has no archived-recipes page or restore mutation, so an archived recipe cannot yet be recovered through the app.
+
+The next archive slice should add an owner-scoped Archived Recipes page and a Restore action that clears `archived_at` and refreshes both active and archived query caches. Archive and permanent deletion must remain separate concepts. Permanent deletion is not part of this slice; if it is introduced later, it must use an explicit confirmation dialog that communicates that the action cannot be undone.
+
+```mermaid
+flowchart LR
+    active["Active recipe library"] -->|Archive| archived["Archived Recipes page"]
+    archived -->|Restore and clear archived_at| active
+    archived -.->|Future permanent delete only after confirmation| deleted["Permanently deleted"]
+```
+
 ## Local Setup
 
 1. Install dependencies:
@@ -547,7 +560,7 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 ## Implementation Roadmap
 
 1. Stage 0: foundation, app shell, CI, tests, Supabase boundary, TanStack Query setup.
-2. Stage 1: true MVP private recipe library.
+2. Stage 1: true MVP private recipe library, followed by archived recipe viewing and restoration.
 3. Stage 2: student-friendly filters, cost, difficulty, equipment, tags, ingredient search.
 4. Stage 3: meal planning, grocery lists, serving scaling, pantry/cost features.
 5. Stage 4: public/shared recipe discovery.

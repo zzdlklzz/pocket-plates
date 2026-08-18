@@ -157,14 +157,13 @@ Stage 1 implementation slices:
 - [x] Reversible repeating-row removal: expose the step row's only destructive action directly and allow removed sources, ingredients, and steps to be restored at their original positions before save.
 - [x] Handle-only row reordering: replace ingredient overflow actions with direct deletion, add step drag handles, and persist both ingredient and step array order through their existing sort order fields.
 - [x] Positional removal undo: render each Undo action at the deleted source, ingredient, or step row's former position.
-- [ ] iPhone recipe form input zoom: keep editable controls at 16px or larger on mobile, verify narrow grids with the keyboard open, and preserve browser zoom accessibility.
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
+- [ ] Archived recipe recovery: add an Archived Recipes page reachable from the library, list the signed-in user's soft-archived recipes, and allow each recipe to be restored to the active library.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
 - [x] Recipe filter UI refactor: extract reusable meal-type controls and the filter dialog while keeping query and filter state in the recipe library.
 - [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
 - [x] Multiple recipe sources: add, edit, order, label, validate, persist, and display up to five source URLs while preserving legacy single-source reads.
-- [ ] Supabase SMTP repair: replace the rejected Gmail SMTP credentials or app password in the Supabase dashboard, then retest email signup.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
 
@@ -188,8 +187,8 @@ Goal: help users turn recipes into weekly cooking decisions.
 - Grocery list generated from selected recipes.
 - Serving scaler.
 - Pantry and staple-item tracking.
-- Estimated cost per serving, with cost rating derived from total SGD cost and servings.
-- Recipe duplication, archiving, and favorites.
+- Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
+- Recipe duplication and favorites.
 
 ### Stage 4: Community Recipe Discovery
 
@@ -207,7 +206,7 @@ Goal: let users discover recipes created by others while keeping private recipes
 
 Goal: improve quality, convenience, and personalization.
 
-- Recipe import from pasted text or supported links.
+- Provider-independent recipe import from pasted text or supported links, with a review-and-edit step before saving.
 - Nutrition/macros.
 - Personalized recommendations.
 - Better onboarding for beginner cooks.
@@ -434,9 +433,22 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 - Cost estimate per serving, derived from optional total SGD cost and serving count.
 - Pantry tracking.
 - Dorm/exchange filters.
-- Icon-based recipe placeholders using Lucide React and meal/tag-based color treatments.
 - Nutrition/macros.
-- Recipe import from pasted text or supported links.
+- Provider-independent recipe import from pasted text or supported links, with a review-and-edit step before saving.
+
+## Upcoming Recipe Library Slice
+
+### Archived Recipe Recovery
+
+The current archive action is a soft archive: it sets `recipes.archived_at` and hides the recipe from active library and detail queries. The row and its ingredients, steps, meal types, and source links remain in the database, but the app does not yet provide a way to view or restore it. The intended implementation should:
+
+- Add an Archived Recipes page, such as `/recipes/archived`, that is reachable from the active recipe library.
+- Query only the signed-in user's rows where `archived_at` is not null, relying on the existing owner-scoped Row Level Security boundary.
+- Show enough recipe information to identify an archived item and provide a clear Restore action.
+- Restore a recipe by setting `archived_at` back to null, then invalidate both active and archived recipe query caches.
+- Keep archive terminology distinct from permanent deletion so users understand that archived recipes are recoverable.
+- Keep permanent deletion out of the archive-recovery slice. If permanent deletion is added later, present a confirmation dialog that names the recipe, explains that the action cannot be undone, and requires explicit confirmation before deleting the row.
+- Add repository, query, UI, and end-to-end coverage for listing and restoring archived recipes.
 
 ## Upcoming Recipe Form Slices
 
@@ -460,6 +472,7 @@ Replace the current pasted Image URL field with an upload flow. The intended imp
 Replace manual cost rating entry with optional total-cost entry once the product is ready for cost-aware planning. The intended implementation should:
 
 - Add an optional Total cost (SGD) input with two-decimal currency validation.
+- Allow the field to remain blank without blocking recipe creation or editing; store null and do not derive a cost rating when no total cost is supplied.
 - Use servings to compute an estimated cost per serving in the form.
 - Derive the existing cost rating from cost per serving instead of trusting a manually selected label.
 - Use `recipes.estimated_total_cost` for the entered total and keep `recipes.cost_rating` as the derived stored value for filtering.
