@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { AppPageShell } from "@/components/ui/app-page-shell";
+import { InlineNotice } from "@/components/ui/inline-notice";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { toRecipeFormValues } from "./recipe.mappers";
 import { useRecipeDetail } from "./recipe.queries";
@@ -20,14 +22,14 @@ export function RecipeEdit({ id }: RecipeEditProps) {
 
   if (error || !recipe) {
     return (
-      <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 py-8 shadow-sm">
-        <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <AppPageShell spacing="compact">
+        <InlineNotice tone="neutral">
           {error ? getRecipeErrorMessage(error, "loadDetail") : "We could not find this recipe."}
-        </p>
+        </InlineNotice>
         <Link className="mt-4 inline-flex text-sm font-semibold text-leaf-700" href="/">
           Back to library
         </Link>
-      </main>
+      </AppPageShell>
     );
   }
 

@@ -4,6 +4,8 @@ import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
+import { AppPageShell } from "@/components/ui/app-page-shell";
+import { InlineNotice } from "@/components/ui/inline-notice";
 import { SignOutButton } from "@/features/auth/sign-out-button";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { RecipeFilterDialog, RecipeMealTypeFilters } from "./recipe-filters";
@@ -53,7 +55,7 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 pb-24 pt-8 shadow-sm">
+    <AppPageShell>
       <header className="space-y-4 rounded-b-3xl bg-leaf-100 px-4 pb-5 pt-2">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -96,11 +98,7 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
             <RecipeGridSkeleton />
           </div>
         ) : null}
-        {error ? (
-          <p className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-            {getRecipeErrorMessage(error, "loadList")}
-          </p>
-        ) : null}
+        {error ? <InlineNotice tone="error">{getRecipeErrorMessage(error, "loadList")}</InlineNotice> : null}
         {!isLoading && !error && recipes.length === 0 ? (
           <div className="rounded-lg border border-slate-200 bg-white p-5 text-center">
             <p className="text-sm font-semibold text-slate-800">No recipes yet</p>
@@ -137,6 +135,6 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
           Filter{activeFilterCount ? ` ${activeFilterCount}` : ""}
         </button>
       </nav>
-    </main>
+    </AppPageShell>
   );
 }

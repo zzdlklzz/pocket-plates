@@ -1,6 +1,9 @@
 import { KeyRound } from "lucide-react";
 import { redirect } from "next/navigation";
+import { AppPageShell } from "@/components/ui/app-page-shell";
+import { InlineNotice } from "@/components/ui/inline-notice";
 import { updatePassword } from "@/features/auth/auth.actions";
+import { AuthHero } from "@/features/auth/auth-hero";
 import { AuthSubmitButton } from "@/features/auth/auth-submit-button";
 import { AUTH_SEARCH_PARAM, getAuthMessage } from "@/features/auth/auth.constants";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -25,20 +28,17 @@ export default async function UpdatePasswordPage({ searchParams }: UpdatePasswor
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center bg-[#fffdf8] px-5 py-8 shadow-sm">
+    <AppPageShell className="flex flex-col justify-center" spacing="compact">
       <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="rounded-b-3xl bg-leaf-100 px-4 pb-6 pt-5">
-          <p className="text-sm font-semibold text-leaf-700">PocketPlates</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900">Choose a new password.</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Use at least 6 characters. You will sign in again after the password is updated.
-          </p>
-        </div>
+        <AuthHero
+          description="Use at least 6 characters. You will sign in again after the password is updated."
+          title="Choose a new password."
+        />
 
         {authMessage ? (
-          <p className="mt-4 rounded-lg border border-leaf-100 bg-leaf-50 px-3 py-2 text-sm text-slate-700">
+          <InlineNotice className="mt-4" padding="slim" tone="info">
             {authMessage}
-          </p>
+          </InlineNotice>
         ) : null}
 
         <form action={updatePassword} className="mt-4 space-y-3">
@@ -59,6 +59,6 @@ export default async function UpdatePasswordPage({ searchParams }: UpdatePasswor
           </AuthSubmitButton>
         </form>
       </section>
-    </main>
+    </AppPageShell>
   );
 }

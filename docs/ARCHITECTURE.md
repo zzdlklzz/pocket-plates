@@ -96,10 +96,20 @@ src/
         page.tsx
       new/
         page.tsx
+  components/
+    ui/
+      __tests__/
+        shared-ui.test.tsx
+      action-button.tsx
+      app-page-shell.tsx
+      back-link.tsx
+      inline-notice.tsx
+      selectable-chip.tsx
   features/
     auth/
       auth.actions.ts
       auth.constants.ts
+      auth-hero.tsx
       auth-panel.tsx
       auth-submit-button.tsx
       sign-out-button.tsx
@@ -157,6 +167,18 @@ vitest.config.mts
 - `docs/database-erd.mmd`: Mermaid ERD source.
 - `docs/assets/`: generated visual references and mockups.
 - `infra/test/`: planned beginner Terraform sandbox. This folder is intentionally created by hand during the learning path.
+
+## Shared UI Boundary
+
+Small, application-wide presentation components live under `src/components/ui`:
+
+- `app-page-shell.tsx` owns the mobile-width page background, horizontal spacing, shadow, and the two established vertical-spacing modes used by full screens and compact error/auth screens.
+- `action-button.tsx` owns primary, secondary, and danger button presentation plus explicit pending rendering. Feature components still own where pending state comes from: `AuthSubmitButton` reads server-form status, while recipe screens pass TanStack Query and redirect state.
+- `selectable-chip.tsx` owns selected-state accessibility and the tinted or plain chip treatments used by recipe forms and filters.
+- `inline-notice.tsx` owns error, informational, and neutral notice treatments with the established padding densities.
+- `back-link.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
+
+Feature-specific components remain with their domain. `auth-hero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `recipe-card.tsx` remains the reusable recipe summary card and should also serve future archived-recipe results. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
 
 ## Server-State Rule
 

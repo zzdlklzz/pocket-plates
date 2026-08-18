@@ -3,6 +3,8 @@
 import { Chrome, KeyRound, Mail, RotateCw, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { AppPageShell } from "@/components/ui/app-page-shell";
+import { InlineNotice } from "@/components/ui/inline-notice";
 import {
   resendConfirmationEmail,
   sendPasswordResetEmail,
@@ -11,6 +13,7 @@ import {
   signUpWithEmail
 } from "./auth.actions";
 import { AuthSubmitButton } from "./auth-submit-button";
+import { AuthHero } from "./auth-hero";
 import type { AuthMode } from "./auth.constants";
 
 type AuthPanelProps = {
@@ -45,15 +48,12 @@ export function AuthPanel({ initialMode, message }: AuthPanelProps) {
     mode === "reset" ? "Sending link..." : mode === "resend" ? "Sending email..." : isSignIn ? "Signing in..." : "Creating...";
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col bg-[#fffdf8] px-5 py-8 shadow-sm">
+    <AppPageShell className="flex flex-col" spacing="compact">
       <section className="flex flex-1 flex-col justify-center">
-        <div className="rounded-b-3xl bg-leaf-100 px-4 pb-6 pt-5">
-          <p className="text-sm font-semibold text-leaf-700">PocketPlates</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900">{title}</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Save practical meals, keep them private, and build a library that fits your kitchen.
-          </p>
-        </div>
+        <AuthHero
+          description="Save practical meals, keep them private, and build a library that fits your kitchen."
+          title={title}
+        />
 
         <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
           <div className="grid grid-cols-2 rounded-lg bg-leaf-50 p-1 text-sm font-semibold">
@@ -78,9 +78,9 @@ export function AuthPanel({ initialMode, message }: AuthPanelProps) {
           </div>
 
           {message ? (
-            <p className="mt-4 rounded-lg border border-leaf-100 bg-leaf-50 px-3 py-2 text-sm text-slate-700">
+            <InlineNotice className="mt-4" padding="slim" tone="info">
               {message}
-            </p>
+            </InlineNotice>
           ) : null}
 
           <form action={formAction} className="mt-4 space-y-3">
@@ -134,6 +134,6 @@ export function AuthPanel({ initialMode, message }: AuthPanelProps) {
           </form>
         </div>
       </section>
-    </main>
+    </AppPageShell>
   );
 }

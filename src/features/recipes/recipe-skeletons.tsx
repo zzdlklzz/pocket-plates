@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
-import type { ReactNode } from "react";
 import { APP_METADATA } from "@/app/app.constants";
+import { AppPageShell } from "@/components/ui/app-page-shell";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 
 type SkeletonBlockProps = {
@@ -9,10 +9,6 @@ type SkeletonBlockProps = {
 
 function SkeletonBlock({ className }: SkeletonBlockProps) {
   return <div className={`animate-pulse rounded-md bg-slate-200 ${className}`} aria-hidden="true" />;
-}
-
-function PageShell({ children }: { children: ReactNode }) {
-  return <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 pb-24 pt-8 shadow-sm">{children}</main>;
 }
 
 function HeaderSkeleton() {
@@ -73,7 +69,7 @@ export function RecipeGridSkeleton({ count = 4 }: { count?: number }) {
 
 export function RecipeLibrarySkeleton() {
   return (
-    <PageShell>
+    <AppPageShell>
       <div role="status" aria-label="Loading recipe library">
         <HeaderSkeleton />
         <MealFilterSkeleton />
@@ -81,13 +77,13 @@ export function RecipeLibrarySkeleton() {
           <RecipeGridSkeleton />
         </section>
       </div>
-    </PageShell>
+    </AppPageShell>
   );
 }
 
 export function RecipeDetailSkeleton() {
   return (
-    <PageShell>
+    <AppPageShell>
       <div role="status" aria-label="Loading recipe">
         <div className="flex items-center justify-between">
           <SkeletonBlock className="h-5 w-20 bg-leaf-100" />
@@ -104,13 +100,13 @@ export function RecipeDetailSkeleton() {
         <SkeletonPanel lines={5} titleWidth="w-24" />
         <SkeletonPanel lines={4} titleWidth="w-16" />
       </div>
-    </PageShell>
+    </AppPageShell>
   );
 }
 
 export function RecipeFormSkeleton() {
   return (
-    <PageShell>
+    <AppPageShell>
       <div role="status" aria-label="Loading recipe form">
         <SkeletonBlock className="h-5 w-20 bg-leaf-100" />
         <section className="mt-5 space-y-3 rounded-b-3xl bg-leaf-100 px-4 pb-5 pt-4">
@@ -124,7 +120,7 @@ export function RecipeFormSkeleton() {
         <SkeletonPanel lines={3} titleWidth="w-16" />
         <SkeletonBlock className="mt-5 h-12 w-full rounded-lg bg-leaf-700/40" />
       </div>
-    </PageShell>
+    </AppPageShell>
   );
 }
 

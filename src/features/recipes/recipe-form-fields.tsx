@@ -3,6 +3,7 @@
 import { Trash2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { SelectableChip } from "@/components/ui/selectable-chip";
 import { AddRowButton, type RemovedRow, UndoRemovalNotice } from "./recipe-form-list";
 import { RecipeIngredientFields } from "./recipe-ingredient-fields";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
@@ -85,19 +86,13 @@ function RecipeMealTypeFields() {
           const isSelected = selectedMealTypes.includes(filter.value);
 
           return (
-            <button
-              aria-pressed={isSelected}
-              className={
-                isSelected
-                  ? "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white"
-                  : "rounded-full border border-leaf-100 bg-leaf-50 px-3 py-2 text-xs font-medium text-slate-600"
-              }
+            <SelectableChip
               key={filter.value}
               onClick={() => toggleMealType(filter.value)}
-              type="button"
+              selected={isSelected}
             >
               {filter.label}
-            </button>
+            </SelectableChip>
           );
         })}
       </div>

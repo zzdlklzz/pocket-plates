@@ -115,6 +115,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Document Docker-backed local Supabase startup, clean migration reset, migration history, schema linting, status inspection, and shutdown.
 - [x] Centralize browser-safe Supabase environment validation while preserving separate browser, server, cookie, and middleware client factories.
 - [x] Keep the Supabase CLI as a development-only dependency while preserving the existing local database scripts and CI workflow.
+- [x] Establish shared page-shell, action-button, selectable-chip, inline-notice, and back-link components while keeping pending state and domain cards with their owning features.
 - Add Vercel deployment configuration.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.

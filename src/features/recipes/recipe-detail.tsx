@@ -1,9 +1,14 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useTransition } from "react";
+import { ActionButton } from "@/components/ui/action-button";
+import { AppPageShell } from "@/components/ui/app-page-shell";
+import { BackLink } from "@/components/ui/back-link";
+import { InlineNotice } from "@/components/ui/inline-notice";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { MEAL_TYPE_LABELS } from "./recipe-library.constants";
 import { useArchiveRecipe, useRecipeDetail } from "./recipe.queries";
@@ -37,25 +42,19 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
 
   if (error || !recipe) {
     return (
-      <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 py-8 shadow-sm">
-        <Link className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700" href="/">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back
-        </Link>
-        <p className="mt-5 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <AppPageShell spacing="compact">
+        <BackLink href="/">Back</BackLink>
+        <InlineNotice className="mt-5" tone="neutral">
           {error ? getRecipeErrorMessage(error, "loadDetail") : "We could not find this recipe."}
-        </p>
-      </main>
+        </InlineNotice>
+      </AppPageShell>
     );
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 pb-24 pt-8 shadow-sm">
+    <AppPageShell>
       <div className="flex items-center justify-between">
-        <Link className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700" href="/">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Library
-        </Link>
+        <BackLink href="/">Library</BackLink>
         <Link className="inline-flex items-center gap-1 rounded-lg border border-leaf-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700" href={`/recipes/${id}/edit`}>
           <Pencil className="h-4 w-4" aria-hidden="true" />
           Edit
@@ -93,14 +92,12 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
       </section>
 
       {recipe.notes ? (
-        <section className="mt-5 rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-800">Notes</h2>
+        <RecipeDetailSection title="Notes">
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{recipe.notes}</p>
-        </section>
+        </RecipeDetailSection>
       ) : null}
 
-      <section className="mt-5 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">Ingredients</h2>
+      <RecipeDetailSection title="Ingredients">
         <ul className="mt-3 space-y-2 text-sm text-slate-600">
           {recipe.ingredients.map((ingredient, index) => (
             <li key={`${ingredient.name}-${index}`}>
@@ -111,10 +108,9 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
             </li>
           ))}
         </ul>
-      </section>
+      </RecipeDetailSection>
 
-      <section className="mt-5 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">Steps</h2>
+      <RecipeDetailSection title="Steps">
         <ol className="mt-3 space-y-3 text-sm text-slate-600">
           {recipe.steps.map((step, index) => (
             <li className="flex gap-3" key={`${step.instruction}-${index}`}>
@@ -123,24 +119,34 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
             </li>
           ))}
         </ol>
-      </section>
+      </RecipeDetailSection>
 
       {archiveRecipe.error ? (
-        <p className="mt-5 rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+        <InlineNotice className="mt-5" padding="compact" tone="error">
           {getRecipeErrorMessage(archiveRecipe.error, "archive")}
-        </p>
+        </InlineNotice>
       ) : null}
 
-      <button
-        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-100 bg-white px-4 py-3 text-sm font-semibold text-red-700 disabled:text-slate-400"
-        aria-busy={isArchiving}
-        disabled={isArchiving}
+      <ActionButton
+        className="mt-5"
+        fullWidth
         onClick={handleArchive}
-        type="button"
+        pending={isArchiving}
+        pendingLabel="Archiving..."
+        variant="danger"
       >
-        {isArchiving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
-        {isArchiving ? "Archiving..." : "Archive recipe"}
-      </button>
-    </main>
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
+        Archive recipe
+      </ActionButton>
+    </AppPageShell>
+  );
+}
+
+function RecipeDetailSection({ children, title }: { children: ReactNode; title: string }) {
+  return (
+    <section className="mt-5 rounded-lg border border-slate-200 bg-white p-4">
+      <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
+      {children}
+    </section>
   );
 }

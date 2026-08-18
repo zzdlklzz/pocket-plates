@@ -1,4 +1,6 @@
 import { X } from "lucide-react";
+import { ActionButton } from "@/components/ui/action-button";
+import { SelectableChip } from "@/components/ui/selectable-chip";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
 
@@ -19,33 +21,28 @@ type RecipeFilterDialogProps = {
   onCostRatingToggle: (costRating: CostRating) => void;
 };
 
-const SELECTED_CHIP_CLASS = "rounded-full bg-leaf-700 px-3 py-2 text-xs font-semibold text-white";
-const BAR_CHIP_CLASS = "shrink-0 rounded-full border border-leaf-100 bg-leaf-50 px-3 py-2 text-xs font-medium text-slate-600";
-const DIALOG_CHIP_CLASS = "rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600";
-
 export function RecipeMealTypeFilters({ mealTypes, onClear, onToggle }: RecipeMealTypeFiltersProps) {
   return (
     <section className="mt-5 flex gap-2 overflow-x-auto" aria-label="Meal type filters">
-      <button
-        className={mealTypes.length === 0 ? `shrink-0 ${SELECTED_CHIP_CLASS}` : BAR_CHIP_CLASS}
+      <SelectableChip
+        className="shrink-0"
         onClick={onClear}
-        type="button"
+        selected={mealTypes.length === 0}
       >
         All
-      </button>
+      </SelectableChip>
       {MEAL_TYPE_FILTERS.map((filter) => {
         const isSelected = mealTypes.includes(filter.value);
 
         return (
-          <button
-            aria-pressed={isSelected}
-            className={isSelected ? `shrink-0 ${SELECTED_CHIP_CLASS}` : BAR_CHIP_CLASS}
+          <SelectableChip
+            className="shrink-0"
             key={filter.value}
             onClick={() => onToggle(filter.value)}
-            type="button"
+            selected={isSelected}
           >
             {filter.label}
-          </button>
+          </SelectableChip>
         );
       })}
     </section>
@@ -81,22 +78,21 @@ export function RecipeFilterDialog({
           <section>
             <h3 className="text-sm font-semibold text-slate-800">Meal type</h3>
             <div className="mt-2 flex flex-wrap gap-2">
-              <button className={mealTypes.length === 0 ? SELECTED_CHIP_CLASS : DIALOG_CHIP_CLASS} onClick={onClear} type="button">
+              <SelectableChip onClick={onClear} selected={mealTypes.length === 0} surface="plain">
                 All
-              </button>
+              </SelectableChip>
               {MEAL_TYPE_FILTERS.map((filter) => {
                 const isSelected = mealTypes.includes(filter.value);
 
                 return (
-                  <button
-                    aria-pressed={isSelected}
-                    className={isSelected ? SELECTED_CHIP_CLASS : DIALOG_CHIP_CLASS}
+                  <SelectableChip
                     key={filter.value}
                     onClick={() => onMealTypeToggle(filter.value)}
-                    type="button"
+                    selected={isSelected}
+                    surface="plain"
                   >
                     {filter.label}
-                  </button>
+                  </SelectableChip>
                 );
               })}
             </div>
@@ -109,15 +105,14 @@ export function RecipeFilterDialog({
                 const isSelected = costRatings.includes(filter.value);
 
                 return (
-                  <button
-                    aria-pressed={isSelected}
-                    className={isSelected ? SELECTED_CHIP_CLASS : DIALOG_CHIP_CLASS}
+                  <SelectableChip
                     key={filter.value}
                     onClick={() => onCostRatingToggle(filter.value)}
-                    type="button"
+                    selected={isSelected}
+                    surface="plain"
                   >
                     {filter.label}
-                  </button>
+                  </SelectableChip>
                 );
               })}
             </div>
@@ -130,15 +125,14 @@ export function RecipeFilterDialog({
                 const isSelected = difficulty === filter.value;
 
                 return (
-                  <button
-                    aria-pressed={isSelected}
-                    className={isSelected ? SELECTED_CHIP_CLASS : DIALOG_CHIP_CLASS}
+                  <SelectableChip
                     key={filter.value}
                     onClick={() => onDifficultyChange(isSelected ? undefined : filter.value)}
-                    type="button"
+                    selected={isSelected}
+                    surface="plain"
                   >
                     {filter.label}
-                  </button>
+                  </SelectableChip>
                 );
               })}
             </div>
@@ -146,12 +140,12 @@ export function RecipeFilterDialog({
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <button className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600" onClick={onClear} type="button">
+          <ActionButton fullWidth onClick={onClear} variant="secondary">
             Clear
-          </button>
-          <button className="rounded-lg bg-leaf-700 px-4 py-3 text-sm font-semibold text-white" onClick={onClose} type="button">
+          </ActionButton>
+          <ActionButton fullWidth onClick={onClose}>
             Done
-          </button>
+          </ActionButton>
         </div>
       </section>
     </div>

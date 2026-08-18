@@ -1,11 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
-import Link from "next/link";
+import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { ActionButton } from "@/components/ui/action-button";
+import { AppPageShell } from "@/components/ui/app-page-shell";
+import { BackLink } from "@/components/ui/back-link";
+import { InlineNotice } from "@/components/ui/inline-notice";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { RecipeFormFields } from "./recipe-form-fields";
 import { useCreateRecipe, useUpdateRecipe } from "./recipe.queries";
@@ -37,12 +40,9 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-md bg-[#fffdf8] px-5 pb-24 pt-8 shadow-sm">
+    <AppPageShell>
       <div className="flex items-center justify-between gap-3">
-        <Link className="inline-flex items-center gap-1 text-sm font-semibold text-leaf-700" href={recipeId ? `/recipes/${recipeId}` : "/"}>
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back
-        </Link>
+        <BackLink href={recipeId ? `/recipes/${recipeId}` : "/"}>Back</BackLink>
       </div>
 
       <FormProvider {...form}>
@@ -51,22 +51,18 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
             <RecipeFormFields isEditing={Boolean(recipeId)} />
 
             {mutation.error ? (
-              <p className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+              <InlineNotice padding="compact" tone="error">
                 {getRecipeErrorMessage(mutation.error, "save")}
-              </p>
+              </InlineNotice>
             ) : null}
 
-            <button
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-leaf-700 px-4 py-3 text-sm font-semibold text-white disabled:bg-slate-300"
-              disabled={isSaving}
-              type="submit"
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}
-              {isSaving ? "Saving..." : "Save recipe"}
-            </button>
+            <ActionButton fullWidth pending={isSaving} pendingLabel="Saving..." type="submit">
+              <Save className="h-4 w-4" aria-hidden="true" />
+              Save recipe
+            </ActionButton>
           </fieldset>
         </form>
       </FormProvider>
-    </main>
+    </AppPageShell>
   );
 }
