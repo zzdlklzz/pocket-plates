@@ -5,6 +5,7 @@ export type RecipeListRow = {
   title: string;
   cost_rating: RecipeCardDto["costRating"];
   difficulty: RecipeCardDto["difficulty"];
+  image_storage_path: string | null;
   image_url: string | null;
   recipe_meal_types?: { meal_type: MealType }[] | null;
 };
@@ -31,20 +32,21 @@ export type RecipeDetailRow = RecipeListRow & {
   }[] | null;
 };
 
-export function toRecipeCardDto(row: RecipeListRow): RecipeCardDto {
+export function toRecipeCardDto(row: RecipeListRow, imageUrl = row.image_url): RecipeCardDto {
   return {
     id: row.id,
     title: row.title,
     costRating: row.cost_rating,
     difficulty: row.difficulty,
-    imageUrl: row.image_url,
+    imageUrl,
     mealTypes: row.recipe_meal_types?.map(({ meal_type }) => meal_type) ?? []
   };
 }
 
-export function toRecipeDetailDto(row: RecipeDetailRow): RecipeDetailDto {
+export function toRecipeDetailDto(row: RecipeDetailRow, imageUrl = row.image_url): RecipeDetailDto {
   return {
-    ...toRecipeCardDto(row),
+    ...toRecipeCardDto(row, imageUrl),
+    imageStoragePath: row.image_storage_path,
     servings: row.servings,
     notes: row.notes,
     sourceLinks: row.recipe_links?.length
@@ -75,7 +77,6 @@ export function toRecipeFormValues(recipe: RecipeDetailDto): RecipeFormValues {
     mealTypes: recipe.mealTypes,
     costRating: recipe.costRating ?? "",
     difficulty: recipe.difficulty ?? "",
-    imageUrl: recipe.imageUrl ?? "",
     sourceLinks: recipe.sourceLinks.map(({ label, url }) => ({ label: label ?? "", url })),
     notes: recipe.notes ?? "",
     ingredients: recipe.ingredients.map((ingredient) => ({

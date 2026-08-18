@@ -12,7 +12,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({})
 }));
 
-function renderRecipeForm(initialValues?: RecipeFormValues) {
+function renderRecipeForm(initialValues?: RecipeFormValues, initialImageUrl?: string) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -22,7 +22,11 @@ function renderRecipeForm(initialValues?: RecipeFormValues) {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <RecipeForm initialValues={initialValues} recipeId={initialValues ? "recipe-1" : undefined} />
+      <RecipeForm
+        initialImageUrl={initialImageUrl}
+        initialValues={initialValues}
+        recipeId={initialValues ? "recipe-1" : undefined}
+      />
     </QueryClientProvider>
   );
 }
@@ -67,6 +71,39 @@ describe("RecipeForm", () => {
       ["medium", "Medium"],
       ["hard", "Hard"]
     ]);
+  });
+
+  it("selects, previews, replaces, and removes a device image", () => {
+    const createObjectUrl = vi.fn(() => "blob:recipe-cover");
+    const revokeObjectUrl = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectUrl });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectUrl });
+    renderRecipeForm();
+
+    const file = new File(["image"], "dinner.webp", { type: "image/webp" });
+    fireEvent.change(screen.getByLabelText("Choose image"), { target: { files: [file] } });
+
+    expect(screen.getByAltText("Recipe cover preview")).toHaveAttribute("src", "blob:recipe-cover");
+    expect(screen.getByText("Selected: dinner.webp")).toBeInTheDocument();
+    expect(screen.getByLabelText("Replace image")).toHaveAttribute(
+      "accept",
+      "image/jpeg,image/png,image/webp"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(screen.queryByAltText("Recipe cover preview")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Choose image")).toBeInTheDocument();
+  });
+
+  it("keeps an existing cover until the user removes or replaces it", () => {
+    renderRecipeForm(undefined, "https://example.com/current.jpg");
+
+    expect(screen.getByAltText("Recipe cover preview")).toHaveAttribute(
+      "src",
+      "https://example.com/current.jpg"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(screen.queryByAltText("Recipe cover preview")).not.toBeInTheDocument();
   });
 
   it("adds and removes dynamic source, ingredient, and step rows", () => {
@@ -140,7 +177,6 @@ describe("RecipeForm", () => {
       mealTypes: ["breakfast"],
       costRating: "cheap",
       difficulty: "easy",
-      imageUrl: "",
       sourceLinks: [
         { label: "First source", url: "https://example.com/first" },
         { label: "Second source", url: "https://example.com/second" }
@@ -226,7 +262,6 @@ describe("RecipeForm", () => {
       mealTypes: ["dinner"],
       costRating: "cheap",
       difficulty: "easy",
-      imageUrl: "",
       sourceLinks: [],
       notes: "",
       ingredients: [

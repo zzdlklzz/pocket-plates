@@ -14,7 +14,7 @@ This project folder contains the project plan, architecture diagrams, database s
 - Backend: Supabase free tier
 - Database: Supabase Postgres
 - Auth: Supabase Auth
-- Images: Supabase Storage or pasted image URLs
+- Images: private, owner-scoped Supabase Storage uploads
 - CI/CD: GitHub Actions and Vercel Git deployments
 - Testing: Vitest for unit/integration tests, Playwright for end-to-end tests
 - Auth email: Supabase custom SMTP, initially via a dedicated Gmail or Google Workspace mailbox if suitable
@@ -53,7 +53,7 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 ## Future Features
 
 - Archived recipe library with restore actions
-- Supabase Storage image uploads
+- Image optimization and moderation before future public recipe sharing
 - Effort/time filters such as quick, make-ahead, one-pot, and low-cleanup
 - Equipment filters such as rice cooker, microwave, stovetop, and no oven
 - Student-friendly tags such as budget, high-protein, freezer-friendly, and dorm-friendly

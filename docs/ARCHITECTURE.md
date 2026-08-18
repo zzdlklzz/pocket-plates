@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive flows, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive flows, private device image uploads, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
 
 ## Stack
 
@@ -14,7 +14,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Backend platform: Supabase.
 - Database: Supabase Postgres with migration files.
 - Auth: Supabase Auth with open email sign-up and Google OAuth.
-- Storage: Supabase Storage for future recipe images.
+- Storage: private Supabase Storage recipe images with owner-scoped access policies.
 - Hosting: Vercel.
 - Containerization: production Docker image for the AWS migration path, using Next.js standalone output.
 - AWS learning path: begin with a minimal Terraform sandbox in `infra/test`, then compare against the fuller reference implementation in `infra/aws`.
@@ -49,6 +49,7 @@ flowchart TD
 The database schema is migration-first and represented in:
 
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`
+- `supabase/migrations/20260818222347_add_private_recipe_image_storage.sql`
 - `docs/database-schema.dbml`
 - `docs/database-erd.mmd`
 
@@ -123,6 +124,9 @@ src/
       recipe-form-fields.tsx
       recipe-form-list.tsx
       recipe-form.tsx
+      recipe-image-field.tsx
+      recipe-image.constants.ts
+      recipe-image.repository.ts
       recipe-ingredient-fields.tsx
       recipe-library.tsx
       recipe-library.constants.ts
@@ -133,6 +137,8 @@ src/
       recipe.types.ts
       recipe.validation.ts
       __tests__/
+        recipe-image.constants.test.ts
+        recipe-image.repository.test.ts
         recipe.mappers.test.ts
   lib/
     env/
@@ -199,6 +205,7 @@ Once signed in, the user sees a Supabase-backed recipe library. The list is load
 The recipe read path keeps database rows, DTOs, and UI state separate:
 
 - `recipe.repository.ts` queries `recipes` and `recipe_meal_types` through the browser Supabase client. When the user filters by breakfast, lunch, dinner, or snack, the repository also includes recipes tagged `flexible`; filtering by Flexible itself stays exact.
+- `recipe-image.repository.ts` exchanges durable private object paths for one-hour signed display URLs. Legacy pasted `image_url` values remain readable only when a recipe has no Storage path.
 - `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects.
 - `recipe.queries.ts` exposes `useRecipeList` and `useRecipeDetail` for TanStack Query caching.
 - `recipe-library.tsx` owns search and filter state, query results, and library navigation.
@@ -212,25 +219,47 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - `/recipes/new` checks the server auth session before rendering the client recipe form.
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
-- `recipe-form.tsx` owns React Hook Form setup, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
+- `recipe-form.tsx` owns React Hook Form setup, image-change state, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
 - `recipe-form-fields.tsx` coordinates the basic, meal-type, optional metadata, source, ingredient, and step sections. Basic fields and source-link controls remain local, while the cost and difficulty selects reuse the same typed option definitions as the recipe filters.
+- `recipe-image-field.tsx` replaces pasted cover-image URLs with a device file picker. It validates JPEG, PNG, and WebP files against the 2 MB bucket limit, previews a valid selection, and exposes explicit replace and remove actions.
 - `recipe-ingredient-fields.tsx` owns the ingredient field array, compact and expanded ingredient row UI, drag context, active row, field-array moves, and reversible removal state.
 - `recipe-step-fields.tsx` owns the step field array, compact and expanded step row UI, drag context, active row, field-array moves, and reversible removal state.
 - `recipe-form-list.tsx` contains the repeating-list mechanics shared by source, ingredient, and step sections: add and undo controls, drag sensors, removed-row types, and index adjustments after moves, removals, or restoration. Ingredient and step row markup stays separate because their fields and summaries differ.
 - Repeating source, ingredient, and step sections place explicit add actions after their rows and focus the newly appended field so mobile entry continues down the page.
-- `recipe.validation.ts` defines the Zod rules for title, servings, meal types, ingredients, steps, up to five optional source links with optional labels, optional image URL, notes, cost rating, and difficulty.
-- The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source links, image URL, cost rating, and difficulty can be left blank.
+- `recipe.validation.ts` defines the Zod rules for title, servings, meal types, ingredients, steps, up to five optional source links with optional labels, notes, cost rating, and difficulty. File validation stays in `recipe-image.constants.ts` because files are upload state rather than database form values.
+- The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source links, cover image, cost rating, and difficulty can be left blank.
 - Ingredient rows keep four editable fields: ingredient name, amount, unit, and notes. Ingredient names are required. Amounts are optional but, when present, must be positive numbers or simple fractions such as `1`, `1.5`, `1/2`, or `1 1/2`. Units are optional but must come from the supported unit picker. Ingredient notes stay available for preparation details like "finely chopped", "optional", or "to taste".
 - Ingredient and step rows collapse into one-line summaries when they are not being edited, with section headings showing the current row count. Selecting a summary exposes that row's full controls, adding a row expands and focuses it, and field-level validation keeps affected rows open. Both row types expose a direct red delete icon instead of an overflow menu.
 - Removing a source, ingredient, or step replaces that row's former list position with a screen-reader-announced Undo notice. This keeps the recovery action beside the user's deletion context, including at the beginning, middle, or end of a list. Undo restores the complete row at its original position, including whether an ingredient or step had been expanded, before the form is saved.
 - Ingredient and step rows can be reordered while adding or editing a recipe. Dedicated drag handles support mouse, delayed touch activation, and keyboard input without making editable row content draggable. React Hook Form keeps reordered values together, and the repository persists their array positions through `recipe_ingredients.sort_order` and `recipe_steps.sort_order`.
 - Step rows now contain only instruction text. Dedicated timer minutes are no longer edited or displayed; timing should be written directly into the instruction, such as "Simmer for 10 minutes."
 - Validation errors are shown next to the specific source, ingredient, or step field that needs attention. Source URLs must be complete HTTP(S) URLs and cannot be duplicated, and the form caps recipe size with practical limits for sources, servings, ingredients, and steps.
-- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_links`, `recipe_ingredients`, and `recipe_steps` child rows, and soft-archives recipes through `archived_at`. Existing `recipes.source_url` values remain readable as a legacy fallback until the recipe is saved into `recipe_links`.
+- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_links`, `recipe_ingredients`, and `recipe_steps` child rows, coordinates image reference changes, and soft-archives recipes through `archived_at`. Existing `recipes.source_url` values remain readable as a legacy fallback until the recipe is saved into `recipe_links`.
+- New recipes are created before their image is uploaded so each object path can include both the authenticated owner ID and recipe ID. A failed upload rolls back the new recipe. During replacement, the new object is uploaded and referenced before the old object is removed; if the reference update fails, the new object is cleaned up and the prior image remains. Old-object cleanup after a successful reference change is best effort so a cleanup failure never restores a cover the user removed.
+- `recipes.image_storage_path` stores the durable private object path. `recipes.image_url` remains a legacy fallback for previously pasted URLs and is cleared when a stored image is added or explicitly removed.
 - Before writing ingredient rows, `recipe.repository.ts` parses accepted amount strings into numeric values for `recipe_ingredients.amount`. Blank optional fields are written as `null`, and step timers are written as `null`.
 - `recipe.queries.ts` exposes create, update, and archive mutations and invalidates recipe list/detail caches after successful writes.
 - `recipe.errors.ts` maps Supabase, PostgREST, Auth, Storage, network, and unknown failures into safe user-facing messages. Recipe list, detail, edit, save, and archive screens show the classified message without exposing raw table names, RLS policy details, constraint names, or backend error text.
 - Save and archive actions show spinner-backed pending labels, disable repeat clicks while the mutation runs, and stay busy through the redirect handoff. The recipe form also disables its editable fields and row controls while saving so a user cannot change the recipe mid-submit. Route-level and query-level loading states reuse recipe skeleton components for the library, detail, and form screens so mobile navigation gives immediate visual feedback instead of plain loading text.
+
+## Recipe Image Storage
+
+The `recipe-images` bucket is private. Reads, uploads, and deletes are owner-scoped through `storage.objects` policies, and every object uses this path shape:
+
+```txt
+<auth-user-id>/<recipe-id>/<generated-id>.<extension>
+```
+
+Only JPEG, PNG, and WebP objects up to 2 MB are accepted. The browser never receives a Supabase secret key: authenticated uploads use the existing publishable client and RLS, while private reads use one-hour signed URLs. Making recipes shareable later does not require changing the current owner boundary; a future sharing layer can issue signed URLs after checking recipe visibility or promote moderated public images into a separate public bucket.
+
+```mermaid
+flowchart LR
+    picker["Device image picker"] --> validation["JPEG, PNG, or WebP; 2 MB maximum"]
+    validation --> upload["Private recipe-images object"]
+    upload --> path["recipes.image_storage_path"]
+    path --> signed["One-hour signed display URL"]
+    signed --> cards["Recipe cards and detail"]
+```
 
 ## Archive Lifecycle
 
@@ -470,6 +499,8 @@ npm run supabase:link -- --project-ref <your-project-ref>
 ```bash
 npm run supabase:db:push
 ```
+
+The recipe image Storage setup is migration-managed. During the initial feature setup, the `recipe-images` bucket was created manually in the Supabase dashboard as private with a 2 MB file limit and an `image/*` MIME restriction. Migration `20260818222347_add_private_recipe_image_storage.sql` adopts that existing bucket—or creates it in a fresh environment—and narrows the allowed types to `image/jpeg`, `image/png`, and `image/webp`. It also creates authenticated owner-only read, upload, and delete policies. After pushing migrations, verify under Storage that the bucket is private, the 2 MB limit is present, and the three exact MIME types are listed. Do not add a public read policy while recipes remain private.
 
 8. Generate database types:
 

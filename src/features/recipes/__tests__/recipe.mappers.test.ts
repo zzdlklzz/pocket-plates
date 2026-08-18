@@ -10,6 +10,7 @@ describe("toRecipeCardDto", () => {
         title: "Rice Bowl",
         cost_rating: "cheap",
         difficulty: "easy",
+        image_storage_path: null,
         image_url: null,
         recipe_meal_types: [{ meal_type: "dinner" }, { meal_type: "flexible" }]
       })
@@ -22,6 +23,28 @@ describe("toRecipeCardDto", () => {
       mealTypes: ["dinner", "flexible"]
     });
   });
+
+  it("uses a resolved private image URL without losing the storage path", () => {
+    const row = {
+      id: "recipe-1",
+      title: "Rice Bowl",
+      cost_rating: null,
+      difficulty: null,
+      image_storage_path: "user-1/recipe-1/cover.webp",
+      image_url: "https://example.com/legacy.jpg",
+      notes: null,
+      servings: 2,
+      source_url: null,
+      recipe_links: [],
+      recipe_ingredients: [],
+      recipe_steps: []
+    };
+
+    expect(toRecipeDetailDto(row, "https://example.com/signed")).toMatchObject({
+      imageStoragePath: "user-1/recipe-1/cover.webp",
+      imageUrl: "https://example.com/signed"
+    });
+  });
 });
 
 describe("toRecipeDetailDto", () => {
@@ -32,6 +55,7 @@ describe("toRecipeDetailDto", () => {
         title: "Rice Bowl",
         cost_rating: "cheap",
         difficulty: "easy",
+        image_storage_path: null,
         image_url: null,
         notes: "Use leftover rice.",
         servings: 2,
@@ -74,6 +98,7 @@ describe("toRecipeDetailDto", () => {
       title: "Rice Bowl",
       cost_rating: null,
       difficulty: null,
+      image_storage_path: null,
       image_url: null,
       notes: null,
       servings: 2,
@@ -95,6 +120,7 @@ describe("toRecipeFormValues", () => {
         title: "Rice Bowl",
         costRating: null,
         difficulty: null,
+        imageStoragePath: null,
         imageUrl: null,
         mealTypes: ["dinner"],
         servings: 2,
@@ -109,7 +135,6 @@ describe("toRecipeFormValues", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
-      imageUrl: "",
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "2", name: "Rice", notes: "", unit: "cups" }],
@@ -126,7 +151,6 @@ describe("recipeFormSchema", () => {
       mealTypes: [],
       costRating: "",
       difficulty: "",
-      imageUrl: "",
       sourceLinks: [],
       notes: "",
       ingredients: [],
@@ -152,7 +176,6 @@ describe("recipeFormSchema", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
-      imageUrl: "",
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
@@ -185,7 +208,6 @@ describe("recipeFormSchema", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
-      imageUrl: "",
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "1 1/2", name: "Rice", notes: "cooked", unit: "cup" }],
@@ -204,7 +226,6 @@ describe("recipeFormSchema", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
-      imageUrl: "",
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],

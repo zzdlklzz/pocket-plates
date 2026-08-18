@@ -1,7 +1,8 @@
 import type { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
+import { removeRecipeImage, uploadRecipeImage } from "./recipe-image.repository";
 import type { RecipeDetailRow, RecipeListRow } from "./recipe.mappers";
-import type { MealType, RecipeFormValues, RecipeListFilters } from "./recipe.types";
+import type { MealType, RecipeFormValues, RecipeImageChange, RecipeListFilters } from "./recipe.types";
 import { parseIngredientAmount } from "./recipe.validation";
 
 type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -12,9 +13,9 @@ type RecipeIngredientInsert = Database["public"]["Tables"]["recipe_ingredients"]
 type RecipeStepInsert = Database["public"]["Tables"]["recipe_steps"]["Insert"];
 type RecipeLinkInsert = Database["public"]["Tables"]["recipe_links"]["Insert"];
 
-const RECIPE_LIST_SELECT = "id,title,cost_rating,difficulty,image_url,created_at,recipe_meal_types(meal_type)";
+const RECIPE_LIST_SELECT = "id,title,cost_rating,difficulty,image_storage_path,image_url,created_at,recipe_meal_types(meal_type)";
 const RECIPE_DETAIL_SELECT =
-  "id,title,cost_rating,difficulty,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_links(label,url,sort_order),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,sort_order)";
+  "id,title,cost_rating,difficulty,image_storage_path,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_links(label,url,sort_order),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,sort_order)";
 
 function emptyToNull(value: string) {
   const trimmed = value.trim();
@@ -165,13 +166,50 @@ function toRecipeRow(values: RecipeFormValues, ownerId?: string): RecipeInsert |
     servings: values.servings,
     cost_rating: values.costRating || null,
     difficulty: values.difficulty || null,
-    image_url: emptyToNull(values.imageUrl),
     source_url: null,
     notes: emptyToNull(values.notes)
   };
 }
 
-export async function createRecipe(supabase: SupabaseBrowserClient, values: RecipeFormValues) {
+async function replaceRecipeImage(
+  supabase: SupabaseBrowserClient,
+  recipeId: string,
+  ownerId: string,
+  currentStoragePath: string | null,
+  imageChange: RecipeImageChange
+) {
+  if (imageChange.type === "keep") {
+    return;
+  }
+
+  let nextStoragePath: string | null = null;
+
+  if (imageChange.type === "replace") {
+    nextStoragePath = await uploadRecipeImage(supabase, ownerId, recipeId, imageChange.file);
+  }
+
+  const { error } = await supabase
+    .from("recipes")
+    .update({ image_storage_path: nextStoragePath, image_url: null } as never)
+    .eq("id", recipeId);
+
+  if (error) {
+    if (nextStoragePath) {
+      await removeRecipeImage(supabase, nextStoragePath).catch(() => undefined);
+    }
+    throw error;
+  }
+
+  if (currentStoragePath && currentStoragePath !== nextStoragePath) {
+    await removeRecipeImage(supabase, currentStoragePath).catch(() => undefined);
+  }
+}
+
+export async function createRecipe(
+  supabase: SupabaseBrowserClient,
+  values: RecipeFormValues,
+  imageChange: RecipeImageChange
+) {
   const {
     data: { user },
     error: userError
@@ -202,6 +240,7 @@ export async function createRecipe(supabase: SupabaseBrowserClient, values: Reci
 
   try {
     await replaceRecipeChildren(supabase, createdRecipe.id, values);
+    await replaceRecipeImage(supabase, createdRecipe.id, user.id, null, imageChange);
   } catch (error) {
     await supabase.from("recipes").delete().eq("id", createdRecipe.id);
     throw error;
@@ -210,7 +249,39 @@ export async function createRecipe(supabase: SupabaseBrowserClient, values: Reci
   return createdRecipe.id;
 }
 
-export async function updateRecipe(supabase: SupabaseBrowserClient, id: string, values: RecipeFormValues) {
+export async function updateRecipe(
+  supabase: SupabaseBrowserClient,
+  id: string,
+  values: RecipeFormValues,
+  imageChange: RecipeImageChange
+) {
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
+  if (!user) {
+    throw new Error("You must be signed in to update a recipe.");
+  }
+
+  const { data: currentRecipe, error: currentRecipeError } = await supabase
+    .from("recipes")
+    .select("image_storage_path")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (currentRecipeError) {
+    throw currentRecipeError;
+  }
+
+  if (!currentRecipe) {
+    throw new Error("Recipe was not found.");
+  }
+
   const { error } = await supabase.from("recipes").update(toRecipeRow(values) as never).eq("id", id);
 
   if (error) {
@@ -218,6 +289,13 @@ export async function updateRecipe(supabase: SupabaseBrowserClient, id: string, 
   }
 
   await replaceRecipeChildren(supabase, id, values);
+  await replaceRecipeImage(
+    supabase,
+    id,
+    user.id,
+    (currentRecipe as { image_storage_path: string | null }).image_storage_path,
+    imageChange
+  );
   return id;
 }
 

@@ -61,6 +61,17 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
         </Link>
       </div>
 
+      {recipe.imageUrl ? (
+        <div className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-leaf-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt={`${recipe.title} cover`}
+            className="aspect-[4/3] w-full object-cover"
+            src={recipe.imageUrl}
+          />
+        </div>
+      ) : null}
+
       <section className="mt-5 rounded-b-3xl bg-leaf-100 px-4 pb-5 pt-4">
         <h1 className="text-3xl font-bold text-slate-900">{recipe.title}</h1>
         <div className="mt-3 flex flex-wrap gap-2">

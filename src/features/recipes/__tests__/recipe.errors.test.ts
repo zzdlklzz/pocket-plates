@@ -39,6 +39,15 @@ describe("getRecipeErrorMessage", () => {
     expect(getRecipeErrorMessage(new TypeError("Failed to fetch"), "loadList")).toBe("Check your connection and try again.");
   });
 
+  it("distinguishes Storage read and upload failures", () => {
+    expect(getRecipeErrorMessage(new Error("Storage bucket unavailable"), "loadList")).toBe(
+      "We could not load this recipe's cover image. Please try again."
+    );
+    expect(getRecipeErrorMessage(new Error("Storage upload failed"), "save")).toBe(
+      "The image could not be uploaded. Try a smaller image or a different file."
+    );
+  });
+
   it("keeps action-specific fallbacks for unknown errors", () => {
     expect(getRecipeErrorMessage(new Error("database details that should stay hidden"), "archive")).toBe(
       "We could not archive this recipe. Please try again."

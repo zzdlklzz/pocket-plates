@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { ActionButton } from "@/components/ui/action-button";
 import { AppPageShell } from "@/components/ui/app-page-shell";
@@ -12,17 +12,19 @@ import { InlineNotice } from "@/components/ui/inline-notice";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { RecipeFormFields } from "./recipe-form-fields";
 import { useCreateRecipe, useUpdateRecipe } from "./recipe.queries";
-import type { RecipeFormValues } from "./recipe.types";
+import type { RecipeFormValues, RecipeImageChange } from "./recipe.types";
 import { DEFAULT_RECIPE_FORM_VALUES, recipeFormSchema } from "./recipe.validation";
 
 type RecipeFormProps = {
+  initialImageUrl?: string | null;
   initialValues?: RecipeFormValues;
   recipeId?: string;
 };
 
-export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
+export function RecipeForm({ initialImageUrl, initialValues, recipeId }: RecipeFormProps) {
   const router = useRouter();
   const [isRedirecting, startRedirect] = useTransition();
+  const [imageChange, setImageChange] = useState<RecipeImageChange>({ type: "keep" });
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe(recipeId ?? "");
   const form = useForm<RecipeFormValues>({
@@ -33,7 +35,7 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
   const isSaving = mutation.isPending || isRedirecting;
 
   async function onSubmit(values: RecipeFormValues) {
-    const id = await mutation.mutateAsync(values);
+    const id = await mutation.mutateAsync({ imageChange, values });
     startRedirect(() => {
       router.push(`/recipes/${id}`);
     });
@@ -48,7 +50,11 @@ export function RecipeForm({ initialValues, recipeId }: RecipeFormProps) {
       <FormProvider {...form}>
         <form aria-busy={isSaving} className="mt-5" onSubmit={form.handleSubmit(onSubmit)}>
           <fieldset className="m-0 min-w-0 w-full space-y-5 border-0 p-0 disabled:opacity-80" disabled={isSaving}>
-            <RecipeFormFields isEditing={Boolean(recipeId)} />
+            <RecipeFormFields
+              initialImageUrl={initialImageUrl}
+              isEditing={Boolean(recipeId)}
+              onImageChange={setImageChange}
+            />
 
             {mutation.error ? (
               <InlineNotice padding="compact" tone="error">

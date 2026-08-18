@@ -10,6 +10,7 @@ const FALLBACK_MESSAGES: Record<RecipeErrorAction, string> = {
 const AUTH_MESSAGE = "Your session expired. Please sign in again.";
 const NETWORK_MESSAGE = "Check your connection and try again.";
 const PERMISSION_MESSAGE = "You do not have access to change this recipe.";
+const STORAGE_READ_MESSAGE = "We could not load this recipe's cover image. Please try again.";
 const STORAGE_MESSAGE = "The image could not be uploaded. Try a smaller image or a different file.";
 const VALIDATION_MESSAGE = "Some fields need fixing before this recipe can be saved.";
 const VIEW_DETAIL_PERMISSION_MESSAGE = "You do not have access to view this recipe.";
@@ -86,12 +87,16 @@ export function getRecipeErrorMessage(error: unknown, action: RecipeErrorAction)
     return PERMISSION_MESSAGE;
   }
 
-  if (details.status === 400 || details.status === 409 || ["23502", "23503", "23505", "23514", "22P02"].includes(details.code ?? "")) {
-    return VALIDATION_MESSAGE;
+  if (includesAny(searchableText, ["storage", "bucket", "upload", "object size", "mime"])) {
+    if (action === "loadDetail" || action === "loadList") {
+      return STORAGE_READ_MESSAGE;
+    }
+
+    return STORAGE_MESSAGE;
   }
 
-  if (includesAny(searchableText, ["storage", "bucket", "upload", "object size", "mime"])) {
-    return STORAGE_MESSAGE;
+  if (details.status === 400 || details.status === 409 || ["23502", "23503", "23505", "23514", "22P02"].includes(details.code ?? "")) {
+    return VALIDATION_MESSAGE;
   }
 
   if (

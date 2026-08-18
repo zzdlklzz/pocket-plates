@@ -49,7 +49,7 @@ Product angle:
 - Backend platform: Supabase.
 - Database: Supabase Postgres.
 - Auth: Supabase Auth with email/password and Google OAuth.
-- Storage: Supabase Storage is planned for recipe image uploads; the current MVP accepts pasted image URLs.
+- Storage: private Supabase Storage recipe image uploads with owner-scoped policies and signed reads.
 - Deployment: Vercel.
 - AWS migration runtime: production Docker image built from Next.js standalone output, with the first AWS work focused on learning the infrastructure basics before deploying the app.
 - AWS migration infrastructure: beginner Terraform sandbox planned for `infra/test`, starting with VPC, one public subnet, internet routing, security group, and one EC2 instance; `infra/aws` remains a fuller reference implementation for later comparison.
@@ -76,7 +76,7 @@ The app has five main layers:
 
 - Mobile PWA frontend hosted on Vercel.
 - Supabase client integration inside the Next.js app.
-- Supabase services for Auth, Postgres, future Storage uploads, and Row Level Security.
+- Supabase services for Auth, Postgres, private Storage uploads, and Row Level Security.
 - GitHub Actions pipeline for checks, tests, type generation, and migration deployment.
 - Supabase custom SMTP for production-ready auth emails, plus Google Cloud Console OAuth credentials for Google login.
 
@@ -86,7 +86,7 @@ Main runtime flow:
 2. The Next.js UI loads from Vercel.
 3. The app signs you up or signs you in through Supabase Auth.
 4. Recipe data is read and written to Supabase Postgres.
-5. Recipe image URLs are stored with recipe data; a future upload flow will store image files in Supabase Storage.
+5. Recipe images are uploaded from the device into private Supabase Storage, while durable object paths are stored with recipe data and exchanged for temporary signed display URLs.
 6. Row Level Security keeps each user's private recipes visible only to that user.
 
 Architecture files:
@@ -135,7 +135,7 @@ Goal: any visitor can create an account, then save and retrieve their own privat
 - [x] Recipe detail page.
 - [x] Add/edit recipe form.
 - [x] Required recipe fields: title, servings, one or more meal types, ingredients, and steps.
-- [x] Optional recipe fields: notes, up to five source URLs with optional labels, and image URL.
+- [x] Optional recipe fields: notes, up to five source URLs with optional labels, and a device-uploaded cover image.
 - [x] Basic search by recipe title.
 - [x] Basic filter by meal types, allowing more than one meal type to be selected.
 - [x] Supabase persistence with Row Level Security. Initial owner-scoped schema and RLS migrations are in place.
@@ -180,7 +180,7 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 - Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep.
 - Search by ingredient name.
 - [x] Support multiple source links per recipe.
-- [ ] Replace pasted image URLs with Supabase Storage uploads, including file validation, previews, owner-scoped storage policies, and cleanup behavior.
+- [x] Replace pasted image URLs with private Supabase Storage uploads, including 2 MB JPEG/PNG/WebP validation, previews, owner-scoped policies, signed reads, and cleanup behavior.
 
 ### Stage 3: Meal Prep Utilities
 
@@ -221,7 +221,7 @@ Primary screens:
 
 - Home / Recipe Library: app header, search, multi-select meal-type quick filters, recipe cards, bottom navigation.
 - Recipe Detail: image, title, meal types, servings, tags, source links, ingredients, steps, edit action.
-- Add/Edit Recipe: title, servings, meal types, image URL, source links, ingredients, steps, notes, save/cancel actions.
+- Add/Edit Recipe: title, servings, meal types, device cover image, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types, cost rating, single-select difficulty, effort/time tags, equipment, ingredient search, clear filters, done action.
 
 Visual reference:
@@ -453,22 +453,24 @@ The current archive action is a soft archive: it sets `recipes.archived_at` and 
 - Keep permanent deletion out of the archive-recovery slice. If permanent deletion is added later, present a confirmation dialog that names the recipe, explains that the action cannot be undone, and requires explicit confirmation before deleting the row.
 - Add repository, query, UI, and end-to-end coverage for listing and restoring archived recipes.
 
-## Upcoming Recipe Form Slices
+## Recipe Form Slices
 
-These are the remaining recipe-form improvements after the completed validation, error feedback, pending-state, filter, component-refactor, public Supabase config, and multiple-source-link slices.
+This section records the completed image-upload slice and the remaining cost-entry work after the validation, error feedback, pending-state, filter, component-refactor, public Supabase config, and multiple-source-link slices.
 
-### Supabase Storage Image Upload
+### Supabase Storage Image Upload — Completed
 
-Replace the current pasted Image URL field with an upload flow. The intended implementation should:
+The pasted Image URL field has been replaced with a private upload flow:
 
-- Use a file input for common image formats such as JPEG, PNG, and WebP.
-- Enforce a practical size limit, such as 5 MB, before upload.
-- Show a selected-image preview and allow remove or replace actions.
-- Store image files in a Supabase Storage bucket such as `recipe-images`.
-- Keep images private to the recipe owner unless public recipe sharing is intentionally added.
-- Store the durable storage path in `recipes.image_storage_path`; use `recipes.image_url` only for legacy pasted URLs or derived display URLs if needed.
-- Add owner-scoped storage policies and verify them with the database change protocol before release.
-- Handle upload lifecycle carefully: create the recipe first when needed, upload after a recipe ID exists, replace old files only after a new upload succeeds, and define cleanup behavior for partial failures.
+- [x] Use a file input for JPEG, PNG, and WebP images.
+- [x] Enforce the configured 2 MB bucket limit before upload.
+- [x] Show a selected-image preview and allow remove or replace actions.
+- [x] Store image files in the private `recipe-images` Supabase Storage bucket.
+- [x] Keep images private to the recipe owner unless public recipe sharing is intentionally added.
+- [x] Store the durable path in `recipes.image_storage_path` and preserve `recipes.image_url` only as a legacy fallback.
+- [x] Add owner-scoped Storage policies through a forward migration.
+- [x] Create a recipe before uploading, replace old files only after a new upload and reference update succeed, and clean up failed or superseded objects where safe.
+
+Follow-up image work remains intentionally separate: resize/compress large device photos before upload, moderate images before future public sharing, and add public delivery only alongside recipe visibility rules.
 
 ### Dynamic Cost Entry And Cost Rating
 

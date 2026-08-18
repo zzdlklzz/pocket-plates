@@ -5,22 +5,26 @@ import { Fragment, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { SelectableChip } from "@/components/ui/selectable-chip";
 import { AddRowButton, type RemovedRow, UndoRemovalNotice } from "./recipe-form-list";
+import { RecipeImageField } from "./recipe-image-field";
 import { RecipeIngredientFields } from "./recipe-ingredient-fields";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { RecipeStepFields } from "./recipe-step-fields";
-import type { RecipeFormValues } from "./recipe.types";
+import type { RecipeFormValues, RecipeImageChange } from "./recipe.types";
 import { MAX_SERVINGS, MAX_SOURCE_LINKS } from "./recipe.validation";
 
 type RecipeFormFieldsProps = {
+  initialImageUrl?: string | null;
   isEditing: boolean;
+  onImageChange: (change: RecipeImageChange) => void;
 };
 
-export function RecipeFormFields({ isEditing }: RecipeFormFieldsProps) {
+export function RecipeFormFields({ initialImageUrl, isEditing, onImageChange }: RecipeFormFieldsProps) {
   return (
     <>
       <RecipeBasicsFields isEditing={isEditing} />
       <RecipeMealTypeFields />
       <RecipeOptionalFields />
+      <RecipeImageField initialImageUrl={initialImageUrl} onChange={onImageChange} />
       <RecipeSourceFields />
       <RecipeIngredientFields />
       <RecipeStepFields />
@@ -28,7 +32,7 @@ export function RecipeFormFields({ isEditing }: RecipeFormFieldsProps) {
   );
 }
 
-function RecipeBasicsFields({ isEditing }: RecipeFormFieldsProps) {
+function RecipeBasicsFields({ isEditing }: { isEditing: boolean }) {
   const {
     formState: { errors },
     register
@@ -203,18 +207,10 @@ function RecipeSourceFields() {
 }
 
 function RecipeNotesFields() {
-  const {
-    formState: { errors },
-    register
-  } = useFormContext<RecipeFormValues>();
+  const { register } = useFormContext<RecipeFormValues>();
 
   return (
     <>
-      <label className="block text-sm font-medium text-slate-700">
-        Image URL
-        <input className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-base text-slate-900" {...register("imageUrl")} />
-      </label>
-      {errors.imageUrl ? <p className="text-sm text-red-700">{errors.imageUrl.message}</p> : null}
       <label className="block text-sm font-medium text-slate-700">
         Notes
         <textarea className="mt-1 min-h-24 w-full rounded-lg border border-slate-200 px-3 py-2 text-base text-slate-900" {...register("notes")} />

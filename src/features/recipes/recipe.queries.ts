@@ -3,9 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { queryKeys } from "@/lib/query/query-keys";
+import { getRecipeImageUrl, getRecipeImageUrls } from "./recipe-image.repository";
 import { archiveRecipe, createRecipe, getRecipe, listRecipes, updateRecipe } from "./recipe.repository";
 import { toRecipeCardDto, toRecipeDetailDto } from "./recipe.mappers";
-import type { RecipeFormValues, RecipeListFilters } from "./recipe.types";
+import type { RecipeListFilters, RecipeSaveInput } from "./recipe.types";
 
 export function useRecipeList(filters: RecipeListFilters) {
   return useQuery({
@@ -13,7 +14,14 @@ export function useRecipeList(filters: RecipeListFilters) {
     queryFn: async () => {
       const supabase = createSupabaseBrowserClient();
       const rows = await listRecipes(supabase, filters);
-      return rows.map(toRecipeCardDto);
+      const imageUrls = await getRecipeImageUrls(
+        supabase,
+        rows.map((row) => ({
+          legacyImageUrl: row.image_url,
+          storagePath: row.image_storage_path
+        }))
+      );
+      return rows.map((row, index) => toRecipeCardDto(row, imageUrls[index]));
     }
   });
 }
@@ -24,7 +32,12 @@ export function useRecipeDetail(id: string) {
     queryFn: async () => {
       const supabase = createSupabaseBrowserClient();
       const row = await getRecipe(supabase, id);
-      return row ? toRecipeDetailDto(row) : null;
+      if (!row) {
+        return null;
+      }
+
+      const imageUrl = await getRecipeImageUrl(supabase, row.image_storage_path, row.image_url);
+      return toRecipeDetailDto(row, imageUrl);
     }
   });
 }
@@ -33,9 +46,9 @@ export function useCreateRecipe() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (values: RecipeFormValues) => {
+    mutationFn: async ({ imageChange, values }: RecipeSaveInput) => {
       const supabase = createSupabaseBrowserClient();
-      return createRecipe(supabase, values);
+      return createRecipe(supabase, values, imageChange);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
@@ -47,9 +60,9 @@ export function useUpdateRecipe(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (values: RecipeFormValues) => {
+    mutationFn: async ({ imageChange, values }: RecipeSaveInput) => {
       const supabase = createSupabaseBrowserClient();
-      return updateRecipe(supabase, id, values);
+      return updateRecipe(supabase, id, values, imageChange);
     },
     onSuccess: async () => {
       await Promise.all([

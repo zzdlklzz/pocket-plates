@@ -33,5 +33,11 @@ export function RecipeEdit({ id }: RecipeEditProps) {
     );
   }
 
-  return <RecipeForm initialValues={toRecipeFormValues(recipe)} recipeId={id} />;
+  return (
+    <RecipeForm
+      initialImageUrl={recipe.imageUrl}
+      initialValues={toRecipeFormValues(recipe)}
+      recipeId={id}
+    />
+  );
 }

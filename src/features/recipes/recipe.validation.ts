@@ -28,11 +28,6 @@ export const INGREDIENT_UNITS = [
   "serving"
 ] as const;
 
-const optionalUrl = z
-  .string()
-  .trim()
-  .refine((value) => value === "" || /^https?:\/\/.+/i.test(value), "Use a full http or https URL.");
-
 const optionalIngredientAmount = z
   .string()
   .trim()
@@ -94,7 +89,6 @@ export const recipeFormSchema = z.object({
   mealTypes: z.array(z.enum(["breakfast", "lunch", "dinner", "snack", "flexible"])).min(1, "Choose at least one meal type."),
   costRating: z.union([z.enum(["very_cheap", "cheap", "moderate", "splurge"]), z.literal("")]),
   difficulty: z.union([z.enum(["easy", "medium", "hard", "beginner_friendly"]), z.literal("")]),
-  imageUrl: optionalUrl,
   sourceLinks: z
     .array(
       z.object({
@@ -149,7 +143,6 @@ export const DEFAULT_RECIPE_FORM_VALUES = {
   mealTypes: [],
   costRating: "",
   difficulty: "",
-  imageUrl: "",
   sourceLinks: [],
   notes: "",
   ingredients: [{ name: "", amount: "", unit: "", notes: "" }],

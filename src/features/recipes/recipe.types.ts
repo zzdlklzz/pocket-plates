@@ -30,6 +30,7 @@ export type RecipeSourceLinkDto = {
 };
 
 export type RecipeDetailDto = RecipeCardDto & {
+  imageStoragePath: string | null;
   servings: number;
   notes: string | null;
   sourceLinks: RecipeSourceLinkDto[];
@@ -43,7 +44,6 @@ export type RecipeFormValues = {
   mealTypes: MealType[];
   costRating: CostRating | "";
   difficulty: DifficultyLevel | "";
-  imageUrl: string;
   sourceLinks: {
     label: string;
     url: string;
@@ -58,6 +58,16 @@ export type RecipeFormValues = {
   steps: {
     instruction: string;
   }[];
+};
+
+export type RecipeImageChange =
+  | { type: "keep" }
+  | { type: "remove" }
+  | { file: File; type: "replace" };
+
+export type RecipeSaveInput = {
+  imageChange: RecipeImageChange;
+  values: RecipeFormValues;
 };
 
 export type RecipeListFilters = {
