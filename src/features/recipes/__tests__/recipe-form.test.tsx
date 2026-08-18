@@ -45,6 +45,30 @@ describe("RecipeForm", () => {
     expect(container.querySelector("fieldset")).toHaveClass("min-w-0", "w-full");
   });
 
+  it("keeps optional cost and difficulty choices available", () => {
+    renderRecipeForm();
+
+    const optionsFor = (name: string) =>
+      within(screen.getByRole("combobox", { name }))
+        .getAllByRole("option")
+        .map((option) => [(option as HTMLOptionElement).value, option.textContent]);
+
+    expect(optionsFor("Cost")).toEqual([
+      ["", "Optional"],
+      ["very_cheap", "Very cheap"],
+      ["cheap", "Cheap"],
+      ["moderate", "Moderate"],
+      ["splurge", "Splurge"]
+    ]);
+    expect(optionsFor("Difficulty")).toEqual([
+      ["", "Optional"],
+      ["beginner_friendly", "Beginner"],
+      ["easy", "Easy"],
+      ["medium", "Medium"],
+      ["hard", "Hard"]
+    ]);
+  });
+
   it("adds and removes dynamic source, ingredient, and step rows", () => {
     renderRecipeForm();
 

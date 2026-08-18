@@ -1,10 +1,125 @@
 "use client";
 
-import { useSortable } from "@dnd-kit/sortable";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Check, GripVertical, Trash2 } from "lucide-react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { Fragment, useState } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import {
+  AddRowButton,
+  getIndexAfterInsertion,
+  getIndexAfterMove,
+  getIndexAfterRemoval,
+  type RemovedExpandableRow,
+  UndoRemovalNotice,
+  useSortableRowSensors
+} from "./recipe-form-list";
 import type { RecipeFormValues } from "./recipe.types";
-import { INGREDIENT_UNITS } from "./recipe.validation";
+import { INGREDIENT_UNITS, MAX_INGREDIENTS } from "./recipe.validation";
+
+export function RecipeIngredientFields() {
+  const {
+    control,
+    formState: { errors },
+    getValues
+  } = useFormContext<RecipeFormValues>();
+  const ingredients = useFieldArray({ control, name: "ingredients" });
+  const [expandedIngredientIndex, setExpandedIngredientIndex] = useState<number | null>(() =>
+    ingredients.fields.length === 1 && !ingredients.fields[0]?.name ? 0 : null
+  );
+  const [removedIngredient, setRemovedIngredient] = useState<RemovedExpandableRow<RecipeFormValues["ingredients"][number]> | null>(null);
+  const sensors = useSortableRowSensors();
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const currentIndex = ingredients.fields.findIndex((field) => field.id === active.id);
+    const nextIndex = ingredients.fields.findIndex((field) => field.id === over.id);
+
+    if (currentIndex !== -1 && nextIndex !== -1) {
+      moveIngredient(currentIndex, nextIndex);
+    }
+  }
+
+  function moveIngredient(from: number, to: number) {
+    ingredients.move(from, to);
+    setExpandedIngredientIndex((current) => getIndexAfterMove(current, from, to));
+  }
+
+  function removeIngredient(index: number) {
+    setRemovedIngredient({
+      index,
+      value: getValues(`ingredients.${index}`),
+      wasExpanded: expandedIngredientIndex === index
+    });
+    ingredients.remove(index);
+    setExpandedIngredientIndex((current) => getIndexAfterRemoval(current, index));
+  }
+
+  function undoRemoveIngredient() {
+    if (!removedIngredient) {
+      return;
+    }
+
+    const restoredIndex = Math.min(removedIngredient.index, ingredients.fields.length);
+    ingredients.insert(restoredIndex, removedIngredient.value);
+    setExpandedIngredientIndex((current) =>
+      removedIngredient.wasExpanded ? restoredIndex : getIndexAfterInsertion(current, restoredIndex)
+    );
+    setRemovedIngredient(null);
+  }
+
+  function addIngredient() {
+    const nextIndex = ingredients.fields.length;
+    setExpandedIngredientIndex(nextIndex);
+    ingredients.append(
+      { name: "", amount: "", unit: "", notes: "" },
+      { focusName: `ingredients.${nextIndex}.name` }
+    );
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold text-slate-800">
+        Ingredients<span aria-hidden="true"> · {ingredients.fields.length}</span>
+      </h2>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} sensors={sensors}>
+        <SortableContext items={ingredients.fields} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {ingredients.fields.map((field, index) => (
+              <Fragment key={field.id}>
+                {removedIngredient?.index === index ? (
+                  <UndoRemovalNotice label="Ingredient removed." onUndo={undoRemoveIngredient} />
+                ) : null}
+                <SortableIngredientRow
+                  count={ingredients.fields.length}
+                  fieldId={field.id}
+                  index={index}
+                  isExpanded={expandedIngredientIndex === index || Boolean(errors.ingredients?.[index])}
+                  onDone={() => setExpandedIngredientIndex(null)}
+                  onEdit={() => setExpandedIngredientIndex(index)}
+                  onRemove={removeIngredient}
+                />
+              </Fragment>
+            ))}
+            {removedIngredient && removedIngredient.index >= ingredients.fields.length ? (
+              <UndoRemovalNotice label="Ingredient removed." onUndo={undoRemoveIngredient} />
+            ) : null}
+          </div>
+        </SortableContext>
+      </DndContext>
+      {errors.ingredients?.message ? <p className="text-sm text-red-700">{errors.ingredients.message}</p> : null}
+      {ingredients.fields.length > 1 ? <p className="text-xs text-slate-500">Press and hold a drag handle to reorder ingredients.</p> : null}
+      <AddRowButton
+        disabled={ingredients.fields.length >= MAX_INGREDIENTS}
+        label="Add ingredient"
+        onClick={addIngredient}
+      />
+    </section>
+  );
+}
 
 type SortableIngredientRowProps = {
   count: number;
@@ -16,7 +131,7 @@ type SortableIngredientRowProps = {
   onRemove: (index: number) => void;
 };
 
-export function SortableIngredientRow({
+function SortableIngredientRow({
   count,
   fieldId,
   index,

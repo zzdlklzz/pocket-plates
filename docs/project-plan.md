@@ -114,6 +114,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Refresh GitHub Actions workflows for Node.js 24 action runtimes, patched framework/test dependencies, ESLint 9 linting, deterministic Playwright startup, explicit CI Supabase public placeholders, Vercel pre-build verification, and a pinned Supabase CLI deploy action.
 - [x] Document Docker-backed local Supabase startup, clean migration reset, migration history, schema linting, status inspection, and shutdown.
 - [x] Centralize browser-safe Supabase environment validation while preserving separate browser, server, cookie, and middleware client factories.
+- [x] Keep the Supabase CLI as a development-only dependency while preserving the existing local database scripts and CI workflow.
 - Add Vercel deployment configuration.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.
@@ -151,6 +152,7 @@ Stage 1 implementation slices:
 - [x] Recipe write path: detail page, add/edit form, ingredients and steps, and create/update/archive mutations.
 - [x] Recipe form validation hardening: stricter ingredient amounts and units, row-level field errors, practical form limits, and removal of the dedicated step timer input.
 - [x] Recipe form component refactor: keep submission orchestration in `RecipeForm` and move cohesive field sections and dynamic row controls behind shared form context.
+- [x] Recipe form ownership refinement: give ingredient and step field arrays dedicated modules, centralize only their stable repeating-list mechanics, and reuse the filter definitions for cost and difficulty form options.
 - [x] Mobile repeating-row workflow: place source, ingredient, and step add actions after their lists and focus newly appended fields for continuous downward entry.
 - [x] Ingredient reordering: support touch, mouse, and keyboard drag handles while preserving saved ingredient order.
 - [x] Compact recipe form rows: collapse completed ingredients and steps into summaries while expanding active, newly added, and invalid rows.

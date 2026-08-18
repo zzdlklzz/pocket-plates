@@ -111,9 +111,12 @@ src/
       recipe-edit.tsx
       recipe-filters.tsx
       recipe-form-fields.tsx
+      recipe-form-list.tsx
       recipe-form.tsx
+      recipe-ingredient-fields.tsx
       recipe-library.tsx
       recipe-library.constants.ts
+      recipe-step-fields.tsx
       recipe.mappers.ts
       recipe.queries.ts
       recipe.repository.ts
@@ -188,9 +191,11 @@ Recipe create/edit/archive flows use the same repository and TanStack Query boun
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
 - `recipe-form.tsx` owns React Hook Form setup, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
-- `recipe-form-fields.tsx` owns the basic, meal-type, optional metadata, source, ingredient, and step controls. Each section reads the shared form context and keeps its own dynamic field-array behavior close to its markup. Repeating source, ingredient, and step sections place explicit add actions after their rows and focus the newly appended field so mobile entry continues down the page.
-- `sortable-ingredient-row.tsx` owns the compact ingredient summary, expanded ingredient fields, drag handle, and direct destructive action, while the parent ingredient section owns the shared drag context, sensors, active row, field-array moves, and reversible removal state.
-- `expandable-step-row.tsx` owns the compact step summary, expanded instruction field, drag handle, and direct destructive action, while the parent step section owns its drag context, active row, field-array moves, and reversible removal state.
+- `recipe-form-fields.tsx` coordinates the basic, meal-type, optional metadata, source, ingredient, and step sections. Basic fields and source-link controls remain local, while the cost and difficulty selects reuse the same typed option definitions as the recipe filters.
+- `recipe-ingredient-fields.tsx` owns the ingredient field array, compact and expanded ingredient row UI, drag context, active row, field-array moves, and reversible removal state.
+- `recipe-step-fields.tsx` owns the step field array, compact and expanded step row UI, drag context, active row, field-array moves, and reversible removal state.
+- `recipe-form-list.tsx` contains the repeating-list mechanics shared by source, ingredient, and step sections: add and undo controls, drag sensors, removed-row types, and index adjustments after moves, removals, or restoration. Ingredient and step row markup stays separate because their fields and summaries differ.
+- Repeating source, ingredient, and step sections place explicit add actions after their rows and focus the newly appended field so mobile entry continues down the page.
 - `recipe.validation.ts` defines the Zod rules for title, servings, meal types, ingredients, steps, up to five optional source links with optional labels, optional image URL, notes, cost rating, and difficulty.
 - The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source links, image URL, cost rating, and difficulty can be left blank.
 - Ingredient rows keep four editable fields: ingredient name, amount, unit, and notes. Ingredient names are required. Amounts are optional but, when present, must be positive numbers or simple fractions such as `1`, `1.5`, `1/2`, or `1 1/2`. Units are optional but must come from the supported unit picker. Ingredient notes stay available for preparation details like "finely chopped", "optional", or "to taste".
