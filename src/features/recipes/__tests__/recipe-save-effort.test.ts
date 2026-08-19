@@ -17,6 +17,7 @@ const values: RecipeFormValues = {
   costRating: "cheap",
   difficulty: "easy",
   effortLabels: ["quick", "one_pot"],
+  equipmentKeys: ["microwave", "no_oven"],
   sourceLinks: [],
   notes: "",
   ingredients: [{ amount: "1", name: "Rice", notes: "", unit: "cup" }],
@@ -68,13 +69,13 @@ function createSupabaseMock() {
   };
 }
 
-describe("recipe effort persistence", () => {
+describe("recipe discovery persistence", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.replaceRecipeDiscoveryMetadata.mockResolvedValue(undefined);
   });
 
-  it("persists effort once after creating ordinary recipe children", async () => {
+  it("persists effort and equipment once after creating ordinary recipe children", async () => {
     const { client } = createSupabaseMock();
 
     await expect(createRecipe(client as never, values, { type: "keep" })).resolves.toBe("recipe-1");
@@ -83,11 +84,12 @@ describe("recipe effort persistence", () => {
     expect(mocks.replaceRecipeDiscoveryMetadata).toHaveBeenCalledWith(
       client,
       "recipe-1",
-      ["quick", "one_pot"]
+      ["quick", "one_pot"],
+      ["microwave", "no_oven"]
     );
   });
 
-  it("persists the complete effort selection during edit", async () => {
+  it("persists complete discovery selections during edit", async () => {
     const { client } = createSupabaseMock();
 
     await expect(updateRecipe(client as never, "recipe-1", values, { type: "keep" })).resolves.toBe(
@@ -98,7 +100,8 @@ describe("recipe effort persistence", () => {
     expect(mocks.replaceRecipeDiscoveryMetadata).toHaveBeenCalledWith(
       client,
       "recipe-1",
-      ["quick", "one_pot"]
+      ["quick", "one_pot"],
+      ["microwave", "no_oven"]
     );
   });
 

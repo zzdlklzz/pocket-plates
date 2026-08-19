@@ -10,7 +10,7 @@ import { AppPageShell } from "@/components/ui/AppPageShell";
 import { BackLink } from "@/components/ui/BackLink";
 import { InlineNotice } from "@/components/ui/InlineNotice";
 import { getRecipeErrorMessage } from "./recipe.errors";
-import { EFFORT_LABELS } from "./recipe-discovery.constants";
+import { EFFORT_LABELS, EQUIPMENT_LABELS } from "./recipe-discovery.constants";
 import { MEAL_TYPE_LABELS } from "./recipe-library.constants";
 import { useArchiveRecipe, useRecipeDetail } from "./recipe.queries";
 import { RecipeDetailSkeleton } from "./recipe-skeletons";
@@ -118,6 +118,21 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
                 key={effortLabel}
               >
                 {EFFORT_LABELS[effortLabel]}
+              </span>
+            ))}
+          </div>
+        </RecipeDetailSection>
+      ) : null}
+
+      {recipe.equipmentKeys.length ? (
+        <RecipeDetailSection title="Equipment & setup">
+          <div className="mt-3 flex flex-wrap gap-2">
+            {recipe.equipmentKeys.map((equipmentKey) => (
+              <span
+                className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-semibold text-slate-600"
+                key={equipmentKey}
+              >
+                {EQUIPMENT_LABELS[equipmentKey]}
               </span>
             ))}
           </div>

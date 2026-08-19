@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
 import { AppPageShell } from "@/components/ui/AppPageShell";
 import { InlineNotice } from "@/components/ui/InlineNotice";
@@ -14,7 +14,13 @@ import { RecipeCard } from "./RecipeCard";
 import { RecipeNavigation } from "./RecipeNavigation";
 import { RECIPE_SEARCH_DEBOUNCE_MS } from "./recipe-library.constants";
 import { RecipeGridSkeleton } from "./recipe-skeletons";
-import type { CostRating, DifficultyLevel, MealType, RecipeEffortLabel } from "./recipe.types";
+import type {
+  CostRating,
+  DifficultyLevel,
+  EquipmentPresetKey,
+  MealType,
+  RecipeEffortLabel
+} from "./recipe.types";
 
 type RecipeLibraryProps = {
   profileLabel: string;
@@ -27,21 +33,28 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
   const [costRatings, setCostRatings] = useState<CostRating[]>([]);
   const [difficulty, setDifficulty] = useState<DifficultyLevel | undefined>();
   const [effortLabels, setEffortLabels] = useState<RecipeEffortLabel[]>([]);
+  const [equipmentKeys, setEquipmentKeys] = useState<EquipmentPresetKey[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterTriggerRef = useRef<HTMLButtonElement>(null);
   const filters = useMemo(
     () => ({
       search: debouncedSearch,
       mealTypes,
       costRatings,
       difficulty,
-      effortLabels
+      effortLabels,
+      equipmentKeys
     }),
-    [costRatings, debouncedSearch, difficulty, effortLabels, mealTypes]
+    [costRatings, debouncedSearch, difficulty, effortLabels, equipmentKeys, mealTypes]
   );
   const { data: recipes = [], error, isFetching, isLoading } = useRecipeList(filters);
   const normalizedSearch = search.trim();
   const hasActiveFilters =
-    mealTypes.length > 0 || costRatings.length > 0 || Boolean(difficulty) || effortLabels.length > 0;
+    mealTypes.length > 0 ||
+    costRatings.length > 0 ||
+    Boolean(difficulty) ||
+    effortLabels.length > 0 ||
+    equipmentKeys.length > 0;
   const hasActiveCriteria = Boolean(normalizedSearch) || hasActiveFilters;
   const isUpdating = !isLoading && (normalizedSearch !== debouncedSearch || isFetching);
 
@@ -73,11 +86,32 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
     );
   }
 
+  function toggleEquipmentKey(equipmentKey: EquipmentPresetKey) {
+    setEquipmentKeys((current) => {
+      if (current.includes(equipmentKey)) {
+        return current.filter((selected) => selected !== equipmentKey);
+      }
+
+      const mutuallyExclusiveKey =
+        equipmentKey === "oven" ? "no_oven" : equipmentKey === "no_oven" ? "oven" : null;
+      const compatibleEquipment = mutuallyExclusiveKey
+        ? current.filter((selected) => selected !== mutuallyExclusiveKey)
+        : current;
+
+      return [...compatibleEquipment, equipmentKey];
+    });
+  }
+
+  const closeFilters = useCallback(() => {
+    setIsFilterOpen(false);
+  }, []);
+
   function clearFilters() {
     setMealTypes([]);
     setCostRatings([]);
     setDifficulty(undefined);
     setEffortLabels([]);
+    setEquipmentKeys([]);
   }
 
   return (
@@ -107,11 +141,14 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         costRatings={costRatings}
         difficulty={difficulty}
         effortLabels={effortLabels}
+        equipmentKeys={equipmentKeys}
+        filterTriggerRef={filterTriggerRef}
         mealTypes={mealTypes}
         onClear={clearFilters}
         onCostRatingRemove={toggleCostRating}
         onDifficultyRemove={() => setDifficulty(undefined)}
         onEffortLabelRemove={toggleEffortLabel}
+        onEquipmentKeyRemove={toggleEquipmentKey}
         onFilterOpen={() => setIsFilterOpen(true)}
         onMealTypeRemove={toggleMealType}
       />
@@ -121,12 +158,15 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
           costRatings={costRatings}
           difficulty={difficulty}
           effortLabels={effortLabels}
+          equipmentKeys={equipmentKeys}
+          filterTriggerRef={filterTriggerRef}
           mealTypes={mealTypes}
           onClear={clearFilters}
-          onClose={() => setIsFilterOpen(false)}
+          onClose={closeFilters}
           onCostRatingToggle={toggleCostRating}
           onDifficultyChange={setDifficulty}
           onEffortLabelToggle={toggleEffortLabel}
+          onEquipmentKeyToggle={toggleEquipmentKey}
           onMealTypesClear={() => setMealTypes([])}
           onMealTypeToggle={toggleMealType}
         />

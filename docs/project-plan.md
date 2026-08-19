@@ -108,7 +108,8 @@ Goal: create a deployable skeleton before building feature depth.
 
 - Scaffold Next.js, React, TypeScript, Tailwind, Vitest, and Playwright.
 - Add app shell, mobile layout, navigation, and placeholder screens.
-- Add Supabase client setup and document the required `.env.local` values.
+- [x] Add Supabase client setup and document the required `.env.local` values.
+- [x] Add a `dev:local` workflow that starts local Supabase when needed, forward-applies pending repository migrations without deleting local data, and overrides hosted environment values only for the local development process.
 - Add TanStack Query provider, query key conventions, and repository-backed query/mutation hooks.
 - Add CI checks for install, lint, type check, tests, and build.
 - [x] Refresh GitHub Actions workflows for Node.js 24 action runtimes, patched framework/test dependencies, ESLint 9 linting, deterministic Playwright startup, explicit CI Supabase public placeholders, Vercel pre-build verification, and a pinned Supabase CLI deploy action.
@@ -182,12 +183,12 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 - [x] Add cost rating, such as very cheap, cheap, moderate, or splurge.
 - [x] Add one difficulty rating per recipe, such as easy, medium, hard, or beginner-friendly.
 - [x] Add optional controlled effort labels—quick, make-ahead, one-pot, and low-cleanup—to recipe create/edit/detail flows and match-all private-library filtering.
-- Add equipment filters, such as microwave, rice cooker, stovetop, oven, no oven, and blender.
-- Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep.
+- [x] Add optional controlled equipment/setup metadata—microwave, rice cooker, stovetop, oven, blender, and no oven needed—to create/edit/detail flows and match-all private-library filtering.
+- [ ] Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep. This remains intentionally deferred as discovery Slice 4.
 - [x] Search by ingredient name, combined with title search and all existing active-library filters.
 - [x] Complete local database-backed verification for private-library search: reset/lint the migration chain, regenerate and diff Supabase types, prove two-user RLS and archived exclusion, and inspect representative query plans.
 - [x] Complete controlled effort-label discovery: atomically persist owner-scoped selections, preserve them through edit/detail mapping, and combine one or several required traits with search and existing filters.
-- [ ] Add a signed-in local Supabase Playwright fixture and run the private-library search and discovery-metadata workflows end to end on mobile and desktop (planned with Slice 3 shared filter-sheet verification).
+- [x] Add an isolated signed-in local Supabase Playwright runner and verify create/edit, discovery-metadata persistence, combined filters, chip removal, clear actions, no-match recovery, reloads, enlarged-text mobile usability, and signed-out protection on mobile and desktop.
 - [x] Support multiple source links per recipe.
 - [x] Replace pasted image URLs with private Supabase Storage uploads, including 2 MB JPEG/PNG/WebP validation, previews, owner-scoped policies, signed reads, and cleanup behavior.
 
@@ -229,9 +230,9 @@ Primary screens:
 
 - Home / Recipe Library: app header with account action, search, one wrapping toolbar for the filter entry point and applied-filter chips, recipe cards, and shared bottom navigation.
 - Archived Recipes: newest-first archived cards, individual/select-all controls, restore actions, confirmed permanent deletion, and shared bottom navigation.
-- Recipe Detail: image, title, meal types, servings, effort labels, source links, ingredients, steps, edit action.
-- Add/Edit Recipe: title, servings, meal types, optional effort labels, device cover image, source links, ingredients, steps, notes, save/cancel actions.
-- Filters Sheet: multi-select meal types, cost rating, single-select difficulty, match-all effort labels, future equipment, clear filters, and done action. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
+- Recipe Detail: image, title, meal types, servings, effort labels, equipment/setup, source links, ingredients, steps, edit action.
+- Add/Edit Recipe: title, servings, meal types, optional effort and equipment/setup metadata, device cover image, source links, ingredients, steps, notes, save/cancel actions.
+- Filters Sheet: multi-select meal types and cost ratings, single-select difficulty, match-all effort and equipment/setup values, clear filters, and done action. The sheet is viewport-bounded, scrollable, focus-contained, and usable with enlarged mobile text. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
 
 Visual reference:
 
@@ -270,8 +271,8 @@ Core MVP tables:
 - `recipe_steps`: ordered cooking steps.
 - `tags`: reusable user-owned tags.
 - `recipe_tags`: recipe-to-tag join table.
-- `equipment`: reusable user-owned equipment labels.
-- `recipe_equipment`: recipe-to-equipment join table.
+- `equipment`: reusable user-owned equipment labels. Controlled rows use a nullable stable `preset_key`; legacy or custom null-key rows remain preserved and hidden from the preset-only interface.
+- `recipe_equipment`: recipe-to-equipment join table used by detail/edit reads and active-library equipment filtering.
 
 Future-ready tables already represented in the draft schema:
 
@@ -285,7 +286,7 @@ Public discovery should build on the `recipes.visibility` and `recipes.published
 
 All user-owned data should be protected by Supabase Row Level Security. Policies should target the `authenticated` role explicitly and use owner checks based on `(select auth.uid())`. The initial policies should support many users, but only owner access. Public-read policies should only be introduced when the community discovery stage is being built.
 
-The active private library uses the authenticated-only, security-invoker `list_private_library_recipes` function to search titles or ingredient names and apply meal, cost, difficulty, and match-all effort criteria in one database operation. The function explicitly selects only the current owner's non-archived recipes while retaining table RLS, and trigram indexes support literal case-insensitive contains matching on both searchable columns. The separate `replace_recipe_discovery_metadata` function atomically replaces an owner-visible recipe's effort selections and rejects duplicates.
+The active private library uses the authenticated-only, security-invoker `list_private_library_recipes` function to search titles or ingredient names and apply meal, cost, difficulty, match-all effort, and match-all equipment criteria in one database operation. The function explicitly selects only the current owner's non-archived recipes while retaining table RLS, and trigram indexes support literal case-insensitive contains matching on both searchable columns. The separate `replace_recipe_discovery_metadata` function validates and atomically replaces an owner-visible recipe's effort and controlled equipment selections, reuses the owner's preset catalog rows, preserves custom null-key equipment links, and rejects duplicate or conflicting values.
 
 ## DTO Boundary
 
@@ -377,7 +378,7 @@ Recommended split:
 
 - Unit tests: Vitest 4, for mappers, validation helpers, DTO conversion, utility functions, and pure components.
 - Integration tests: Vitest 4, for repository functions, TanStack Query hooks, and Supabase-facing logic. These can run against mocked clients at first, then a local Supabase database later.
-- E2E tests: Playwright, for core browser flows like sign in, recipe creation, recipe editing, filtering, and mobile viewport behavior.
+- E2E tests: Playwright, for core browser flows like sign in, recipe creation, recipe editing, filtering, and mobile viewport behavior. Signed-out checks use `npm run test:e2e`; the authenticated private-library workflow uses `npm run test:e2e:local` against the local Supabase stack on an isolated app port.
 
 This avoids the common Jest/Cypress issue where both tools inject global test types such as `describe`, `it`, and `expect`. Vitest and Playwright can also be kept in separate test folders with separate config files, so their types do not leak into each other.
 

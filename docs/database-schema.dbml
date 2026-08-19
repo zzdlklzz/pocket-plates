@@ -178,10 +178,12 @@ Table equipment {
   id uuid [pk, default: `gen_random_uuid()`]
   owner_id uuid [not null, ref: > profiles.id]
   label text [not null]
+  preset_key text [note: 'Nullable controlled key: microwave, rice_cooker, stovetop, oven, blender, or no_oven']
   created_at timestamptz [not null, default: `now()`]
 
   indexes {
     (owner_id, label) [unique]
+    (owner_id, preset_key) [unique]
   }
 }
 

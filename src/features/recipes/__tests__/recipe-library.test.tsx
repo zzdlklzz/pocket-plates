@@ -84,7 +84,10 @@ describe("RecipeLibrary", () => {
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByRole("heading", { name: "Meal type" })).toBeInTheDocument();
     expect(within(dialog).getByRole("heading", { name: "Effort" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Equipment & setup" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Breakfast" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Close filters" })).toHaveFocus();
+    expect(dialog).toHaveClass("max-h-[calc(100dvh-2rem)]", "overflow-hidden");
     expect(screen.queryByRole("button", { name: /^Remove .* filter$/ })).not.toBeInTheDocument();
   });
 
@@ -96,19 +99,21 @@ describe("RecipeLibrary", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Breakfast" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Cheap" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Quick" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Microwave" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
 
     const filterToolbar = screen.getByLabelText("Recipe filters");
     expect(filterToolbar).toHaveClass("flex-wrap");
-    expect(within(filterToolbar).getByRole("button", { name: "Filters, 3 active" })).toBeInTheDocument();
+    expect(within(filterToolbar).getByRole("button", { name: "Filters, 4 active" })).toBeInTheDocument();
     expect(within(filterToolbar).getByRole("button", { name: "Remove Meal type: Breakfast filter" })).toBeInTheDocument();
     expect(within(filterToolbar).getByRole("button", { name: "Remove Cost: Cheap filter" })).toBeInTheDocument();
     expect(within(filterToolbar).getByRole("button", { name: "Remove Effort: Quick filter" })).toBeInTheDocument();
+    expect(within(filterToolbar).getByRole("button", { name: "Remove Equipment: Microwave filter" })).toBeInTheDocument();
 
     fireEvent.click(within(filterToolbar).getByRole("button", { name: "Remove Meal type: Breakfast filter" }));
     expect(screen.queryByRole("button", { name: "Remove Meal type: Breakfast filter" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove Cost: Cheap filter" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Filters, 2 active" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filters, 3 active" })).toBeInTheDocument();
     expect(within(screen.getByRole("navigation")).queryByRole("button", { name: /^Filters/ })).not.toBeInTheDocument();
   });
 
@@ -138,6 +143,34 @@ describe("RecipeLibrary", () => {
 
     expect(screen.queryByRole("button", { name: "Remove Meal type: Breakfast filter" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove Cost: Cheap filter" })).toBeInTheDocument();
+  });
+
+  it("closes filters on Escape and restores focus to the trigger", () => {
+    renderRecipeLibrary();
+
+    const trigger = screen.getByRole("button", { name: "Filters" });
+    fireEvent.click(trigger);
+    expect(screen.getByRole("button", { name: "Close filters" })).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog", { name: "Recipe filters" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("keeps Oven and No oven needed mutually exclusive in filters", () => {
+    renderRecipeLibrary();
+
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    const dialog = screen.getByRole("dialog", { name: "Recipe filters" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Oven" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "No oven needed" }));
+
+    expect(within(dialog).getByRole("button", { name: "Oven" })).toHaveAttribute("aria-pressed", "false");
+    expect(within(dialog).getByRole("button", { name: "No oven needed" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
   });
 
   it("links to archived recipes from More without crowding the bottom bar", () => {

@@ -85,6 +85,11 @@ describe("toRecipeDetailDto", () => {
           { effort_label: "quick" },
           { effort_label: "one_pot" }
         ],
+        recipe_equipment: [
+          { equipment: { preset_key: "no_oven" } },
+          { equipment: { preset_key: null } },
+          { equipment: { preset_key: "microwave" } }
+        ],
         recipe_meal_types: [{ meal_type: "dinner" }],
         recipe_ingredients: [
           { amount: 1, name: "Egg", notes: null, sort_order: 1, unit: null },
@@ -99,6 +104,7 @@ describe("toRecipeDetailDto", () => {
       title: "Rice Bowl",
       servings: 2,
       effortLabels: ["quick", "one_pot", "low_cleanup"],
+      equipmentKeys: ["microwave", "no_oven"],
       sourceLinks: [
         { label: "Original", url: "https://example.com/original" },
         { label: null, url: "https://example.com/variation" }
@@ -146,6 +152,7 @@ describe("toRecipeFormValues", () => {
         imageUrl: null,
         mealTypes: ["dinner"],
         effortLabels: ["make_ahead"],
+        equipmentKeys: ["rice_cooker"],
         servings: 2,
         notes: null,
         sourceLinks: [],
@@ -159,6 +166,7 @@ describe("toRecipeFormValues", () => {
       costRating: "",
       difficulty: "",
       effortLabels: ["make_ahead"],
+      equipmentKeys: ["rice_cooker"],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "2", name: "Rice", notes: "", unit: "cups" }],
@@ -176,6 +184,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       effortLabels: [],
+      equipmentKeys: [],
       sourceLinks: [],
       notes: "",
       ingredients: [],
@@ -202,6 +211,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       effortLabels: [],
+      equipmentKeys: [],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
@@ -235,6 +245,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       effortLabels: [],
+      equipmentKeys: [],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "1 1/2", name: "Rice", notes: "cooked", unit: "cup" }],
@@ -254,6 +265,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       effortLabels: [],
+      equipmentKeys: [],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
@@ -272,6 +284,7 @@ describe("recipeFormSchema", () => {
       costRating: "",
       difficulty: "",
       effortLabels: [] as string[],
+      equipmentKeys: [] as string[],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
@@ -288,6 +301,35 @@ describe("recipeFormSchema", () => {
     expect(
       recipeFormSchema.safeParse({ ...baseValues, effortLabels: ["instant"] }).success
     ).toBe(false);
+  });
+
+  it("accepts controlled equipment and rejects duplicates or oven conflicts", () => {
+    const baseValues = {
+      title: "Rice Bowl",
+      servings: 2,
+      mealTypes: ["dinner"],
+      costRating: "",
+      difficulty: "",
+      effortLabels: [],
+      equipmentKeys: [] as string[],
+      sourceLinks: [],
+      notes: "",
+      ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
+      steps: [{ instruction: "Cook rice." }]
+    };
+
+    expect(
+      recipeFormSchema.safeParse({ ...baseValues, equipmentKeys: ["microwave", "no_oven"] }).success
+    ).toBe(true);
+    expect(
+      recipeFormSchema.safeParse({ ...baseValues, equipmentKeys: ["microwave", "microwave"] }).success
+    ).toBe(false);
+    expect(
+      recipeFormSchema.safeParse({ ...baseValues, equipmentKeys: ["oven", "no_oven"] }).success
+    ).toBe(false);
+    expect(recipeFormSchema.safeParse({ ...baseValues, equipmentKeys: ["air_fryer"] }).success).toBe(
+      false
+    );
   });
 });
 

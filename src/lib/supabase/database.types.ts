@@ -20,18 +20,21 @@ export type Database = {
           id: string
           label: string
           owner_id: string
+          preset_key: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           label: string
           owner_id: string
+          preset_key?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           label?: string
           owner_id?: string
+          preset_key?: string | null
         }
         Relationships: [
           {
@@ -656,6 +659,7 @@ export type Database = {
           p_cost_ratings?: Database["public"]["Enums"]["cost_rating"][] | null
           p_difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
           p_effort_labels?: Database["public"]["Enums"]["recipe_effort_label"][] | null
+          p_equipment_keys?: string[] | null
           p_meal_types?: Database["public"]["Enums"]["meal_type"][] | null
           p_search?: string | null
         }
@@ -673,6 +677,7 @@ export type Database = {
       replace_recipe_discovery_metadata: {
         Args: {
           p_effort_labels?: Database["public"]["Enums"]["recipe_effort_label"][] | null
+          p_equipment_keys?: string[] | null
           p_recipe_id: string
         }
         Returns: undefined

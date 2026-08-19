@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EFFORT_LABEL_VALUES } from "./recipe-discovery.constants";
+import { EFFORT_LABEL_VALUES, EQUIPMENT_PRESET_VALUES } from "./recipe-discovery.constants";
 
 export const MAX_RECIPE_TITLE_LENGTH = 120;
 export const MAX_RECIPE_NOTES_LENGTH = 2000;
@@ -60,6 +60,25 @@ const effortLabelsSchema = z
     }
   });
 
+const equipmentKeysSchema = z
+  .array(z.enum(EQUIPMENT_PRESET_VALUES))
+  .max(EQUIPMENT_PRESET_VALUES.length, `Choose no more than ${EQUIPMENT_PRESET_VALUES.length} equipment options.`)
+  .superRefine((equipmentKeys, context) => {
+    if (new Set(equipmentKeys).size !== equipmentKeys.length) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose each equipment option only once."
+      });
+    }
+
+    if (equipmentKeys.includes("oven") && equipmentKeys.includes("no_oven")) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose Oven or No oven needed, not both."
+      });
+    }
+  });
+
 export function parseIngredientAmount(value: string) {
   const trimmed = value.trim();
 
@@ -103,6 +122,7 @@ export const recipeFormSchema = z.object({
   costRating: z.union([z.enum(["very_cheap", "cheap", "moderate", "splurge"]), z.literal("")]),
   difficulty: z.union([z.enum(["easy", "medium", "hard", "beginner_friendly"]), z.literal("")]),
   effortLabels: effortLabelsSchema,
+  equipmentKeys: equipmentKeysSchema,
   sourceLinks: z
     .array(
       z.object({
@@ -158,6 +178,7 @@ export const DEFAULT_RECIPE_FORM_VALUES = {
   costRating: "",
   difficulty: "",
   effortLabels: [],
+  equipmentKeys: [],
   sourceLinks: [],
   notes: "",
   ingredients: [{ name: "", amount: "", unit: "", notes: "" }],

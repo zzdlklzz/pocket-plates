@@ -6,13 +6,19 @@ describe("replaceRecipeDiscoveryMetadata", () => {
     const rpc = vi.fn().mockResolvedValue({ data: undefined, error: null });
 
     await expect(
-      replaceRecipeDiscoveryMetadata({ rpc } as never, "recipe-1", ["quick", "one_pot"])
+      replaceRecipeDiscoveryMetadata(
+        { rpc } as never,
+        "recipe-1",
+        ["quick", "one_pot"],
+        ["microwave", "no_oven"]
+      )
     ).resolves.toBeUndefined();
 
     expect(rpc).toHaveBeenCalledTimes(1);
     expect(rpc).toHaveBeenCalledWith("replace_recipe_discovery_metadata", {
       p_recipe_id: "recipe-1",
-      p_effort_labels: ["quick", "one_pot"]
+      p_effort_labels: ["quick", "one_pot"],
+      p_equipment_keys: ["microwave", "no_oven"]
     });
   });
 
@@ -21,7 +27,7 @@ describe("replaceRecipeDiscoveryMetadata", () => {
     const rpc = vi.fn().mockResolvedValue({ data: undefined, error });
 
     await expect(
-      replaceRecipeDiscoveryMetadata({ rpc } as never, "recipe-1", [])
+      replaceRecipeDiscoveryMetadata({ rpc } as never, "recipe-1", [], [])
     ).rejects.toBe(error);
   });
 });

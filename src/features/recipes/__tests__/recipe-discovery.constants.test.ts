@@ -3,6 +3,11 @@ import {
   EFFORT_LABELS,
   EFFORT_LABEL_VALUES,
   EFFORT_PRESETS,
+  EQUIPMENT_LABELS,
+  EQUIPMENT_PRESET_VALUES,
+  EQUIPMENT_PRESETS,
+  isEquipmentPresetKey,
+  sortEquipmentKeys,
   sortEffortLabels
 } from "../recipe-discovery.constants";
 
@@ -22,5 +27,22 @@ describe("effort presets", () => {
       "one_pot",
       "low_cleanup"
     ]);
+  });
+
+  it("keeps equipment keys and display labels unique and ordered", () => {
+    expect(new Set(EQUIPMENT_PRESET_VALUES).size).toBe(EQUIPMENT_PRESET_VALUES.length);
+    expect(new Set(EQUIPMENT_PRESETS.map(({ label }) => label)).size).toBe(EQUIPMENT_PRESETS.length);
+    expect(EQUIPMENT_PRESETS.map(({ value }) => value)).toEqual(EQUIPMENT_PRESET_VALUES);
+    expect(EQUIPMENT_PRESETS.map(({ value }) => EQUIPMENT_LABELS[value])).toEqual(
+      EQUIPMENT_PRESETS.map(({ label }) => label)
+    );
+    expect(sortEquipmentKeys(["no_oven", "microwave", "blender"])).toEqual([
+      "microwave",
+      "blender",
+      "no_oven"
+    ]);
+    expect(isEquipmentPresetKey("rice_cooker")).toBe(true);
+    expect(isEquipmentPresetKey("air_fryer")).toBe(false);
+    expect(isEquipmentPresetKey(null)).toBe(false);
   });
 });

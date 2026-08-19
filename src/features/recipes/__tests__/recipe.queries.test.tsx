@@ -33,6 +33,7 @@ vi.mock("../recipe.repository", () => ({
     costRatings?: string[];
     difficulty?: string;
     effortLabels?: string[];
+    equipmentKeys?: string[];
     mealTypes?: string[];
     search?: string;
   }) => ({
@@ -40,7 +41,8 @@ vi.mock("../recipe.repository", () => ({
     mealTypes: filters.mealTypes?.length ? Array.from(new Set(filters.mealTypes)).sort() : undefined,
     costRatings: filters.costRatings?.length ? Array.from(new Set(filters.costRatings)).sort() : undefined,
     difficulty: filters.difficulty,
-    effortLabels: filters.effortLabels?.length ? Array.from(new Set(filters.effortLabels)).sort() : undefined
+    effortLabels: filters.effortLabels?.length ? Array.from(new Set(filters.effortLabels)).sort() : undefined,
+    equipmentKeys: filters.equipmentKeys?.length ? Array.from(new Set(filters.equipmentKeys)).sort() : undefined
   }),
   restoreRecipe: mocks.restoreRecipe,
   updateRecipe: vi.fn()
@@ -168,7 +170,8 @@ describe("active recipe queries", () => {
           search: "  egg  ",
           mealTypes: ["lunch", "breakfast", "lunch"],
           costRatings: [],
-          effortLabels: ["quick", "one_pot", "quick"]
+          effortLabels: ["quick", "one_pot", "quick"],
+          equipmentKeys: ["no_oven", "microwave", "no_oven"]
         }),
       { wrapper: createWrapper(queryClient) }
     );
@@ -181,7 +184,8 @@ describe("active recipe queries", () => {
         mealTypes: ["breakfast", "lunch"],
         costRatings: undefined,
         difficulty: undefined,
-        effortLabels: ["one_pot", "quick"]
+        effortLabels: ["one_pot", "quick"],
+        equipmentKeys: ["microwave", "no_oven"]
       }
     );
     expect(result.current.data).toEqual([

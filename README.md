@@ -1,6 +1,6 @@
 # PocketPlates
 
-This project folder contains the project plan, architecture diagrams, database schema, migration draft, and UI mockups for PocketPlates, a multi-user private-first mobile recipe app for students and beginner cooks who want practical, affordable meals.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, private images, title-or-ingredient search, controlled effort labels, and controlled equipment/setup metadata with combined filtering.
 
 ## Recommended Stack
 
@@ -22,7 +22,7 @@ This project folder contains the project plan, architecture diagrams, database s
 
 ## MVP Goal
 
-Create a multi-user private recipe library that works well on iPhone, lets anyone create an account, save recipes with ingredients, steps, servings, source links, and optional effort traits, and find active recipes by title, ingredient, or effort while leaving room for richer discovery, public recipes, meal planning, and grocery lists.
+Create a multi-user private recipe library that works well on iPhone, lets anyone create an account, save recipes with ingredients, steps, servings, source links, and optional effort and equipment/setup traits, and find active recipes by title, ingredient, effort, or available equipment while leaving room for public recipes, meal planning, and grocery lists.
 
 ## Included Files
 
@@ -40,6 +40,23 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `supabase/migrations/20260819194346_add_private_library_search.sql`: owner-scoped title/ingredient search function and trigram indexes
 - `supabase/migrations/20260819200746_grant_private_library_search_reads.sql`: authenticated source-table reads required by the security-invoker search function, still constrained by RLS
 - `supabase/migrations/20260819203000_add_recipe_effort_labels.sql`: owner-scoped controlled effort metadata, atomic replacement, and match-all private-library filtering
+- `supabase/migrations/20260819205000_add_equipment_presets.sql`: owner-scoped equipment presets, atomic effort/equipment replacement, match-all equipment filtering, and fresh-install recipe CRUD grants
+- `supabase/tests/equipment_presets.sql`: transactional local SQL checks for preset reuse, filter semantics, validation, and RLS
+- `scripts/run-local-e2e.mjs`: isolated local-Supabase Playwright runner for signed-in mobile and desktop workflows
+
+## Local Development
+
+Use the repository migrations as the shared schema source of truth. With Docker running, start the app against local Supabase with:
+
+```bash
+npm run dev:local
+```
+
+This command starts the local Supabase stack when necessary, applies any pending local migrations without deleting existing local data, injects only the local public URL and publishable key into Next.js, and then starts the app. It intentionally overrides `.env.local` for that process, so localhost cannot accidentally read or write hosted recipe data.
+
+Open `http://localhost:3000` and create a local account. Local users and recipe data remain separate from production. To rebuild the local database from every migration, use `npx supabase db reset --local`; this deletes local data only.
+
+Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflow. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
 
 ## AWS Terraform Lab
 
@@ -58,7 +75,6 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 ## Future Features
 
 - Image optimization and moderation before future public recipe sharing
-- Equipment filters such as rice cooker, microwave, stovetop, and no oven
 - Student-friendly tags such as budget, high-protein, freezer-friendly, and dorm-friendly
 - Weekly meal prep planner
 - Grocery list from selected recipes

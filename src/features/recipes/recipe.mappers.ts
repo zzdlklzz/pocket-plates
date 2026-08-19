@@ -1,5 +1,15 @@
-import { sortEffortLabels } from "./recipe-discovery.constants";
-import type { MealType, RecipeCardDto, RecipeDetailDto, RecipeEffortLabel, RecipeFormValues } from "./recipe.types";
+import {
+  isEquipmentPresetKey,
+  sortEffortLabels,
+  sortEquipmentKeys
+} from "./recipe-discovery.constants";
+import type {
+  MealType,
+  RecipeCardDto,
+  RecipeDetailDto,
+  RecipeEffortLabel,
+  RecipeFormValues
+} from "./recipe.types";
 
 export type RecipeListRow = {
   id: string;
@@ -23,6 +33,9 @@ export type RecipeDetailRow = RecipeListRow & {
   }[] | null;
   recipe_effort_labels?: {
     effort_label: RecipeEffortLabel;
+  }[] | null;
+  recipe_equipment?: {
+    equipment: { preset_key: string | null } | null;
   }[] | null;
   recipe_ingredients?: {
     amount: number | null;
@@ -57,6 +70,12 @@ export function toRecipeDetailDto(row: RecipeDetailRow, imageUrl = row.image_url
     effortLabels: sortEffortLabels(
       row.recipe_effort_labels?.map(({ effort_label }) => effort_label) ?? []
     ),
+    equipmentKeys: sortEquipmentKeys(
+      row.recipe_equipment?.flatMap(({ equipment }) => {
+        const presetKey = equipment?.preset_key ?? null;
+        return isEquipmentPresetKey(presetKey) ? [presetKey] : [];
+      }) ?? []
+    ),
     sourceLinks: row.recipe_links?.length
       ? row.recipe_links
           .slice()
@@ -86,6 +105,7 @@ export function toRecipeFormValues(recipe: RecipeDetailDto): RecipeFormValues {
     costRating: recipe.costRating ?? "",
     difficulty: recipe.difficulty ?? "",
     effortLabels: recipe.effortLabels.slice(),
+    equipmentKeys: recipe.equipmentKeys.slice(),
     sourceLinks: recipe.sourceLinks.map(({ label, url }) => ({ label: label ?? "", url })),
     notes: recipe.notes ?? "",
     ingredients: recipe.ingredients.map((ingredient) => ({

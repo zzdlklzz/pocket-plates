@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = "http://127.0.0.1:3000";
+const e2ePort = process.env.E2E_PORT ?? "3000";
+const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${e2ePort}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -11,9 +12,9 @@ export default defineConfig({
     trace: "on-first-retry"
   },
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3000",
+    command: `npm run dev -- --hostname 127.0.0.1 --port ${e2ePort}`,
     url: baseURL,
-    reuseExistingServer: !process.env.CI
+    reuseExistingServer: !process.env.CI && !process.env.E2E_LOCAL_SUPABASE
   },
   projects: [
     {

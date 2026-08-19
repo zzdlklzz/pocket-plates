@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library and the first two Stage 2 discovery slices: it has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, title-or-ingredient search, optional controlled effort metadata and match-all filtering, private device image uploads, the Next.js app shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library and discovery Slices 1–3: it has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, title-or-ingredient search, optional controlled effort and equipment/setup metadata, match-all discovery filtering, a mobile-safe filter dialog, private device image uploads, the Next.js app shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented tags remain deferred as discovery Slice 4.
 
 ## Stack
 
@@ -53,6 +53,7 @@ The database schema is migration-first and represented in:
 - `supabase/migrations/20260819194346_add_private_library_search.sql`
 - `supabase/migrations/20260819200746_grant_private_library_search_reads.sql`
 - `supabase/migrations/20260819203000_add_recipe_effort_labels.sql`
+- `supabase/migrations/20260819205000_add_equipment_presets.sql`
 - `docs/database-schema.dbml`
 - `docs/database-erd.mmd`
 
@@ -66,7 +67,7 @@ Core entities:
 - `recipe_steps`: ordered instructions.
 - `recipe_links`: up to five ordered source URLs per recipe, each with an optional display label.
 - `tags` and `recipe_tags`: user-owned tags and recipe/tag joins.
-- `equipment` and `recipe_equipment`: user-owned equipment labels and recipe/equipment joins.
+- `equipment` and `recipe_equipment`: user-owned equipment labels and recipe/equipment joins. Controlled equipment rows have a nullable stable `preset_key`; custom null-key rows remain compatible but are not shown in the preset-only interface.
 
 Future-ready entities:
 
@@ -78,9 +79,9 @@ Future-ready entities:
 
 Recipe create and edit flows write sources to `recipe_links`. The legacy `recipes.source_url` column remains readable as a fallback for recipes created before multi-source support, but new saves clear it and use the child rows. Source rows follow recipe ownership through existing Row Level Security policies.
 
-The `list_private_library_recipes` security-invoker database function provides the active-library card query. It matches literal case-insensitive substrings against recipe titles or ingredient names, applies meal/cost/difficulty filters plus match-all effort labels in the same database operation, explicitly restricts results to the authenticated owner and non-archived recipes, and aggregates meal types for the card mapper. GIN trigram indexes on `recipes.title` and `recipe_ingredients.name` support contains search without changing the intentionally non-fuzzy match semantics. Function execution and the source-table reads required by invoker rights are granted only to `authenticated`; underlying RLS remains enabled and enforces owner isolation on direct and function-mediated reads.
+The `list_private_library_recipes` security-invoker database function provides the active-library card query. It matches literal case-insensitive substrings against recipe titles or ingredient names, applies meal/cost/difficulty filters plus match-all effort and match-all equipment criteria in the same database operation, explicitly restricts results to the authenticated owner and non-archived recipes, and aggregates meal types for the card mapper. GIN trigram indexes on `recipes.title` and `recipe_ingredients.name` support contains search without changing the intentionally non-fuzzy match semantics. Function execution and the source-table reads required by invoker rights are granted only to `authenticated`; underlying RLS remains enabled and enforces owner isolation on direct and function-mediated reads.
 
-`replace_recipe_discovery_metadata` is the authenticated, security-invoker write boundary for discovery metadata. In the current slice it validates and atomically replaces a recipe's controlled effort labels. It derives the owner from `auth.uid()`, refuses recipes outside that owner boundary, rejects null or duplicate selections, and relies on the `recipe_effort_labels` RLS policy for a second ownership check. Later discovery slices extend this one metadata replacement boundary for equipment and tags instead of issuing one request per selection.
+`replace_recipe_discovery_metadata` is the authenticated, security-invoker write boundary for discovery metadata. It validates and atomically replaces a recipe's controlled effort and equipment selections. It derives the owner from `auth.uid()`, refuses recipes outside that owner boundary, rejects null or duplicate selections and the `oven`/`no_oven` conflict, upserts one reusable owner catalog row for each selected equipment preset, and relies on the join-table RLS policies for a second ownership check. Replacing controlled equipment removes only prior keyed joins, so existing custom null-key equipment links are preserved. A future tag slice can extend this same bounded metadata boundary instead of issuing one request per selected value.
 
 ## Code Organization
 
@@ -215,20 +216,20 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI. Supabase 5xx failures during email signup are treated as confirmation-email delivery failures in the UI because account creation depends on the configured Supabase Auth email provider.
 
-Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then searched by title or ingredient name and filtered by one or more meal types, cost rating, difficulty, and optional effort traits. Multiple effort selections use match-all semantics; other dimensions continue to combine with them using AND. Recipe cards link to owner-scoped detail pages and remain free of discovery metadata. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
+Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then searched by title or ingredient name and filtered by one or more meal types, cost rating, difficulty, optional effort traits, and optional equipment/setup values. Multiple effort or equipment selections use match-all semantics; dimensions combine with one another using AND. Recipe cards link to owner-scoped detail pages and remain free of discovery metadata. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
 
 ## Recipe Read Path
 
 The recipe read path keeps database rows, DTOs, and UI state separate:
 
-- `recipe.repository.ts` sends normalized active search, meal type, cost, difficulty, and effort criteria to `list_private_library_recipes` in one database request. Effort arrays are sorted and deduplicated for stable query keys; the database requires every selected effort label. The function matches title or any ingredient name, excludes archived and non-owner rows, returns each recipe once, aggregates meal types, and keeps the existing rule that `flexible` recipes appear under selected specific meal types while Flexible-only filtering stays exact. Archived results retain their separate direct query, require `archived_at` to be non-null, and remain newest-first and owner-scoped through RLS.
+- `recipe.repository.ts` sends normalized active search, meal type, cost, difficulty, effort, and equipment criteria to `list_private_library_recipes` in one database request. Multi-value arrays are sorted and deduplicated for stable query keys; the database requires every selected effort label and every selected equipment key. The function matches title or any ingredient name, excludes archived and non-owner rows, returns each recipe once, aggregates meal types, and keeps the existing rule that `flexible` recipes appear under selected specific meal types while Flexible-only filtering stays exact. Archived results retain their separate direct query, require `archived_at` to be non-null, and remain newest-first and owner-scoped through RLS.
 - `recipe-image.repository.ts` exchanges durable private object paths for one-hour signed display URLs. Legacy pasted `image_url` values remain readable only when a recipe has no Storage path.
-- `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects. Effort labels are ordered by application constants before reaching detail or edit UI.
+- `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects. Effort labels and recognized keyed equipment values are ordered by application constants before reaching detail or edit UI; null-key and unknown equipment values are excluded from the controlled interface.
 - `recipe.queries.ts` exposes active-list, archived-list, and detail hooks for TanStack Query caching. Equivalent trimmed/deduplicated filter inputs share a stable active-list query key, previous card data remains visible while new criteria load, and both list hooks reuse the same batched private-image URL mapping.
 - `RecipeLibrary.tsx` owns search and filter state plus active-library query results. Search is trimmed and debounced by 300 ms before querying. The screen distinguishes an empty library from an empty result, provides relevant clear actions, and announces background result updates without replacing prior cards with a full skeleton.
 - `ArchivedRecipeLibrary.tsx` owns archived results, checkbox selection, select-all state, and restore/permanent-delete interactions without introducing a global store or a second list framework.
 - `DeleteArchivedRecipesDialog.tsx` owns the explicit irreversible-action confirmation, selected recipe summary, pending state, Escape handling, and safe failure message.
-- `recipe-filters.tsx` renders the single Filters action, active-count badge, applied-filter chips, and filter dialog from state owned by `RecipeLibrary.tsx`. Effort appears after the existing dimensions and explains its match-all behavior. Applied chips use category-qualified accessible removal names. The action, chips, and Clear all control share one wrapping toolbar; each chip removes only its represented value, while the summary and dialog can both clear every active filter without introducing another state owner.
+- `recipe-filters.tsx` renders the single Filters action, active-count badge, applied-filter chips, and filter dialog from state owned by `RecipeLibrary.tsx`. Effort and equipment appear after the existing dimensions and explain their match-all behavior. Applied chips use category-qualified accessible removal names. The action, chips, and Clear all control share one wrapping toolbar; each chip removes only its represented value, while the summary and dialog can both clear every active filter without introducing another state owner. The dialog is bounded to the dynamic viewport, keeps its action row reachable while its content scrolls, moves initial focus to Close, traps Tab focus, closes on Escape or backdrop interaction, and returns focus to the Filters trigger.
 - `RecipeCard.tsx` renders compact mobile-friendly recipe cards.
 
 ## Recipe Write Path
@@ -240,22 +241,22 @@ Recipe create/edit/archive/restore/permanent-delete flows use the same repositor
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
 - `RecipeForm.tsx` owns React Hook Form setup, image-change state, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
 - `RecipeFormFields.tsx` coordinates the basic, meal-type, optional metadata, discovery, image, source, ingredient, and step sections. Basic fields and source-link controls remain local, while the cost and difficulty selects reuse the same typed option definitions as the recipe filters.
-- `RecipeDiscoveryFields.tsx` owns the optional effort-selection UI. It stores stable keys in React Hook Form, renders controlled labels and descriptions from `recipe-discovery.constants.ts`, and inherits the form fieldset's pending disabled state.
+- `RecipeDiscoveryFields.tsx` owns the optional effort and equipment/setup selection UI. It stores stable keys in React Hook Form, renders controlled labels and descriptions from `recipe-discovery.constants.ts`, automatically replaces `Oven` with `No oven needed` or vice versa, and inherits the form fieldset's pending disabled state.
 - `RecipeImageField.tsx` replaces pasted cover-image URLs with a device file picker. It validates JPEG, PNG, and WebP files against the 2 MB bucket limit, previews a valid selection, and exposes explicit replace and remove actions.
 - `RecipeIngredientFields.tsx` owns the ingredient field array, compact and expanded ingredient row UI, drag context, active row, field-array moves, and reversible removal state.
 - `RecipeStepFields.tsx` owns the step field array, compact and expanded step row UI, drag context, active row, field-array moves, and reversible removal state.
 - `recipe-form-list.tsx` contains the repeating-list mechanics shared by source, ingredient, and step sections: add and undo controls, drag sensors, removed-row types, and index adjustments after moves, removals, or restoration. Ingredient and step row markup stays separate because their fields and summaries differ.
 - Repeating source, ingredient, and step sections place explicit add actions after their rows and focus the newly appended field so mobile entry continues down the page.
-- `recipe.validation.ts` defines the Zod rules for title, servings, meal types, effort labels, ingredients, steps, up to five optional source links with optional labels, notes, cost rating, and difficulty. Effort accepts only the four controlled keys, permits an empty selection, and rejects duplicates. File validation stays in `recipe-image.constants.ts` because files are upload state rather than database form values.
-- The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source links, cover image, cost rating, difficulty, and any combination of effort labels can be left blank.
+- `recipe.validation.ts` defines the Zod rules for title, servings, meal types, effort labels, equipment keys, ingredients, steps, up to five optional source links with optional labels, notes, cost rating, and difficulty. Discovery arrays permit an empty selection, accept only controlled keys, and reject duplicates; equipment additionally rejects selecting both oven states. File validation stays in `recipe-image.constants.ts` because files are upload state rather than database form values.
+- The add/edit form is intentionally mobile-first. A user adds a title, positive whole-number servings, at least one meal type, at least one ingredient, and at least one step. Optional recipe notes, source links, cover image, cost rating, difficulty, effort labels, and equipment/setup values can be left blank.
 - Ingredient rows keep four editable fields: ingredient name, amount, unit, and notes. Ingredient names are required. Amounts are optional but, when present, must be positive numbers or simple fractions such as `1`, `1.5`, `1/2`, or `1 1/2`. Units are optional but must come from the supported unit picker. Ingredient notes stay available for preparation details like "finely chopped", "optional", or "to taste".
 - Ingredient and step rows collapse into one-line summaries when they are not being edited, with section headings showing the current row count. Selecting a summary exposes that row's full controls, adding a row expands and focuses it, and field-level validation keeps affected rows open. Both row types expose a direct red delete icon instead of an overflow menu.
 - Removing a source, ingredient, or step replaces that row's former list position with a screen-reader-announced Undo notice. This keeps the recovery action beside the user's deletion context, including at the beginning, middle, or end of a list. Undo restores the complete row at its original position, including whether an ingredient or step had been expanded, before the form is saved.
 - Ingredient and step rows can be reordered while adding or editing a recipe. Dedicated drag handles support mouse, delayed touch activation, and keyboard input without making editable row content draggable. React Hook Form keeps reordered values together, and the repository persists their array positions through `recipe_ingredients.sort_order` and `recipe_steps.sort_order`.
 - Step rows now contain only instruction text. Dedicated timer minutes are no longer edited or displayed; timing should be written directly into the instruction, such as "Simmer for 10 minutes."
 - Validation errors are shown next to the specific source, ingredient, or step field that needs attention. Source URLs must be complete HTTP(S) URLs and cannot be duplicated, and the form caps recipe size with practical limits for sources, servings, ingredients, and steps.
-- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_links`, `recipe_ingredients`, and `recipe_steps` child rows, calls the single discovery-metadata replacement RPC, coordinates image reference changes, and changes archive state through `archived_at`. `recipe-discovery.repository.ts` owns that RPC call so save performs one bounded request rather than one write per selected effort. Restoring clears only `archived_at`; it does not rewrite recipe children, effort labels, or image references. Permanent deletion first resolves only the selected owner-visible rows that remain archived, then deletes and returns only rows that still satisfy that condition so existing foreign-key cascades remove their child data and Storage cleanup cannot affect a concurrently restored recipe. Existing `recipes.source_url` values remain readable as a legacy fallback until the recipe is saved into `recipe_links`.
-- Discovery metadata replacement is atomic within its database function, but the broader pre-existing update flow still writes the base recipe, ordinary child collections, discovery metadata, and image reference as separate operations. A create failure rolls back by deleting the new recipe so cascades remove saved effort rows. An update metadata failure is surfaced safely but can occur after earlier base/child writes have succeeded; a future whole-save transaction remains outside this slice.
+- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_links`, `recipe_ingredients`, and `recipe_steps` child rows, calls the single discovery-metadata replacement RPC, coordinates image reference changes, and changes archive state through `archived_at`. `recipe-discovery.repository.ts` owns that RPC call so save performs one bounded request rather than one write per selected discovery value. Restoring clears only `archived_at`; it does not rewrite recipe children, discovery metadata, or image references. Permanent deletion first resolves only the selected owner-visible rows that remain archived, then deletes and returns only rows that still satisfy that condition so existing foreign-key cascades remove their child data and Storage cleanup cannot affect a concurrently restored recipe. Existing `recipes.source_url` values remain readable as a legacy fallback until the recipe is saved into `recipe_links`.
+- Discovery metadata replacement is atomic within its database function, but the broader pre-existing update flow still writes the base recipe, ordinary child collections, discovery metadata, and image reference as separate operations. A create failure rolls back by deleting the new recipe so cascades remove saved effort and equipment joins. An update metadata failure is surfaced safely but can occur after earlier base/child writes have succeeded; a future whole-save transaction remains outside this slice.
 - New recipes are created before their image is uploaded so each object path can include both the authenticated owner ID and recipe ID. A failed upload rolls back the new recipe. During replacement, the new object is uploaded and referenced before the old object is removed; if the reference update fails, the new object is cleaned up and the prior image remains. Old-object cleanup after a successful reference change is best effort so a cleanup failure never restores a cover the user removed.
 - `recipes.image_storage_path` stores the durable private object path. `recipes.image_url` remains a legacy fallback for previously pasted URLs and is cleared when a stored image is added or explicitly removed.
 - Before writing ingredient rows, `recipe.repository.ts` parses accepted amount strings into numeric values for `recipe_ingredients.amount`. Blank optional fields are written as `null`, and step timers are written as `null`.
@@ -288,7 +289,7 @@ The archive action is reversible in the app. `recipe.repository.ts` sets `recipe
 
 Restoring clears only `archived_at`, then invalidates the shared recipe query key so the restored card leaves the archived page and becomes available in the active library. A failed restore keeps the card visible and presents a safe retryable message.
 
-Permanent deletion remains separate and is available only from the archived page. A user can select individual recipes or all currently listed archived recipes, then must confirm an alert dialog that states the action cannot be undone. The repository rechecks that the selected owner-visible rows are still archived before deleting them. Database cascades remove ingredients, steps, meal types, effort labels, and source links. After the database delete succeeds, private cover images for the returned deleted IDs are removed in one best-effort Storage request; a concurrent restore is therefore excluded from both deletion and image cleanup, and a Storage cleanup failure cannot restore a recipe that was already deleted.
+Permanent deletion remains separate and is available only from the archived page. A user can select individual recipes or all currently listed archived recipes, then must confirm an alert dialog that states the action cannot be undone. The repository rechecks that the selected owner-visible rows are still archived before deleting them. Database cascades remove ingredients, steps, meal types, effort labels, equipment joins, and source links; reusable owner equipment catalog rows remain. After the database delete succeeds, private cover images for the returned deleted IDs are removed in one best-effort Storage request; a concurrent restore is therefore excluded from both deletion and image cleanup, and a Storage cleanup failure cannot restore a recipe that was already deleted.
 
 ```mermaid
 flowchart LR
@@ -318,11 +319,13 @@ SUPABASE_SECRET_KEY=
 
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the modern replacement for the legacy `anon` key in browser-safe code. `SUPABASE_SECRET_KEY` is server-only and should stay out of any `NEXT_PUBLIC_` variable; it is reserved for future backend-only admin work and is not used by the browser client.
 
-3. Start the local app:
+3. Start the app. The recommended local-database command starts Supabase when needed, applies pending local migrations without deleting data, overrides any hosted values in `.env.local` for this process, and then starts Next.js:
 
 ```bash
-npm run dev
+npm run dev:local
 ```
+
+Use plain `npm run dev` only when you deliberately want the target configured in `.env.local`. Local and production data remain separate; schema alignment comes from applying the same committed migration chain to both environments.
 
 4. Run checks. CI runs these checks with Node.js 24 and placeholder public Supabase values because GitHub Actions does not inherit Vercel environment variables. The application job runs inside Microsoft's Playwright 1.61.1 Noble container, which already contains the matching browser binaries and Linux system dependencies. The project pins `@playwright/test` to the same version so CI does not need a live Ubuntu package installation before E2E testing. Playwright starts the local Next.js server on `127.0.0.1:3000` so E2E tests use a deterministic base URL:
 
@@ -333,6 +336,14 @@ npm run test
 npm run build
 npm run test:e2e
 ```
+
+The default `test:e2e` command keeps CI's signed-out coverage independent of database credentials. For the real signed-in private-library journey, start Docker and the local Supabase stack, reset the migration chain when needed, then run:
+
+```bash
+npm run test:e2e:local
+```
+
+The local runner shares the same local-Supabase preparation helper as `npm run dev:local`: it starts the stack when needed and applies pending migrations before testing. It then reads only Supabase's public browser URL and publishable key, starts an isolated Next.js development server on a free port with a separate `.next/e2e` output directory, and runs the same mobile and desktop Playwright projects. It does not use `.env.local` or the linked hosted database. The authenticated test creates disposable local users and recipes; `npx supabase db reset --local` removes that local test data.
 
 Vercel deployments use `vercel.json` to run `npm run verify && npm run build`, so lint, typecheck, and unit tests must pass before Vercel produces a deployment build. `next.config.mjs` leaves `output` unset when Vercel supplies its `VERCEL` environment variable because Vercel's build adapter produces the deployment artifacts itself. This avoids a Next.js 16.3 adapter conflict while keeping standalone output for non-Vercel Docker and AWS builds. GitHub branch protection is still required if production deploys should be limited to commits whose full GitHub Actions CI, including Playwright E2E, has passed.
 
@@ -501,6 +512,16 @@ npx supabase status
 
 A clean result means the local migration chain applies and the schema linter found no errors. It does not by itself prove hosted deployment credentials, production migration state, application behavior, or every RLS access path. Run the application checks as well, and verify the linked migration list during deployment.
 
+For normal development, `npm run dev:local` runs `supabase migration up --local` before starting the app. This forward-applies new migrations while preserving local accounts and recipes. Use the reset command periodically, and before releases, to prove a clean database can still be recreated from scratch.
+
+Run the transactional equipment/RLS integration checks after a reset:
+
+```bash
+docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/equipment_presets.sql
+```
+
+The SQL test rolls its fixtures back. It verifies owner catalog reuse, match-all and combined filters, conflict atomicity, custom null-key preservation, owner isolation, cross-owner join rejection, and anonymous function denial.
+
 Supabase Studio is available at the Studio URL printed by `npx supabase status`, usually `http://127.0.0.1:54323`. Stop the local containers when they are no longer needed:
 
 ```bash
@@ -645,7 +666,7 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 
 1. Stage 0: foundation, app shell, CI, tests, Supabase boundary, TanStack Query setup.
 2. Stage 1: true MVP private recipe library with archived recipe viewing and restoration.
-3. Stage 2: title-or-ingredient search and controlled effort labels are complete; equipment and student-oriented tag filters remain.
+3. Stage 2: title-or-ingredient search plus controlled effort and equipment/setup discovery are complete; student-oriented tags remain intentionally deferred.
 4. Stage 3: meal planning, grocery lists, serving scaling, pantry/cost features.
 5. Stage 4: public/shared recipe discovery.
 6. Stage 5: polish, import flows, nutrition/macros, recommendations.

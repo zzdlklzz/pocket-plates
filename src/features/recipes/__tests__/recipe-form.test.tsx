@@ -178,6 +178,7 @@ describe("RecipeForm", () => {
       costRating: "cheap",
       difficulty: "easy",
       effortLabels: ["make_ahead"],
+      equipmentKeys: ["oven"],
       sourceLinks: [
         { label: "First source", url: "https://example.com/first" },
         { label: "Second source", url: "https://example.com/second" }
@@ -264,6 +265,7 @@ describe("RecipeForm", () => {
       costRating: "cheap",
       difficulty: "easy",
       effortLabels: ["quick", "low_cleanup"],
+      equipmentKeys: ["microwave", "no_oven"],
       sourceLinks: [],
       notes: "",
       ingredients: [
@@ -290,6 +292,14 @@ describe("RecipeForm", () => {
       "aria-pressed",
       "true"
     );
+    expect(getSection("Equipment & setup").getByRole("button", { name: "Microwave" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(getSection("Equipment & setup").getByRole("button", { name: "No oven needed" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
 
     const ingredients = getSection("Ingredients");
     expect(ingredients.getByRole("button", { name: "Edit ingredient 1: 2 cups Rice · cooked" })).toBeInTheDocument();
@@ -312,5 +322,20 @@ describe("RecipeForm", () => {
     fireEvent.click(effort.getByRole("button", { name: "One pot" }));
     expect(effort.getByRole("button", { name: "Quick" })).toHaveAttribute("aria-pressed", "true");
     expect(effort.getByRole("button", { name: "One pot" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("selects optional equipment and keeps oven choices mutually exclusive", () => {
+    renderRecipeForm();
+
+    const equipment = getSection("Equipment & setup");
+    fireEvent.click(equipment.getByRole("button", { name: "Oven" }));
+    expect(equipment.getByRole("button", { name: "Oven" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(equipment.getByRole("button", { name: "No oven needed" }));
+    expect(equipment.getByRole("button", { name: "Oven" })).toHaveAttribute("aria-pressed", "false");
+    expect(equipment.getByRole("button", { name: "No oven needed" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
   });
 });

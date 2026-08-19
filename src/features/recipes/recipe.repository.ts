@@ -5,6 +5,7 @@ import { replaceRecipeDiscoveryMetadata } from "./recipe-discovery.repository";
 import type { RecipeDetailRow, RecipeListRow } from "./recipe.mappers";
 import type {
   CostRating,
+  EquipmentPresetKey,
   MealType,
   RecipeEffortLabel,
   RecipeFormValues,
@@ -23,7 +24,7 @@ type RecipeLinkInsert = Database["public"]["Tables"]["recipe_links"]["Insert"];
 
 const RECIPE_LIST_SELECT = "id,title,cost_rating,difficulty,image_storage_path,image_url,created_at,recipe_meal_types(meal_type)";
 const RECIPE_DETAIL_SELECT =
-  "id,title,cost_rating,difficulty,image_storage_path,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_effort_labels(effort_label),recipe_links(label,url,sort_order),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,sort_order)";
+  "id,title,cost_rating,difficulty,image_storage_path,image_url,source_url,notes,servings,created_at,recipe_meal_types(meal_type),recipe_effort_labels(effort_label),recipe_equipment(equipment(preset_key)),recipe_links(label,url,sort_order),recipe_ingredients(name,amount,unit,notes,sort_order),recipe_steps(instruction,sort_order)";
 
 function emptyToNull(value: string) {
   const trimmed = value.trim();
@@ -51,7 +52,8 @@ export function normalizeRecipeListFilters(filters: RecipeListFilters): RecipeLi
     mealTypes: normalizeFilterValues<MealType>(filters.mealTypes),
     costRatings: normalizeFilterValues<CostRating>(filters.costRatings),
     difficulty: filters.difficulty,
-    effortLabels: normalizeFilterValues<RecipeEffortLabel>(filters.effortLabels)
+    effortLabels: normalizeFilterValues<RecipeEffortLabel>(filters.effortLabels),
+    equipmentKeys: normalizeFilterValues<EquipmentPresetKey>(filters.equipmentKeys)
   };
 }
 
@@ -70,7 +72,8 @@ export async function listRecipes(
         : null,
       p_cost_ratings: normalizedFilters.costRatings ?? null,
       p_difficulty: normalizedFilters.difficulty ?? null,
-      p_effort_labels: normalizedFilters.effortLabels ?? null
+      p_effort_labels: normalizedFilters.effortLabels ?? null,
+      p_equipment_keys: normalizedFilters.equipmentKeys ?? null
     } as never
   );
 
@@ -245,7 +248,12 @@ export async function createRecipe(
 
   try {
     await replaceRecipeChildren(supabase, createdRecipe.id, values);
-    await replaceRecipeDiscoveryMetadata(supabase, createdRecipe.id, values.effortLabels);
+    await replaceRecipeDiscoveryMetadata(
+      supabase,
+      createdRecipe.id,
+      values.effortLabels,
+      values.equipmentKeys
+    );
     await replaceRecipeImage(supabase, createdRecipe.id, user.id, null, imageChange);
   } catch (error) {
     await supabase.from("recipes").delete().eq("id", createdRecipe.id);
@@ -295,7 +303,7 @@ export async function updateRecipe(
   }
 
   await replaceRecipeChildren(supabase, id, values);
-  await replaceRecipeDiscoveryMetadata(supabase, id, values.effortLabels);
+  await replaceRecipeDiscoveryMetadata(supabase, id, values.effortLabels, values.equipmentKeys);
   await replaceRecipeImage(
     supabase,
     id,

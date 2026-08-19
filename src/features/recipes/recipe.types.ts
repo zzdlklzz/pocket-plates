@@ -4,6 +4,13 @@ export type CostRating = Database["public"]["Enums"]["cost_rating"];
 export type DifficultyLevel = Database["public"]["Enums"]["difficulty_level"];
 export type MealType = Database["public"]["Enums"]["meal_type"];
 export type RecipeEffortLabel = Database["public"]["Enums"]["recipe_effort_label"];
+export type EquipmentPresetKey =
+  | "microwave"
+  | "rice_cooker"
+  | "stovetop"
+  | "oven"
+  | "blender"
+  | "no_oven";
 
 export type RecipeCardDto = {
   id: string;
@@ -35,6 +42,7 @@ export type RecipeDetailDto = RecipeCardDto & {
   servings: number;
   notes: string | null;
   effortLabels: RecipeEffortLabel[];
+  equipmentKeys: EquipmentPresetKey[];
   sourceLinks: RecipeSourceLinkDto[];
   ingredients: RecipeIngredientDto[];
   steps: RecipeStepDto[];
@@ -47,6 +55,7 @@ export type RecipeFormValues = {
   costRating: CostRating | "";
   difficulty: DifficultyLevel | "";
   effortLabels: RecipeEffortLabel[];
+  equipmentKeys: EquipmentPresetKey[];
   sourceLinks: {
     label: string;
     url: string;
@@ -79,4 +88,5 @@ export type RecipeListFilters = {
   costRatings?: CostRating[];
   difficulty?: DifficultyLevel;
   effortLabels?: RecipeEffortLabel[];
+  equipmentKeys?: EquipmentPresetKey[];
 };

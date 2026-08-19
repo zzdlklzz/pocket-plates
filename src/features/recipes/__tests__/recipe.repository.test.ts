@@ -30,14 +30,16 @@ describe("private library recipe filters", () => {
         mealTypes: ["lunch", "breakfast", "lunch"],
         costRatings: ["moderate", "cheap", "moderate"],
         difficulty: "easy",
-        effortLabels: ["one_pot", "quick", "one_pot"]
+        effortLabels: ["one_pot", "quick", "one_pot"],
+        equipmentKeys: ["no_oven", "microwave", "no_oven"]
       })
     ).toEqual({
       search: "rice",
       mealTypes: ["breakfast", "lunch"],
       costRatings: ["cheap", "moderate"],
       difficulty: "easy",
-      effortLabels: ["one_pot", "quick"]
+      effortLabels: ["one_pot", "quick"],
+      equipmentKeys: ["microwave", "no_oven"]
     });
   });
 
@@ -51,7 +53,8 @@ describe("private library recipe filters", () => {
         mealTypes: ["lunch", "breakfast", "lunch"],
         costRatings: ["cheap", "very_cheap"],
         difficulty: "beginner_friendly",
-        effortLabels: ["quick", "one_pot"]
+        effortLabels: ["quick", "one_pot"],
+        equipmentKeys: ["microwave", "no_oven"]
       })
     ).resolves.toBe(rows);
 
@@ -61,7 +64,8 @@ describe("private library recipe filters", () => {
       p_meal_types: ["breakfast", "lunch", "flexible"],
       p_cost_ratings: ["cheap", "very_cheap"],
       p_difficulty: "beginner_friendly",
-      p_effort_labels: ["one_pot", "quick"]
+      p_effort_labels: ["one_pot", "quick"],
+      p_equipment_keys: ["microwave", "no_oven"]
     });
   });
 
@@ -75,7 +79,8 @@ describe("private library recipe filters", () => {
       p_meal_types: null,
       p_cost_ratings: null,
       p_difficulty: null,
-      p_effort_labels: null
+      p_effort_labels: null,
+      p_equipment_keys: null
     });
   });
 });
