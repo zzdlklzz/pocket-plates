@@ -87,7 +87,17 @@ export async function uploadRecipeImage(
 }
 
 export async function removeRecipeImage(supabase: SupabaseBrowserClient, storagePath: string) {
-  const { error } = await supabase.storage.from(RECIPE_IMAGE_BUCKET).remove([storagePath]);
+  return removeRecipeImages(supabase, [storagePath]);
+}
+
+export async function removeRecipeImages(supabase: SupabaseBrowserClient, storagePaths: string[]) {
+  const uniqueStoragePaths = Array.from(new Set(storagePaths));
+
+  if (uniqueStoragePaths.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase.storage.from(RECIPE_IMAGE_BUCKET).remove(uniqueStoragePaths);
 
   if (error) {
     throw error;

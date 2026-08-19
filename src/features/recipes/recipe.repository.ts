@@ -1,6 +1,6 @@
 import type { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
-import { removeRecipeImage, uploadRecipeImage } from "./recipe-image.repository";
+import { removeRecipeImage, removeRecipeImages, uploadRecipeImage } from "./recipe-image.repository";
 import type { RecipeDetailRow, RecipeListRow } from "./recipe.mappers";
 import type { MealType, RecipeFormValues, RecipeImageChange, RecipeListFilters } from "./recipe.types";
 import { parseIngredientAmount } from "./recipe.validation";
@@ -334,4 +334,46 @@ export async function restoreRecipe(supabase: SupabaseBrowserClient, id: string)
   if (error) {
     throw error;
   }
+}
+
+export async function deleteArchivedRecipes(supabase: SupabaseBrowserClient, ids: string[]) {
+  const uniqueIds = Array.from(new Set(ids));
+
+  if (uniqueIds.length === 0) {
+    return;
+  }
+
+  const { data, error: lookupError } = await supabase
+    .from("recipes")
+    .select("id,image_storage_path")
+    .in("id", uniqueIds)
+    .not("archived_at", "is", null);
+
+  if (lookupError) {
+    throw lookupError;
+  }
+
+  const archivedRecipes = data as { id: string; image_storage_path: string | null }[];
+
+  if (archivedRecipes.length === 0) {
+    return;
+  }
+
+  const archivedIds = archivedRecipes.map(({ id }) => id);
+  const { data: deletedRows, error: deleteError } = await supabase
+    .from("recipes")
+    .delete()
+    .in("id", archivedIds)
+    .not("archived_at", "is", null)
+    .select("id");
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  const deletedIds = new Set(((deletedRows ?? []) as { id: string }[]).map(({ id }) => id));
+  const storagePaths = archivedRecipes.flatMap(({ id, image_storage_path: storagePath }) =>
+    deletedIds.has(id) && storagePath ? [storagePath] : []
+  );
+  await removeRecipeImages(supabase, storagePaths).catch(() => undefined);
 }

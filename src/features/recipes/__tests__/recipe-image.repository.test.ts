@@ -4,6 +4,7 @@ import {
   getRecipeImageUrl,
   getRecipeImageUrls,
   removeRecipeImage,
+  removeRecipeImages,
   uploadRecipeImage
 } from "../recipe-image.repository";
 
@@ -82,5 +83,16 @@ describe("recipe image repository", () => {
     await removeRecipeImage(supabase, "user-1/recipe-1/cover.png");
     expect(remove).toHaveBeenCalledWith(["user-1/recipe-1/cover.png"]);
     randomUuid.mockRestore();
+  });
+
+  it("removes multiple private images in one deduplicated request", async () => {
+    const remove = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn(() => ({ remove }));
+    const supabase = { storage: { from } } as never;
+
+    await removeRecipeImages(supabase, ["one.webp", "two.webp", "one.webp"]);
+
+    expect(from).toHaveBeenCalledWith(RECIPE_IMAGE_BUCKET);
+    expect(remove).toHaveBeenCalledWith(["one.webp", "two.webp"]);
   });
 });

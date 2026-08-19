@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
@@ -11,6 +11,7 @@ import { getRecipeErrorMessage } from "./recipe.errors";
 import { RecipeFilterDialog, RecipeMealTypeFilters } from "./recipe-filters";
 import { useRecipeList } from "./recipe.queries";
 import { RecipeCard } from "./recipe-card";
+import { RecipeNavigation } from "./recipe-navigation";
 import { RecipeGridSkeleton } from "./recipe-skeletons";
 import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
 
@@ -62,16 +63,7 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
             <h1 className="text-xl font-bold text-slate-800">{APP_METADATA.name}</h1>
             <p className="mt-1 truncate text-xs text-slate-500">{profileLabel}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
-              href="/recipes/archived"
-            >
-              <Archive className="h-3.5 w-3.5" aria-hidden="true" />
-              Archived
-            </Link>
-            <SignOutButton />
-          </div>
+          <SignOutButton />
         </div>
         <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
           <Search className="h-4 w-4" aria-hidden="true" />
@@ -86,7 +78,13 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         </label>
       </header>
 
-      <RecipeMealTypeFilters mealTypes={mealTypes} onClear={() => setMealTypes([])} onToggle={toggleMealType} />
+      <RecipeMealTypeFilters
+        activeFilterCount={activeFilterCount}
+        mealTypes={mealTypes}
+        onClear={() => setMealTypes([])}
+        onFilterOpen={() => setIsFilterOpen(true)}
+        onToggle={toggleMealType}
+      />
 
       {isFilterOpen ? (
         <RecipeFilterDialog
@@ -127,23 +125,7 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         ) : null}
       </section>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md items-center justify-around border-t border-slate-200 bg-leaf-50 px-5 py-4 text-sm text-slate-600">
-        <button className="font-semibold text-leaf-700" type="button">
-          Home
-        </button>
-        <Link className="rounded-full bg-leaf-700 p-3 text-white" href="/recipes/new" aria-label="Add recipe">
-          <Plus className="h-5 w-5" aria-hidden="true" />
-        </Link>
-        <button
-          aria-haspopup="dialog"
-          className={activeFilterCount ? "flex items-center gap-1 font-semibold text-leaf-700" : "flex items-center gap-1"}
-          onClick={() => setIsFilterOpen(true)}
-          type="button"
-        >
-          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-          Filter{activeFilterCount ? ` ${activeFilterCount}` : ""}
-        </button>
-      </nav>
+      <RecipeNavigation activePage="home" />
     </AppPageShell>
   );
 }

@@ -6,6 +6,7 @@ import { queryKeys } from "@/lib/query/query-keys";
 
 const mocks = vi.hoisted(() => ({
   createSupabaseBrowserClient: vi.fn(),
+  deleteArchivedRecipes: vi.fn(),
   getRecipeImageUrls: vi.fn(),
   listArchivedRecipes: vi.fn(),
   restoreRecipe: vi.fn()
@@ -23,6 +24,7 @@ vi.mock("../recipe-image.repository", () => ({
 vi.mock("../recipe.repository", () => ({
   archiveRecipe: vi.fn(),
   createRecipe: vi.fn(),
+  deleteArchivedRecipes: mocks.deleteArchivedRecipes,
   getRecipe: vi.fn(),
   listArchivedRecipes: mocks.listArchivedRecipes,
   listRecipes: vi.fn(),
@@ -30,7 +32,7 @@ vi.mock("../recipe.repository", () => ({
   updateRecipe: vi.fn()
 }));
 
-import { useArchivedRecipeList, useRestoreRecipe } from "../recipe.queries";
+import { useArchivedRecipeList, useDeleteArchivedRecipes, useRestoreRecipe } from "../recipe.queries";
 
 function createWrapper(queryClient: QueryClient) {
   return function QueryWrapper({ children }: { children: ReactNode }) {
@@ -102,6 +104,25 @@ describe("archived recipe queries", () => {
     });
 
     expect(mocks.restoreRecipe).toHaveBeenCalledWith({ client: "supabase" }, "recipe-1");
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.recipes.all });
+  });
+
+  it("invalidates all recipe queries after permanent deletion", async () => {
+    mocks.deleteArchivedRecipes.mockResolvedValue(undefined);
+    const queryClient = createQueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useDeleteArchivedRecipes(), {
+      wrapper: createWrapper(queryClient)
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync(["recipe-1", "recipe-2"]);
+    });
+
+    expect(mocks.deleteArchivedRecipes).toHaveBeenCalledWith(
+      { client: "supabase" },
+      ["recipe-1", "recipe-2"]
+    );
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.recipes.all });
   });
 });

@@ -7,6 +7,7 @@ import { getRecipeImageUrl, getRecipeImageUrls } from "./recipe-image.repository
 import {
   archiveRecipe,
   createRecipe,
+  deleteArchivedRecipes,
   getRecipe,
   listArchivedRecipes,
   listRecipes,
@@ -125,6 +126,20 @@ export function useRestoreRecipe() {
     mutationFn: async (id: string) => {
       const supabase = createSupabaseBrowserClient();
       return restoreRecipe(supabase, id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
+    }
+  });
+}
+
+export function useDeleteArchivedRecipes() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const supabase = createSupabaseBrowserClient();
+      return deleteArchivedRecipes(supabase, ids);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });

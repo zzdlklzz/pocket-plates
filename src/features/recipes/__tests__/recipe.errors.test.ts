@@ -58,6 +58,9 @@ describe("getRecipeErrorMessage", () => {
     expect(getRecipeErrorMessage(new Error("database details that should stay hidden"), "restore")).toBe(
       "We could not restore this recipe. Please try again."
     );
+    expect(getRecipeErrorMessage(new Error("database details that should stay hidden"), "delete")).toBe(
+      "We could not permanently delete the selected recipes. Please try again."
+    );
   });
 
   it("reuses safe permission and network messages for restore failures", () => {

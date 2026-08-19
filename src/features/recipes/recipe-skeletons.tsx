@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { APP_METADATA } from "@/app/app.constants";
 import { AppPageShell } from "@/components/ui/app-page-shell";
 import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
@@ -31,11 +31,17 @@ function HeaderSkeleton() {
 
 function MealFilterSkeleton() {
   return (
-    <section className="mt-5 flex gap-2 overflow-hidden" aria-hidden="true">
-      <SkeletonBlock className="h-8 w-12 shrink-0 rounded-full bg-leaf-700/40" />
-      {MEAL_TYPE_FILTERS.slice(0, 4).map((filter) => (
-        <SkeletonBlock className="h-8 w-20 shrink-0 rounded-full bg-leaf-100" key={filter.value} />
-      ))}
+    <section className="mt-5 flex items-center gap-3" aria-hidden="true">
+      <div className="flex min-w-0 flex-1 gap-2 overflow-hidden">
+        <SkeletonBlock className="h-8 w-12 shrink-0 rounded-full bg-leaf-700/40" />
+        {MEAL_TYPE_FILTERS.slice(0, 3).map((filter) => (
+          <SkeletonBlock className="h-8 w-20 shrink-0 rounded-full bg-leaf-100" key={filter.value} />
+        ))}
+      </div>
+      <div className="flex shrink-0 items-center gap-1 text-sm text-slate-400">
+        <SlidersHorizontal className="h-4 w-4" />
+        Filters
+      </div>
     </section>
   );
 }
@@ -83,7 +89,7 @@ export function RecipeLibrarySkeleton() {
 
 export function ArchivedRecipeLibrarySkeleton() {
   return (
-    <AppPageShell spacing="compact">
+    <AppPageShell>
       <div role="status" aria-label="Loading archived recipes">
         <SkeletonBlock className="h-5 w-20 bg-leaf-100" />
         <section className="mt-5 rounded-b-3xl bg-leaf-100 px-4 pb-5 pt-4">

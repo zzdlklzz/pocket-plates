@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive/restore flows, private device image uploads, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, private device image uploads, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
 
 ## Stack
 
@@ -121,6 +121,7 @@ src/
         auth.constants.test.ts
     recipes/
       archived-recipe-library.tsx
+      delete-archived-recipes-dialog.tsx
       recipe-card.tsx
       recipe-detail.tsx
       recipe-edit.tsx
@@ -133,6 +134,7 @@ src/
       recipe-image.repository.ts
       recipe-ingredient-fields.tsx
       recipe-library.tsx
+      recipe-navigation.tsx
       recipe-library.constants.ts
       recipe-step-fields.tsx
       recipe.mappers.ts
@@ -188,7 +190,7 @@ Small, application-wide presentation components live under `src/components/ui`:
 - `inline-notice.tsx` owns error, informational, and neutral notice treatments with the established padding densities.
 - `back-link.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
 
-Feature-specific components remain with their domain. `auth-hero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `recipe-card.tsx` remains the reusable recipe summary card for both active and archived results. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
+Feature-specific components remain with their domain. `auth-hero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `recipe-card.tsx` remains the reusable recipe summary card for both active and archived results. `recipe-navigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Archived Recipes is the sheet's only current destination; future secondary pages can be added to its small item definition without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
 
 ## Server-State Rule
 
@@ -202,7 +204,7 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI. Supabase 5xx failures during email signup are treated as confirmation-email delivery failures in the UI because account creation depends on the configured Supabase Auth email provider.
 
-Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title, one or more meal types, cost rating, and difficulty. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a sign-out action.
+Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title, one or more meal types, cost rating, and difficulty. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Archived Recipes. Filters remain local to the active library beside its meal-type chips instead of occupying a global navigation slot.
 
 ## Recipe Read Path
 
@@ -212,14 +214,15 @@ The recipe read path keeps database rows, DTOs, and UI state separate:
 - `recipe-image.repository.ts` exchanges durable private object paths for one-hour signed display URLs. Legacy pasted `image_url` values remain readable only when a recipe has no Storage path.
 - `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects.
 - `recipe.queries.ts` exposes active-list, archived-list, and detail hooks for TanStack Query caching. Both list hooks reuse the same batched private-image URL mapping.
-- `recipe-library.tsx` owns search and filter state, query results, and library navigation.
-- `archived-recipe-library.tsx` owns archived results and restore interaction state without introducing a global store or a second list framework.
-- `recipe-filters.tsx` renders the persistent meal-type chips and filter dialog from that shared state, keeping filter controls separate from recipe result rendering without introducing another state owner.
+- `recipe-library.tsx` owns search and filter state plus active-library query results.
+- `archived-recipe-library.tsx` owns archived results, checkbox selection, select-all state, and restore/permanent-delete interactions without introducing a global store or a second list framework.
+- `delete-archived-recipes-dialog.tsx` owns the explicit irreversible-action confirmation, selected recipe summary, pending state, Escape handling, and safe failure message.
+- `recipe-filters.tsx` renders the persistent meal-type chips, their adjacent Filters action, and the filter dialog from that shared state, keeping page-level controls separate from recipe result rendering without introducing another state owner.
 - `recipe-card.tsx` renders compact mobile-friendly recipe cards.
 
 ## Recipe Write Path
 
-Recipe create/edit/archive/restore flows use the same repository and TanStack Query boundary:
+Recipe create/edit/archive/restore/permanent-delete flows use the same repository and TanStack Query boundary:
 
 - `/recipes/new` checks the server auth session before rendering the client recipe form.
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
@@ -239,13 +242,13 @@ Recipe create/edit/archive/restore flows use the same repository and TanStack Qu
 - Ingredient and step rows can be reordered while adding or editing a recipe. Dedicated drag handles support mouse, delayed touch activation, and keyboard input without making editable row content draggable. React Hook Form keeps reordered values together, and the repository persists their array positions through `recipe_ingredients.sort_order` and `recipe_steps.sort_order`.
 - Step rows now contain only instruction text. Dedicated timer minutes are no longer edited or displayed; timing should be written directly into the instruction, such as "Simmer for 10 minutes."
 - Validation errors are shown next to the specific source, ingredient, or step field that needs attention. Source URLs must be complete HTTP(S) URLs and cannot be duplicated, and the form caps recipe size with practical limits for sources, servings, ingredients, and steps.
-- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_links`, `recipe_ingredients`, and `recipe_steps` child rows, coordinates image reference changes, and changes archive state through `archived_at`. Restoring clears only `archived_at`; it does not rewrite recipe children or image references. Existing `recipes.source_url` values remain readable as a legacy fallback until the recipe is saved into `recipe_links`.
+- `recipe.repository.ts` writes the main `recipes` row, replaces ordered `recipe_meal_types`, `recipe_links`, `recipe_ingredients`, and `recipe_steps` child rows, coordinates image reference changes, and changes archive state through `archived_at`. Restoring clears only `archived_at`; it does not rewrite recipe children or image references. Permanent deletion first resolves only the selected owner-visible rows that remain archived, then deletes and returns only rows that still satisfy that condition so existing foreign-key cascades remove their child data and Storage cleanup cannot affect a concurrently restored recipe. Existing `recipes.source_url` values remain readable as a legacy fallback until the recipe is saved into `recipe_links`.
 - New recipes are created before their image is uploaded so each object path can include both the authenticated owner ID and recipe ID. A failed upload rolls back the new recipe. During replacement, the new object is uploaded and referenced before the old object is removed; if the reference update fails, the new object is cleaned up and the prior image remains. Old-object cleanup after a successful reference change is best effort so a cleanup failure never restores a cover the user removed.
 - `recipes.image_storage_path` stores the durable private object path. `recipes.image_url` remains a legacy fallback for previously pasted URLs and is cleared when a stored image is added or explicitly removed.
 - Before writing ingredient rows, `recipe.repository.ts` parses accepted amount strings into numeric values for `recipe_ingredients.amount`. Blank optional fields are written as `null`, and step timers are written as `null`.
-- `recipe.queries.ts` exposes create, update, archive, and restore mutations. A successful restore invalidates the shared recipe key so both active and archived lists refresh.
-- `recipe.errors.ts` maps Supabase, PostgREST, Auth, Storage, network, and unknown failures into safe user-facing messages. Recipe list, detail, edit, save, archive, and restore screens show the classified message without exposing raw table names, RLS policy details, constraint names, or backend error text.
-- Save, archive, and restore actions show spinner-backed pending labels and disable repeat clicks while their mutation runs. The archived page labels only the affected action as `Restoring...` while temporarily disabling the other restore actions. The recipe form also disables its editable fields and row controls while saving so a user cannot change the recipe mid-submit. Route-level and query-level loading states reuse recipe skeleton components for the active library, archived library, detail, and form screens so mobile navigation gives immediate visual feedback instead of plain loading text.
+- `recipe.queries.ts` exposes create, update, archive, restore, and archived-only permanent-delete mutations. Successful restore and deletion operations invalidate the shared recipe key so active and archived data refresh together.
+- `recipe.errors.ts` maps Supabase, PostgREST, Auth, Storage, network, and unknown failures into safe user-facing messages. Recipe list, detail, edit, save, archive, restore, and delete screens show the classified message without exposing raw table names, RLS policy details, constraint names, or backend error text.
+- Save, archive, restore, and permanent-delete actions show spinner-backed pending labels and disable repeat clicks while their mutation runs. The archived page labels only the affected restore action as `Restoring...`, disables competing archive-management operations during a mutation, and keeps the confirmation dialog open with a safe message when deletion fails. The recipe form also disables its editable fields and row controls while saving so a user cannot change the recipe mid-submit. Route-level and query-level loading states reuse recipe skeleton components for the active library, archived library, detail, and form screens so mobile navigation gives immediate visual feedback instead of plain loading text.
 
 ## Recipe Image Storage
 
@@ -268,15 +271,20 @@ flowchart LR
 
 ## Archive Lifecycle
 
-The archive action is reversible in the app. `recipe.repository.ts` sets `recipes.archived_at`, while active recipe list and detail queries require `archived_at` to be null. Archiving does not delete the recipe row, child records, or private cover image. The active library links to the authenticated `/recipes/archived` route, which lists the signed-in owner's archived recipes newest-first and retains their signed cover-image display.
+The archive action is reversible in the app. `recipe.repository.ts` sets `recipes.archived_at`, while active recipe list and detail queries require `archived_at` to be null. Archiving does not delete the recipe row, child records, or private cover image. The shared More sheet links to the authenticated `/recipes/archived` route, which lists the signed-in owner's archived recipes newest-first and retains their signed cover-image display.
 
-Restoring clears only `archived_at`, then invalidates the shared recipe query key so the restored card leaves the archived page and becomes available in the active library. A failed restore keeps the card visible and presents a safe retryable message. Archive and permanent deletion remain separate concepts. Permanent deletion is not implemented; if it is introduced later, it must use an explicit confirmation dialog that communicates that the action cannot be undone.
+Restoring clears only `archived_at`, then invalidates the shared recipe query key so the restored card leaves the archived page and becomes available in the active library. A failed restore keeps the card visible and presents a safe retryable message.
+
+Permanent deletion remains separate and is available only from the archived page. A user can select individual recipes or all currently listed archived recipes, then must confirm an alert dialog that states the action cannot be undone. The repository rechecks that the selected owner-visible rows are still archived before deleting them. Database cascades remove ingredients, steps, meal types, and source links. After the database delete succeeds, private cover images for the returned deleted IDs are removed in one best-effort Storage request; a concurrent restore is therefore excluded from both deletion and image cleanup, and a Storage cleanup failure cannot restore a recipe that was already deleted.
 
 ```mermaid
 flowchart LR
     active["Active recipe library"] -->|Archive| archived["Archived Recipes page"]
     archived -->|Restore and clear archived_at| active
-    archived -.->|Not implemented: future confirmed deletion| deleted["Permanently deleted"]
+    archived -->|Select one, some, or all| confirm["Confirm permanent deletion"]
+    confirm -->|Cancel| archived
+    confirm -->|Delete archived rows| deleted["Permanently deleted"]
+    deleted --> cleanup["Best-effort private image cleanup"]
 ```
 
 ## Local Setup

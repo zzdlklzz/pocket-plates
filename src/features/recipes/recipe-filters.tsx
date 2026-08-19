@@ -1,12 +1,14 @@
-import { X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { ActionButton } from "@/components/ui/action-button";
 import { SelectableChip } from "@/components/ui/selectable-chip";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
 
 type RecipeMealTypeFiltersProps = {
+  activeFilterCount: number;
   mealTypes: MealType[];
   onClear: () => void;
+  onFilterOpen: () => void;
   onToggle: (mealType: MealType) => void;
 };
 
@@ -21,30 +23,47 @@ type RecipeFilterDialogProps = {
   onCostRatingToggle: (costRating: CostRating) => void;
 };
 
-export function RecipeMealTypeFilters({ mealTypes, onClear, onToggle }: RecipeMealTypeFiltersProps) {
+export function RecipeMealTypeFilters({
+  activeFilterCount,
+  mealTypes,
+  onClear,
+  onFilterOpen,
+  onToggle
+}: RecipeMealTypeFiltersProps) {
   return (
-    <section className="mt-5 flex gap-2 overflow-x-auto" aria-label="Meal type filters">
-      <SelectableChip
-        className="shrink-0"
-        onClick={onClear}
-        selected={mealTypes.length === 0}
-      >
-        All
-      </SelectableChip>
-      {MEAL_TYPE_FILTERS.map((filter) => {
-        const isSelected = mealTypes.includes(filter.value);
+    <section className="mt-5 flex items-center gap-3" aria-label="Recipe filters">
+      <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto" aria-label="Meal type filters">
+        <SelectableChip
+          className="shrink-0"
+          onClick={onClear}
+          selected={mealTypes.length === 0}
+        >
+          All
+        </SelectableChip>
+        {MEAL_TYPE_FILTERS.map((filter) => {
+          const isSelected = mealTypes.includes(filter.value);
 
-        return (
-          <SelectableChip
-            className="shrink-0"
-            key={filter.value}
-            onClick={() => onToggle(filter.value)}
-            selected={isSelected}
-          >
-            {filter.label}
-          </SelectableChip>
-        );
-      })}
+          return (
+            <SelectableChip
+              className="shrink-0"
+              key={filter.value}
+              onClick={() => onToggle(filter.value)}
+              selected={isSelected}
+            >
+              {filter.label}
+            </SelectableChip>
+          );
+        })}
+      </div>
+      <button
+        aria-haspopup="dialog"
+        className={activeFilterCount ? "flex shrink-0 items-center gap-1 text-sm font-semibold text-leaf-700" : "flex shrink-0 items-center gap-1 text-sm font-semibold text-slate-600"}
+        onClick={onFilterOpen}
+        type="button"
+      >
+        <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+        Filters{activeFilterCount ? ` (${activeFilterCount})` : ""}
+      </button>
     </section>
   );
 }
@@ -60,7 +79,7 @@ export function RecipeFilterDialog({
   onMealTypeToggle
 }: RecipeFilterDialogProps) {
   return (
-    <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 px-4 pb-4" role="presentation">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/30 px-4 pb-4" role="presentation">
       <section aria-label="Recipe filters" aria-modal="true" className="w-full max-w-md rounded-lg bg-white p-4 shadow-xl" role="dialog">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-slate-900">Filters</h2>

@@ -163,6 +163,8 @@ Stage 1 implementation slices:
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 - [x] Archived recipe recovery: the authenticated Archived Recipes page is reachable from the library, lists the signed-in user's soft-archived recipes newest-first, and restores them to the active library.
+- [x] Archived recipe management: select individual, multiple, or all archived recipes and permanently delete them only after an explicit irreversible-action confirmation.
+- [x] Extensible recipe navigation: a shared three-slot Home–Add–More bar keeps Add Recipe centered, exposes Archived Recipes through the More sheet, and leaves Filters beside the active library's meal-type chips.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
 - [x] Recipe filter UI refactor: extract reusable meal-type controls and the filter dialog while keeping query and filter state in the recipe library.
 - [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
@@ -219,7 +221,8 @@ Goal: improve quality, convenience, and personalization.
 
 Primary screens:
 
-- Home / Recipe Library: app header, search, multi-select meal-type quick filters, recipe cards, bottom navigation.
+- Home / Recipe Library: app header with account action, search, multi-select meal-type quick filters, recipe cards, and shared bottom navigation.
+- Archived Recipes: newest-first archived cards, individual/select-all controls, restore actions, confirmed permanent deletion, and shared bottom navigation.
 - Recipe Detail: image, title, meal types, servings, tags, source links, ingredients, steps, edit action.
 - Add/Edit Recipe: title, servings, meal types, device cover image, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types, cost rating, single-select difficulty, effort/time tags, equipment, ingredient search, clear filters, done action.
@@ -450,16 +453,19 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 
 ## Completed Recipe Library Slice
 
-### Archived Recipe Recovery
+### Archived Recipe Management
 
-The archive action is a soft archive: it sets `recipes.archived_at` and hides the recipe from active library and detail queries. The row, ingredients, steps, meal types, source links, and image reference remain intact. The completed recovery flow now:
+The archive action is a soft archive: it sets `recipes.archived_at` and hides the recipe from active library and detail queries. The row, ingredients, steps, meal types, source links, and image reference remain intact until the user deliberately restores or permanently deletes it. The completed management flow now:
 
 - [x] Adds an authenticated `/recipes/archived` page reachable from the active recipe library.
 - [x] Queries rows where `archived_at` is not null, newest-first, while relying on existing owner-scoped Row Level Security.
 - [x] Reuses recipe cards and private signed image URLs so archived items remain identifiable without exposing an active-detail link.
 - [x] Restores a recipe by setting `archived_at` to null and invalidating the shared recipe query key so both lists refresh.
 - [x] Keeps archive terminology distinct from permanent deletion and shows safe loading, empty, pending, and failure states.
-- Keep permanent deletion out of the archive-recovery slice. If permanent deletion is added later, present a confirmation dialog that names the recipe, explains that the action cannot be undone, and requires explicit confirmation before deleting the row.
+- [x] Supports selecting one, several, or all archived recipes for deletion.
+- [x] Requires an explicit confirmation dialog that identifies the selection and explains that permanent deletion cannot be undone.
+- [x] Restricts deletion to rows that remain archived, relies on owner RLS, cascades recipe child deletion, and attempts private cover cleanup only after the database delete succeeds.
+- [x] Uses the shared Home–Add–More navigation on active and archived pages, with Archived Recipes in the More sheet and the centered Add action unchanged as secondary pages are added.
 - [x] Adds repository, query, route, UI, and signed-out end-to-end coverage for archive recovery.
 
 ## Recipe Form Slices

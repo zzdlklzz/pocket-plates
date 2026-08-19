@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  deleteArchivedRecipes,
   getMealTypeFilterValues,
   listArchivedRecipes,
   restoreRecipe
@@ -53,5 +54,62 @@ describe("archived recipe repository", () => {
     const from = vi.fn(() => ({ update }));
 
     await expect(restoreRecipe({ from } as never, "recipe-1")).rejects.toBe(error);
+  });
+
+  it("permanently deletes only matching archived recipes", async () => {
+    const archivedRows = [
+      { id: "recipe-1", image_storage_path: "user-1/recipe-1/cover.webp" },
+      { id: "recipe-2", image_storage_path: "user-1/recipe-2/cover.webp" }
+    ];
+    const lookupNot = vi.fn().mockResolvedValue({ data: archivedRows, error: null });
+    const lookupIn = vi.fn(() => ({ not: lookupNot }));
+    const select = vi.fn(() => ({ in: lookupIn }));
+    const deleteSelect = vi.fn().mockResolvedValue({ data: [{ id: "recipe-1" }], error: null });
+    const deleteNot = vi.fn(() => ({ select: deleteSelect }));
+    const deleteIn = vi.fn(() => ({ not: deleteNot }));
+    const deleteRows = vi.fn(() => ({ in: deleteIn }));
+    const from = vi.fn(() => ({ delete: deleteRows, select }));
+    const remove = vi.fn().mockResolvedValue({ error: null });
+    const storageFrom = vi.fn(() => ({ remove }));
+
+    await deleteArchivedRecipes({ from, storage: { from: storageFrom } } as never, [
+      "recipe-1",
+      "recipe-2",
+      "recipe-1"
+    ]);
+
+    expect(lookupIn).toHaveBeenCalledWith("id", ["recipe-1", "recipe-2"]);
+    expect(lookupNot).toHaveBeenCalledWith("archived_at", "is", null);
+    expect(deleteIn).toHaveBeenCalledWith("id", ["recipe-1", "recipe-2"]);
+    expect(deleteNot).toHaveBeenCalledWith("archived_at", "is", null);
+    expect(deleteSelect).toHaveBeenCalledWith("id");
+    expect(remove).toHaveBeenCalledWith(["user-1/recipe-1/cover.webp"]);
+  });
+
+  it("does not delete when none of the selected recipes are archived", async () => {
+    const lookupNot = vi.fn().mockResolvedValue({ data: [], error: null });
+    const lookupIn = vi.fn(() => ({ not: lookupNot }));
+    const deleteRows = vi.fn();
+    const from = vi.fn(() => ({ delete: deleteRows, select: vi.fn(() => ({ in: lookupIn })) }));
+
+    await deleteArchivedRecipes({ from } as never, ["active-recipe"]);
+
+    expect(deleteRows).not.toHaveBeenCalled();
+  });
+
+  it("propagates permanent deletion errors", async () => {
+    const error = new Error("delete failed");
+    const lookupNot = vi.fn().mockResolvedValue({
+      data: [{ id: "recipe-1", image_storage_path: null }],
+      error: null
+    });
+    const deleteSelect = vi.fn().mockResolvedValue({ data: null, error });
+    const deleteNot = vi.fn(() => ({ select: deleteSelect }));
+    const from = vi.fn(() => ({
+      delete: vi.fn(() => ({ in: vi.fn(() => ({ not: deleteNot })) })),
+      select: vi.fn(() => ({ in: vi.fn(() => ({ not: lookupNot })) }))
+    }));
+
+    await expect(deleteArchivedRecipes({ from } as never, ["recipe-1"])).rejects.toBe(error);
   });
 });

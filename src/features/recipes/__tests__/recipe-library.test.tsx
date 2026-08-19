@@ -33,10 +33,10 @@ function renderRecipeLibrary() {
 }
 
 describe("RecipeLibrary", () => {
-  it("opens the filter dialog from the bottom navigation filter button", () => {
+  it("opens the filter dialog from the local library controls", () => {
     renderRecipeLibrary();
 
-    fireEvent.click(screen.getByRole("button", { name: "Filter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
 
     const dialog = screen.getByRole("dialog", { name: "Recipe filters" });
 
@@ -45,19 +45,21 @@ describe("RecipeLibrary", () => {
     expect(within(dialog).getByRole("button", { name: "Breakfast" })).toBeInTheDocument();
   });
 
-  it("keeps meal chips visible without duplicating the popup filter button at the top", () => {
+  it("keeps meal chips and the popup filter action together above the results", () => {
     renderRecipeLibrary();
 
-    expect(screen.getByLabelText("Meal type filters")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Breakfast" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Filters/ })).not.toBeInTheDocument();
+    const mealTypeFilters = screen.getByLabelText("Meal type filters");
+    expect(mealTypeFilters).toBeInTheDocument();
+    fireEvent.click(within(mealTypeFilters).getByRole("button", { name: "Breakfast" }));
+    expect(screen.getByRole("button", { name: "Filters (1)" })).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation")).queryByRole("button", { name: /^Filters/ })).not.toBeInTheDocument();
   });
 
-  it("links to archived recipes without removing the existing library controls", () => {
+  it("links to archived recipes from More without crowding the bottom bar", () => {
     renderRecipeLibrary();
 
-    expect(screen.getByRole("link", { name: "Archived" })).toHaveAttribute("href", "/recipes/archived");
     expect(screen.getByRole("link", { name: "Add recipe" })).toHaveAttribute("href", "/recipes/new");
-    expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    expect(screen.getByRole("link", { name: "Archived recipes" })).toHaveAttribute("href", "/recipes/archived");
   });
 });
