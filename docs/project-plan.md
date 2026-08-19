@@ -164,9 +164,9 @@ Stage 1 implementation slices:
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
 - [x] Archived recipe recovery: the authenticated Archived Recipes page is reachable from the library, lists the signed-in user's soft-archived recipes newest-first, and restores them to the active library.
 - [x] Archived recipe management: select individual, multiple, or all archived recipes and permanently delete them only after an explicit irreversible-action confirmation.
-- [x] Extensible recipe navigation: a shared three-slot Home–Add–More bar keeps Add Recipe centered, exposes Archived Recipes through the More sheet, and leaves Filters beside the active library's meal-type chips.
+- [x] Extensible recipe navigation: a shared three-slot Home–Add–More bar keeps Add Recipe centered, exposes Archived Recipes through the More sheet, and keeps filtering as a local library action.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
-- [x] Recipe filter UI refactor: extract reusable meal-type controls and the filter dialog while keeping query and filter state in the recipe library.
+- [x] Recipe filter UI refactor: use one filter dialog for every filter dimension and summarize selected values as removable, wrapping chips while keeping query and filter state in the recipe library.
 - [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
 - [x] Multiple recipe sources: add, edit, order, label, validate, persist, and display up to five source URLs while preserving legacy single-source reads.
 
@@ -221,7 +221,7 @@ Goal: improve quality, convenience, and personalization.
 
 Primary screens:
 
-- Home / Recipe Library: app header with account action, search, multi-select meal-type quick filters, recipe cards, and shared bottom navigation.
+- Home / Recipe Library: app header with account action, search, one wrapping toolbar for the filter entry point and applied-filter chips, recipe cards, and shared bottom navigation.
 - Archived Recipes: newest-first archived cards, individual/select-all controls, restore actions, confirmed permanent deletion, and shared bottom navigation.
 - Recipe Detail: image, title, meal types, servings, tags, source links, ingredients, steps, edit action.
 - Add/Edit Recipe: title, servings, meal types, device cover image, source links, ingredients, steps, notes, save/cancel actions.

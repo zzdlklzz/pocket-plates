@@ -1,7 +1,6 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { APP_METADATA } from "@/app/app.constants";
 import { AppPageShell } from "@/components/ui/app-page-shell";
-import { MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 
 type SkeletonBlockProps = {
   className: string;
@@ -29,16 +28,10 @@ function HeaderSkeleton() {
   );
 }
 
-function MealFilterSkeleton() {
+function FilterControlsSkeleton() {
   return (
-    <section className="mt-5 flex items-center gap-3" aria-hidden="true">
-      <div className="flex min-w-0 flex-1 gap-2 overflow-hidden">
-        <SkeletonBlock className="h-8 w-12 shrink-0 rounded-full bg-leaf-700/40" />
-        {MEAL_TYPE_FILTERS.slice(0, 3).map((filter) => (
-          <SkeletonBlock className="h-8 w-20 shrink-0 rounded-full bg-leaf-100" key={filter.value} />
-        ))}
-      </div>
-      <div className="flex shrink-0 items-center gap-1 text-sm text-slate-400">
+    <section className="mt-5 flex" aria-hidden="true">
+      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-400">
         <SlidersHorizontal className="h-4 w-4" />
         Filters
       </div>
@@ -78,7 +71,7 @@ export function RecipeLibrarySkeleton() {
     <AppPageShell>
       <div role="status" aria-label="Loading recipe library">
         <HeaderSkeleton />
-        <MealFilterSkeleton />
+        <FilterControlsSkeleton />
         <section className="mt-5" aria-label="Recipe library loading">
           <RecipeGridSkeleton />
         </section>

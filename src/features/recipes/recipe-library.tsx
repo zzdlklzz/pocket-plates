@@ -8,7 +8,7 @@ import { AppPageShell } from "@/components/ui/app-page-shell";
 import { InlineNotice } from "@/components/ui/inline-notice";
 import { SignOutButton } from "@/features/auth/sign-out-button";
 import { getRecipeErrorMessage } from "./recipe.errors";
-import { RecipeFilterDialog, RecipeMealTypeFilters } from "./recipe-filters";
+import { RecipeFilterControls, RecipeFilterDialog } from "./recipe-filters";
 import { useRecipeList } from "./recipe.queries";
 import { RecipeCard } from "./recipe-card";
 import { RecipeNavigation } from "./recipe-navigation";
@@ -35,8 +35,6 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
     [costRatings, difficulty, mealTypes, search]
   );
   const { data: recipes = [], error, isLoading } = useRecipeList(filters);
-  const activeFilterCount = mealTypes.length + costRatings.length + (difficulty ? 1 : 0);
-
   function toggleMealType(mealType: MealType) {
     setMealTypes((current) =>
       current.includes(mealType) ? current.filter((selected) => selected !== mealType) : [...current, mealType]
@@ -78,12 +76,15 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         </label>
       </header>
 
-      <RecipeMealTypeFilters
-        activeFilterCount={activeFilterCount}
+      <RecipeFilterControls
+        costRatings={costRatings}
+        difficulty={difficulty}
         mealTypes={mealTypes}
-        onClear={() => setMealTypes([])}
+        onClear={clearFilters}
+        onCostRatingRemove={toggleCostRating}
+        onDifficultyRemove={() => setDifficulty(undefined)}
         onFilterOpen={() => setIsFilterOpen(true)}
-        onToggle={toggleMealType}
+        onMealTypeRemove={toggleMealType}
       />
 
       {isFilterOpen ? (
@@ -95,6 +96,7 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
           onClose={() => setIsFilterOpen(false)}
           onCostRatingToggle={toggleCostRating}
           onDifficultyChange={setDifficulty}
+          onMealTypesClear={() => setMealTypes([])}
           onMealTypeToggle={toggleMealType}
         />
       ) : null}
