@@ -2,7 +2,13 @@ import type { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
 import { removeRecipeImage, removeRecipeImages, uploadRecipeImage } from "./recipe-image.repository";
 import type { RecipeDetailRow, RecipeListRow } from "./recipe.mappers";
-import type { MealType, RecipeFormValues, RecipeImageChange, RecipeListFilters } from "./recipe.types";
+import type {
+  CostRating,
+  MealType,
+  RecipeFormValues,
+  RecipeImageChange,
+  RecipeListFilters
+} from "./recipe.types";
 import { parseIngredientAmount } from "./recipe.validation";
 
 type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -33,55 +39,36 @@ export function getMealTypeFilterValues(selectedMealTypes: MealType[]) {
   return Array.from(selected);
 }
 
+function normalizeFilterValues<T extends string>(values?: T[]) {
+  return values?.length ? Array.from(new Set(values)).sort() : undefined;
+}
+
+export function normalizeRecipeListFilters(filters: RecipeListFilters): RecipeListFilters {
+  return {
+    search: filters.search?.trim() || undefined,
+    mealTypes: normalizeFilterValues<MealType>(filters.mealTypes),
+    costRatings: normalizeFilterValues<CostRating>(filters.costRatings),
+    difficulty: filters.difficulty
+  };
+}
+
 export async function listRecipes(
   supabase: SupabaseBrowserClient,
   filters: RecipeListFilters
 ) {
-  const mealTypes = filters.mealTypes?.length ? getMealTypeFilterValues(filters.mealTypes) : null;
-  let recipeIds: string[] | null = null;
-
-  if (mealTypes) {
-    const { data: matchingMealTypes, error } = await supabase
-      .from("recipe_meal_types")
-      .select("recipe_id")
-      .in("meal_type", mealTypes);
-
-    if (error) {
-      throw error;
-    }
-
-    recipeIds = Array.from(new Set(matchingMealTypes.map(({ recipe_id }) => recipe_id)));
-
-    if (recipeIds.length === 0) {
-      return [];
-    }
-  }
-
-  let query = supabase
-    .from("recipes")
-    .select(RECIPE_LIST_SELECT)
-    .is("archived_at", null)
-    .order("created_at", { ascending: false });
-
-  const search = filters.search?.trim();
-
-  if (search) {
-    query = query.ilike("title", `%${search}%`);
-  }
-
-  if (recipeIds) {
-    query = query.in("id", recipeIds);
-  }
-
-  if (filters.costRatings?.length) {
-    query = query.in("cost_rating", filters.costRatings);
-  }
-
-  if (filters.difficulty) {
-    query = query.eq("difficulty", filters.difficulty);
-  }
-
-  const { data, error } = await query;
+  const normalizedFilters = normalizeRecipeListFilters(filters);
+  const { data, error } = await supabase.rpc(
+    "list_private_library_recipes",
+    // The @supabase/ssr browser client currently narrows generated RPC arguments to never.
+    {
+      p_search: normalizedFilters.search ?? null,
+      p_meal_types: normalizedFilters.mealTypes
+        ? getMealTypeFilterValues(normalizedFilters.mealTypes)
+        : null,
+      p_cost_ratings: normalizedFilters.costRatings ?? null,
+      p_difficulty: normalizedFilters.difficulty ?? null
+    } as never
+  );
 
   if (error) {
     throw error;

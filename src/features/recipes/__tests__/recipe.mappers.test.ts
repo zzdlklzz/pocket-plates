@@ -24,6 +24,22 @@ describe("toRecipeCardDto", () => {
     });
   });
 
+  it("maps meal types aggregated by the private-library RPC", () => {
+    expect(
+      toRecipeCardDto({
+        id: "recipe-1",
+        title: "Rice Bowl",
+        cost_rating: null,
+        difficulty: null,
+        image_storage_path: null,
+        image_url: null,
+        meal_types: ["lunch", "flexible"]
+      })
+    ).toMatchObject({
+      mealTypes: ["lunch", "flexible"]
+    });
+  });
+
   it("uses a resolved private image URL without losing the storage path", () => {
     const row = {
       id: "recipe-1",

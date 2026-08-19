@@ -7,6 +7,7 @@ export type RecipeListRow = {
   difficulty: RecipeCardDto["difficulty"];
   image_storage_path: string | null;
   image_url: string | null;
+  meal_types?: MealType[] | null;
   recipe_meal_types?: { meal_type: MealType }[] | null;
 };
 
@@ -39,7 +40,7 @@ export function toRecipeCardDto(row: RecipeListRow, imageUrl = row.image_url): R
     costRating: row.cost_rating,
     difficulty: row.difficulty,
     imageUrl,
-    mealTypes: row.recipe_meal_types?.map(({ meal_type }) => meal_type) ?? []
+    mealTypes: row.meal_types ?? row.recipe_meal_types?.map(({ meal_type }) => meal_type) ?? []
   };
 }
 

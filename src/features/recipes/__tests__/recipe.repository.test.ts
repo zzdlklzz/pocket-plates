@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   deleteArchivedRecipes,
   getMealTypeFilterValues,
+  listRecipes,
   listArchivedRecipes,
+  normalizeRecipeListFilters,
   restoreRecipe
 } from "../recipe.repository";
 
@@ -17,6 +19,59 @@ describe("getMealTypeFilterValues", () => {
 
   it("deduplicates flexible when it is already selected with specific meal types", () => {
     expect(getMealTypeFilterValues(["dinner", "flexible", "lunch"])).toEqual(["dinner", "flexible", "lunch"]);
+  });
+});
+
+describe("private library recipe filters", () => {
+  it("normalizes search and multi-select values for stable queries", () => {
+    expect(
+      normalizeRecipeListFilters({
+        search: "  rice  ",
+        mealTypes: ["lunch", "breakfast", "lunch"],
+        costRatings: ["moderate", "cheap", "moderate"],
+        difficulty: "easy"
+      })
+    ).toEqual({
+      search: "rice",
+      mealTypes: ["breakfast", "lunch"],
+      costRatings: ["cheap", "moderate"],
+      difficulty: "easy"
+    });
+  });
+
+  it("uses one owner-scoped RPC for search and every active filter", async () => {
+    const rows = [{ id: "recipe-1", title: "Egg fried rice" }];
+    const rpc = vi.fn().mockResolvedValue({ data: rows, error: null });
+
+    await expect(
+      listRecipes({ rpc } as never, {
+        search: "  egg  ",
+        mealTypes: ["lunch", "breakfast", "lunch"],
+        costRatings: ["cheap", "very_cheap"],
+        difficulty: "beginner_friendly"
+      })
+    ).resolves.toBe(rows);
+
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith("list_private_library_recipes", {
+      p_search: "egg",
+      p_meal_types: ["breakfast", "lunch", "flexible"],
+      p_cost_ratings: ["cheap", "very_cheap"],
+      p_difficulty: "beginner_friendly"
+    });
+  });
+
+  it("passes null for inactive RPC filters and propagates failures", async () => {
+    const error = new Error("database details");
+    const rpc = vi.fn().mockResolvedValue({ data: null, error });
+
+    await expect(listRecipes({ rpc } as never, { search: "   " })).rejects.toBe(error);
+    expect(rpc).toHaveBeenCalledWith("list_private_library_recipes", {
+      p_search: null,
+      p_meal_types: null,
+      p_cost_ratings: null,
+      p_difficulty: null
+    });
   });
 });
 

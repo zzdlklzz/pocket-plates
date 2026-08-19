@@ -11,6 +11,7 @@ import {
   getRecipe,
   listArchivedRecipes,
   listRecipes,
+  normalizeRecipeListFilters,
   restoreRecipe,
   updateRecipe
 } from "./recipe.repository";
@@ -34,13 +35,16 @@ async function mapRecipeCardsWithImages(
 }
 
 export function useRecipeList(filters: RecipeListFilters) {
+  const normalizedFilters = normalizeRecipeListFilters(filters);
+
   return useQuery({
-    queryKey: queryKeys.recipes.list(filters),
+    queryKey: queryKeys.recipes.list(normalizedFilters),
     queryFn: async () => {
       const supabase = createSupabaseBrowserClient();
-      const rows = await listRecipes(supabase, filters);
+      const rows = await listRecipes(supabase, normalizedFilters);
       return mapRecipeCardsWithImages(supabase, rows);
-    }
+    },
+    placeholderData: (previousData) => previousData
   });
 }
 

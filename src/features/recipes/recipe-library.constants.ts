@@ -1,5 +1,7 @@
 import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
 
+export const RECIPE_SEARCH_DEBOUNCE_MS = 300;
+
 export const MEAL_TYPE_FILTERS: { label: string; value: MealType }[] = [
   { label: "Breakfast", value: "breakfast" },
   { label: "Lunch", value: "lunch" },

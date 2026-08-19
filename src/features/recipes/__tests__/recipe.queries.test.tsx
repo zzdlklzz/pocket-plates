@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   deleteArchivedRecipes: vi.fn(),
   getRecipeImageUrls: vi.fn(),
   listArchivedRecipes: vi.fn(),
+  listRecipes: vi.fn(),
   restoreRecipe: vi.fn()
 }));
 
@@ -27,12 +28,23 @@ vi.mock("../recipe.repository", () => ({
   deleteArchivedRecipes: mocks.deleteArchivedRecipes,
   getRecipe: vi.fn(),
   listArchivedRecipes: mocks.listArchivedRecipes,
-  listRecipes: vi.fn(),
+  listRecipes: mocks.listRecipes,
+  normalizeRecipeListFilters: (filters: {
+    costRatings?: string[];
+    difficulty?: string;
+    mealTypes?: string[];
+    search?: string;
+  }) => ({
+    search: filters.search?.trim() || undefined,
+    mealTypes: filters.mealTypes?.length ? Array.from(new Set(filters.mealTypes)).sort() : undefined,
+    costRatings: filters.costRatings?.length ? Array.from(new Set(filters.costRatings)).sort() : undefined,
+    difficulty: filters.difficulty
+  }),
   restoreRecipe: mocks.restoreRecipe,
   updateRecipe: vi.fn()
 }));
 
-import { useArchivedRecipeList, useDeleteArchivedRecipes, useRestoreRecipe } from "../recipe.queries";
+import { useArchivedRecipeList, useDeleteArchivedRecipes, useRecipeList, useRestoreRecipe } from "../recipe.queries";
 
 function createWrapper(queryClient: QueryClient) {
   return function QueryWrapper({ children }: { children: ReactNode }) {
@@ -124,5 +136,59 @@ describe("archived recipe queries", () => {
       ["recipe-1", "recipe-2"]
     );
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.recipes.all });
+  });
+});
+
+describe("active recipe queries", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createSupabaseBrowserClient.mockReturnValue({ client: "supabase" });
+  });
+
+  it("normalizes list filters and maps RPC rows through batched images", async () => {
+    mocks.listRecipes.mockResolvedValue([
+      {
+        id: "recipe-1",
+        title: "Egg fried rice",
+        cost_rating: "cheap",
+        difficulty: "easy",
+        image_storage_path: null,
+        image_url: null,
+        meal_types: ["dinner"]
+      }
+    ]);
+    mocks.getRecipeImageUrls.mockResolvedValue([null]);
+    const queryClient = createQueryClient();
+
+    const { result } = renderHook(
+      () =>
+        useRecipeList({
+          search: "  egg  ",
+          mealTypes: ["lunch", "breakfast", "lunch"],
+          costRatings: []
+        }),
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mocks.listRecipes).toHaveBeenCalledWith(
+      { client: "supabase" },
+      {
+        search: "egg",
+        mealTypes: ["breakfast", "lunch"],
+        costRatings: undefined,
+        difficulty: undefined
+      }
+    );
+    expect(result.current.data).toEqual([
+      {
+        id: "recipe-1",
+        title: "Egg fried rice",
+        costRating: "cheap",
+        difficulty: "easy",
+        imageUrl: null,
+        mealTypes: ["dinner"]
+      }
+    ]);
   });
 });

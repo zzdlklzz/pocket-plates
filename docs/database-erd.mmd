@@ -1,3 +1,5 @@
+%% Search indexes not expressible as ER relationships:
+%% recipes.title and recipe_ingredients.name use GIN pg_trgm indexes.
 erDiagram
     profiles ||--o{ recipes : owns
     profiles ||--o{ tags : owns

@@ -76,6 +76,7 @@ Table recipes {
     (visibility, published_at)
     (owner_id, is_favorite)
     (owner_id, slug) [unique]
+    (title) [name: 'recipes_title_trgm_idx', note: 'GIN pg_trgm index for case-insensitive contains search']
   }
 }
 
@@ -114,6 +115,7 @@ Table recipe_ingredients {
   indexes {
     (recipe_id, sort_order)
     (name)
+    (name) [name: 'recipe_ingredients_name_trgm_idx', note: 'GIN pg_trgm index for case-insensitive contains search']
   }
 }
 

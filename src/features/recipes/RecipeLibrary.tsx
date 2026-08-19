@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
 import { AppPageShell } from "@/components/ui/AppPageShell";
 import { InlineNotice } from "@/components/ui/InlineNotice";
@@ -12,6 +12,7 @@ import { RecipeFilterControls, RecipeFilterDialog } from "./recipe-filters";
 import { useRecipeList } from "./recipe.queries";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeNavigation } from "./RecipeNavigation";
+import { RECIPE_SEARCH_DEBOUNCE_MS } from "./recipe-library.constants";
 import { RecipeGridSkeleton } from "./recipe-skeletons";
 import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
 
@@ -21,20 +22,34 @@ type RecipeLibraryProps = {
 
 export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [costRatings, setCostRatings] = useState<CostRating[]>([]);
   const [difficulty, setDifficulty] = useState<DifficultyLevel | undefined>();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filters = useMemo(
     () => ({
-      search,
+      search: debouncedSearch,
       mealTypes,
       costRatings,
       difficulty
     }),
-    [costRatings, difficulty, mealTypes, search]
+    [costRatings, debouncedSearch, difficulty, mealTypes]
   );
-  const { data: recipes = [], error, isLoading } = useRecipeList(filters);
+  const { data: recipes = [], error, isFetching, isLoading } = useRecipeList(filters);
+  const normalizedSearch = search.trim();
+  const hasActiveFilters = mealTypes.length > 0 || costRatings.length > 0 || Boolean(difficulty);
+  const hasActiveCriteria = Boolean(normalizedSearch) || hasActiveFilters;
+  const isUpdating = !isLoading && (normalizedSearch !== debouncedSearch || isFetching);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearch(normalizedSearch);
+    }, RECIPE_SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [normalizedSearch]);
+
   function toggleMealType(mealType: MealType) {
     setMealTypes((current) =>
       current.includes(mealType) ? current.filter((selected) => selected !== mealType) : [...current, mealType]
@@ -65,11 +80,11 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         </div>
         <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
           <Search className="h-4 w-4" aria-hidden="true" />
-          <span className="sr-only">Search recipes</span>
+          <span className="sr-only">Search titles or ingredients</span>
           <input
             className="min-w-0 flex-1 bg-transparent text-base text-slate-800 outline-none placeholder:text-slate-400"
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search recipes"
+            placeholder="Search titles or ingredients"
             type="search"
             value={search}
           />
@@ -101,19 +116,50 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         />
       ) : null}
 
-      <section className="mt-5" aria-label="Recipe library">
+      <section aria-busy={isUpdating || isLoading} className="mt-5" aria-label="Recipe library">
+        {isUpdating ? (
+          <p aria-live="polite" className="mb-3 text-xs font-medium text-slate-500" role="status">
+            Updating recipes...
+          </p>
+        ) : null}
         {isLoading ? (
           <div role="status" aria-label="Loading recipes">
             <RecipeGridSkeleton />
           </div>
         ) : null}
         {error ? <InlineNotice tone="error">{getRecipeErrorMessage(error, "loadList")}</InlineNotice> : null}
-        {!isLoading && !error && recipes.length === 0 ? (
+        {!isLoading && !isUpdating && !error && recipes.length === 0 ? (
           <div className="rounded-lg border border-slate-200 bg-white p-5 text-center">
-            <p className="text-sm font-semibold text-slate-800">No recipes yet</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Your saved recipes will appear here once you add them.
+            <p className="text-sm font-semibold text-slate-800">
+              {hasActiveCriteria ? "No matching recipes" : "No recipes yet"}
             </p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {hasActiveCriteria
+                ? "Try another search or clear some filters."
+                : "Your saved recipes will appear here once you add them."}
+            </p>
+            {hasActiveCriteria ? (
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {normalizedSearch ? (
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                    onClick={() => setSearch("")}
+                    type="button"
+                  >
+                    Clear search
+                  </button>
+                ) : null}
+                {hasActiveFilters ? (
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                    onClick={clearFilters}
+                    type="button"
+                  >
+                    Clear filters
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
         {recipes.length ? (

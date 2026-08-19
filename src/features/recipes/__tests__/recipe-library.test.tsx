@@ -1,7 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RecipeLibrary } from "../RecipeLibrary";
+
+const mocks = vi.hoisted(() => ({
+  listRecipes: vi.fn()
+}));
 
 vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({})
@@ -12,7 +16,7 @@ vi.mock("../recipe.repository", async (importOriginal) => {
 
   return {
     ...actual,
-    listRecipes: vi.fn().mockResolvedValue([])
+    listRecipes: mocks.listRecipes
   };
 });
 
@@ -33,6 +37,43 @@ function renderRecipeLibrary() {
 }
 
 describe("RecipeLibrary", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.listRecipes.mockResolvedValue([]);
+  });
+
+  it("searches titles or ingredients after normalizing and debouncing input", async () => {
+    renderRecipeLibrary();
+
+    await screen.findByText("No recipes yet");
+    const search = screen.getByPlaceholderText("Search titles or ingredients");
+    fireEvent.change(search, { target: { value: "  rice  " } });
+
+    expect(screen.getByText("Updating recipes...")).toBeInTheDocument();
+    await waitFor(
+      () =>
+        expect(mocks.listRecipes).toHaveBeenCalledWith(
+          {},
+          expect.objectContaining({ search: "rice" })
+        ),
+      { timeout: 1000 }
+    );
+  });
+
+  it("distinguishes an empty library from an empty filtered result", async () => {
+    renderRecipeLibrary();
+
+    expect(await screen.findByText("No recipes yet")).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Search titles or ingredients"), {
+      target: { value: "tofu" }
+    });
+
+    expect(await screen.findByText("No matching recipes", {}, { timeout: 1000 })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear search" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(await screen.findByText("No recipes yet", {}, { timeout: 1000 })).toBeInTheDocument();
+  });
+
   it("opens the filter dialog from the local library controls", () => {
     renderRecipeLibrary();
 

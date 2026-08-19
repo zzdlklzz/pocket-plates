@@ -625,7 +625,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      list_private_library_recipes: {
+        Args: {
+          p_cost_ratings?: Database["public"]["Enums"]["cost_rating"][] | null
+          p_difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          p_meal_types?: Database["public"]["Enums"]["meal_type"][] | null
+          p_search?: string | null
+        }
+        Returns: {
+          cost_rating: Database["public"]["Enums"]["cost_rating"] | null
+          created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty_level"] | null
+          id: string
+          image_storage_path: string | null
+          image_url: string | null
+          meal_types: Database["public"]["Enums"]["meal_type"][]
+          title: string
+        }[]
+      }
     }
     Enums: {
       cost_rating: "very_cheap" | "cheap" | "moderate" | "splurge"

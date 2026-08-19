@@ -139,7 +139,7 @@ Goal: any visitor can create an account, then save and retrieve their own privat
 - [x] Add/edit recipe form.
 - [x] Required recipe fields: title, servings, one or more meal types, ingredients, and steps.
 - [x] Optional recipe fields: notes, up to five source URLs with optional labels, and a device-uploaded cover image.
-- [x] Basic search by recipe title.
+- [x] Search active recipes by recipe title or ingredient name through one owner-scoped database function.
 - [x] Basic filter by meal types, allowing more than one meal type to be selected.
 - [x] Supabase persistence with Row Level Security. Initial owner-scoped schema and RLS migrations are in place.
 - [x] TanStack Query hook for the recipe list.
@@ -172,6 +172,7 @@ Stage 1 implementation slices:
 - [x] Recipe filter UI refactor: use one filter dialog for every filter dimension and summarize selected values as removable, wrapping chips while keeping query and filter state in the recipe library.
 - [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
 - [x] Multiple recipe sources: add, edit, order, label, validate, persist, and display up to five source URLs while preserving legacy single-source reads.
+- [x] Private-library ingredient search: debounce and normalize title-or-ingredient search, combine it with existing filters in one owner-scoped active-library database request, retain previous cards during updates, and distinguish no matches from an empty library.
 
 ### Stage 2: Student-Friendly Discovery Within Your Own Library
 
@@ -183,7 +184,9 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 - Add effort/time filters, such as quick, make-ahead, one-pot, and low-cleanup.
 - Add equipment filters, such as microwave, rice cooker, stovetop, oven, no oven, and blender.
 - Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep.
-- Search by ingredient name.
+- [x] Search by ingredient name, combined with title search and all existing active-library filters.
+- [x] Complete local database-backed verification for private-library search: reset/lint the migration chain, regenerate and diff Supabase types, prove two-user RLS and archived exclusion, and inspect representative query plans.
+- [ ] Add a signed-in local Supabase Playwright fixture and run the private-library search workflow end to end on mobile and desktop.
 - [x] Support multiple source links per recipe.
 - [x] Replace pasted image URLs with private Supabase Storage uploads, including 2 MB JPEG/PNG/WebP validation, previews, owner-scoped policies, signed reads, and cleanup behavior.
 
@@ -227,7 +230,7 @@ Primary screens:
 - Archived Recipes: newest-first archived cards, individual/select-all controls, restore actions, confirmed permanent deletion, and shared bottom navigation.
 - Recipe Detail: image, title, meal types, servings, tags, source links, ingredients, steps, edit action.
 - Add/Edit Recipe: title, servings, meal types, device cover image, source links, ingredients, steps, notes, save/cancel actions.
-- Filters Sheet: multi-select meal types, cost rating, single-select difficulty, effort/time tags, equipment, ingredient search, clear filters, done action.
+- Filters Sheet: multi-select meal types, cost rating, single-select difficulty, future effort/time tags and equipment, clear filters, and done action. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
 
 Visual reference:
 
@@ -279,6 +282,8 @@ Future-ready tables already represented in the draft schema:
 Public discovery should build on the `recipes.visibility` and `recipes.published_at` fields rather than requiring a second recipe table. Private recipes stay visible only to their owner. Public recipes can be searched by other users once the community stage is implemented.
 
 All user-owned data should be protected by Supabase Row Level Security. Policies should target the `authenticated` role explicitly and use owner checks based on `(select auth.uid())`. The initial policies should support many users, but only owner access. Public-read policies should only be introduced when the community discovery stage is being built.
+
+The active private library uses the authenticated-only, security-invoker `list_private_library_recipes` function to search titles or ingredient names and apply meal, cost, and difficulty criteria in one database operation. The function explicitly selects only the current owner's non-archived recipes while retaining table RLS, and trigram indexes support literal case-insensitive contains matching on both searchable columns.
 
 ## DTO Boundary
 

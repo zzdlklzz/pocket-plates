@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, private device image uploads, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library and the first Stage 2 discovery slice: it has the Next.js app shell, authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, title-or-ingredient search, private device image uploads, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, unit test setup, E2E test setup, and GitHub Actions workflow templates.
 
 ## Stack
 
@@ -50,6 +50,8 @@ The database schema is migration-first and represented in:
 
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`
 - `supabase/migrations/20260818222347_add_private_recipe_image_storage.sql`
+- `supabase/migrations/20260819194346_add_private_library_search.sql`
+- `supabase/migrations/20260819200746_grant_private_library_search_reads.sql`
 - `docs/database-schema.dbml`
 - `docs/database-erd.mmd`
 
@@ -73,6 +75,8 @@ Future-ready entities:
 - `grocery_list_items`
 
 Recipe create and edit flows write sources to `recipe_links`. The legacy `recipes.source_url` column remains readable as a fallback for recipes created before multi-source support, but new saves clear it and use the child rows. Source rows follow recipe ownership through existing Row Level Security policies.
+
+The `list_private_library_recipes` security-invoker database function provides the active-library card query. It matches literal case-insensitive substrings against recipe titles or ingredient names, applies the existing meal/cost/difficulty filters in the same database operation, explicitly restricts results to the authenticated owner and non-archived recipes, and aggregates meal types for the card mapper. GIN trigram indexes on `recipes.title` and `recipe_ingredients.name` support contains search without changing the intentionally non-fuzzy match semantics. Function execution and the source-table reads required by invoker rights are granted only to `authenticated`; underlying RLS remains enabled and enforces owner isolation on direct and function-mediated reads.
 
 ## Code Organization
 
@@ -204,17 +208,17 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI. Supabase 5xx failures during email signup are treated as confirmation-email delivery failures in the UI because account creation depends on the configured Supabase Auth email provider.
 
-Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then filtered by recipe title, one or more meal types, cost rating, and difficulty. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
+Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then searched by title or ingredient name and filtered by one or more meal types, cost rating, and difficulty. Recipe cards link to owner-scoped detail pages. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
 
 ## Recipe Read Path
 
 The recipe read path keeps database rows, DTOs, and UI state separate:
 
-- `recipe.repository.ts` queries active and archived `recipes` plus `recipe_meal_types` through the browser Supabase client. Active results require `archived_at` to be null, archived results require it to be non-null and are ordered by the newest archive timestamp, and existing owner-scoped RLS limits both lists to the signed-in user. When the user filters by breakfast, lunch, dinner, or snack, the repository also includes recipes tagged `flexible`; filtering by Flexible itself stays exact.
+- `recipe.repository.ts` sends normalized active search, meal type, cost, and difficulty criteria to `list_private_library_recipes` in one database request. The function matches title or any ingredient name, excludes archived and non-owner rows, returns each recipe once, aggregates meal types, and keeps the existing rule that `flexible` recipes appear under selected specific meal types while Flexible-only filtering stays exact. Archived results retain their separate direct query, require `archived_at` to be non-null, and remain newest-first and owner-scoped through RLS.
 - `recipe-image.repository.ts` exchanges durable private object paths for one-hour signed display URLs. Legacy pasted `image_url` values remain readable only when a recipe has no Storage path.
 - `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects.
-- `recipe.queries.ts` exposes active-list, archived-list, and detail hooks for TanStack Query caching. Both list hooks reuse the same batched private-image URL mapping.
-- `RecipeLibrary.tsx` owns search and filter state plus active-library query results.
+- `recipe.queries.ts` exposes active-list, archived-list, and detail hooks for TanStack Query caching. Equivalent trimmed/deduplicated filter inputs share a stable active-list query key, previous card data remains visible while new criteria load, and both list hooks reuse the same batched private-image URL mapping.
+- `RecipeLibrary.tsx` owns search and filter state plus active-library query results. Search is trimmed and debounced by 300 ms before querying. The screen distinguishes an empty library from an empty result, provides relevant clear actions, and announces background result updates without replacing prior cards with a full skeleton.
 - `ArchivedRecipeLibrary.tsx` owns archived results, checkbox selection, select-all state, and restore/permanent-delete interactions without introducing a global store or a second list framework.
 - `DeleteArchivedRecipesDialog.tsx` owns the explicit irreversible-action confirmation, selected recipe summary, pending state, Escape handling, and safe failure message.
 - `recipe-filters.tsx` renders the single Filters action, active-count badge, applied-filter chips, and filter dialog from state owned by `RecipeLibrary.tsx`. The action, chips, and Clear all control share one wrapping toolbar; each chip removes only its represented value, while the summary and dialog can both clear every active filter without introducing another state owner.
@@ -632,7 +636,7 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 
 1. Stage 0: foundation, app shell, CI, tests, Supabase boundary, TanStack Query setup.
 2. Stage 1: true MVP private recipe library with archived recipe viewing and restoration.
-3. Stage 2: student-friendly filters, cost, difficulty, equipment, tags, ingredient search.
+3. Stage 2: title-or-ingredient search is complete; effort, equipment, and student-oriented tag filters remain.
 4. Stage 3: meal planning, grocery lists, serving scaling, pantry/cost features.
 5. Stage 4: public/shared recipe discovery.
 6. Stage 5: polish, import flows, nutrition/macros, recommendations.
