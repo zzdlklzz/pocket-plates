@@ -117,6 +117,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Keep the Supabase CLI as a development-only dependency while preserving the existing local database scripts and CI workflow.
 - [x] Establish shared page-shell, action-button, selectable-chip, inline-notice, and back-link components while keeping pending state and domain cards with their owning features.
 - [x] Audit component and test ownership, retain cohesive multi-export modules, and align every single-component module filename with its exported PascalCase component name.
+- [x] Refresh production and development dependency locks to patched framework, CSS, image, lint, and test-tool releases after the August 2026 security audit.
 - Add Vercel deployment configuration.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.
@@ -191,10 +192,9 @@ Goal: help users turn recipes into weekly cooking decisions.
 
 - Weekly meal planning.
 - Grocery list generated from selected recipes.
-- Serving scaler.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
-- Recipe duplication and favorites.
+- Favorites.
 
 ### Stage 4: Community Recipe Discovery
 
@@ -445,7 +445,6 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 
 - Weekly meal prep planner.
 - Grocery list generated from selected recipes.
-- Serving scaler.
 - Cost estimate per serving, derived from optional total SGD cost and serving count.
 - Pantry tracking.
 - Dorm/exchange filters.

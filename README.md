@@ -47,13 +47,13 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 ## MVP Screens
 
 - Recipe library home screen
+- Archived recipe management screen
 - Recipe detail screen
 - Add/edit recipe screen
 - Filter sheet
 
 ## Future Features
 
-- Archived recipe library with restore actions
 - Image optimization and moderation before future public recipe sharing
 - Effort/time filters such as quick, make-ahead, one-pot, and low-cleanup
 - Equipment filters such as rice cooker, microwave, stovetop, and no oven
@@ -61,10 +61,9 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Ingredient-name search
 - Weekly meal prep planner
 - Grocery list from selected recipes
-- Serving scaler
 - Optional total-cost entry and estimated cost per serving
 - Pantry and staple tracking
-- Recipe duplication and favorites
+- Favorites
 - Public recipe discovery
 - Recipe import from pasted text or supported links
 - Nutrition/macros

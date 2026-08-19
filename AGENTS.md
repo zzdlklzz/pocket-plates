@@ -51,7 +51,7 @@ Do not rewrite an already-applied migration unless the user confirms it is safe.
 
 ## Post-Change Documentation
 
-After every code, database, configuration, dependency, or feature change, complete these steps before marking work done:
+After every code, database, configuration, dependency, or feature change, complete these steps before marking work done or creating a commit:
 
 1. Create a chronological changelog in `docs/changelog` named `YYYY-MM-DD-HHMM-description.md`.
    - Explain what changed and why.
@@ -61,9 +61,23 @@ After every code, database, configuration, dependency, or feature change, comple
 2. Update `docs/ARCHITECTURE.md` when the current system architecture, features, business logic, data model, flows, or setup assumptions change.
 3. Update setup/onboarding documentation when the change introduces dependencies, scripts, environment variables, migrations, Supabase setup, OAuth setup, storage buckets, or external infrastructure steps.
 4. Update feature progress tracking in `docs/project-plan.md` for every implemented feature or slice. Mark completed items as done in the roadmap/checklist during the same change, and add any newly discovered follow-up slice as pending rather than leaving progress implied only by code or changelogs.
+5. Update `README.md` whenever the current feature set, primary screens, planned features, stack, repository contents, or documentation index changes. A completed feature must not remain listed as future work, and a declined or removed feature must not remain listed as planned work.
+6. Before every commit, perform a current-document consistency sweep across `README.md`, `docs/ARCHITECTURE.md`, and `docs/project-plan.md`. Confirm that current behavior, completed work, future work, filenames, and ownership descriptions agree with the code and with each other.
+
+Historical changelogs are immutable records of their original slices. Do not rewrite an older changelog merely because a feature later changes status or a file is renamed; record the new state in the current changelog and current-state documentation instead.
 
 ## Verification
 
 - Run the narrowest meaningful verification after edits: typecheck, lint, unit tests, build, Playwright, migration validation, or targeted static checks.
 - If verification cannot run, say why and name the remaining risk.
 - Inspect the final diff before finishing to catch accidental churn, broken imports, leaked secrets, or stale documentation.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
