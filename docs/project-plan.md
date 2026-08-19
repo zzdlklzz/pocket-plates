@@ -118,7 +118,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Establish shared page-shell, action-button, selectable-chip, inline-notice, and back-link components while keeping pending state and domain cards with their owning features.
 - [x] Audit component and test ownership, retain cohesive multi-export modules, and align every single-component module filename with its exported PascalCase component name.
 - [x] Refresh production and development dependency locks to patched framework, CSS, image, lint, and test-tool releases after the August 2026 security audit.
-- [x] Stabilize Playwright CI installation with a pinned Ubuntu 22.04 runner, Chromium/WebKit-only downloads, and bounded workflow timeouts.
+- [x] Stabilize Playwright CI with a version-matched prebuilt browser container and a bounded job timeout, avoiding live Ubuntu package installation during each run.
 - Add Vercel deployment configuration.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.

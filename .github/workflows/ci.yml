@@ -10,7 +10,10 @@ permissions:
 
 jobs:
   checks:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --user 1001
     timeout-minutes: 15
     env:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
@@ -27,7 +30,4 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
-      - name: Install Playwright browsers
-        timeout-minutes: 5
-        run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
