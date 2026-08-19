@@ -55,5 +55,17 @@ describe("getRecipeErrorMessage", () => {
     expect(getRecipeErrorMessage(new Error("database details that should stay hidden"), "loadDetail")).toBe(
       "We could not load this recipe. Please try again."
     );
+    expect(getRecipeErrorMessage(new Error("database details that should stay hidden"), "restore")).toBe(
+      "We could not restore this recipe. Please try again."
+    );
+  });
+
+  it("reuses safe permission and network messages for restore failures", () => {
+    expect(getRecipeErrorMessage({ message: "permission denied", status: 403 }, "restore")).toBe(
+      "You do not have access to change this recipe."
+    );
+    expect(getRecipeErrorMessage(new TypeError("Failed to fetch"), "restore")).toBe(
+      "Check your connection and try again."
+    );
   });
 });

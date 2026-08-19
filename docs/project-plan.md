@@ -140,7 +140,7 @@ Goal: any visitor can create an account, then save and retrieve their own privat
 - [x] Basic filter by meal types, allowing more than one meal type to be selected.
 - [x] Supabase persistence with Row Level Security. Initial owner-scoped schema and RLS migrations are in place.
 - [x] TanStack Query hook for the recipe list.
-- [x] TanStack Query hooks for recipe detail, create recipe, update recipe, and archive recipe flows.
+- [x] TanStack Query hooks for recipe detail, create recipe, update recipe, archive recipe, and restore recipe flows.
 - [x] Privacy guarantee: users can only read and change their own private library. Current authenticated app access and RLS policies preserve owner scope.
 
 This is the first version worth calling "usable." Anything not listed here should wait unless it is needed to avoid rework.
@@ -162,7 +162,7 @@ Stage 1 implementation slices:
 - [x] Positional removal undo: render each Undo action at the deleted source, ingredient, or step row's former position.
 - [x] Recipe error feedback hardening: safe classified messages for recipe list, detail, edit, save, and archive failures.
 - [x] Recipe action and navigation pending states: spinner-backed save/archive/sign-out buttons, disabled form controls during recipe save, and reusable skeleton loaders for recipe route transitions.
-- [ ] Archived recipe recovery: add an Archived Recipes page reachable from the library, list the signed-in user's soft-archived recipes, and allow each recipe to be restored to the active library.
+- [x] Archived recipe recovery: the authenticated Archived Recipes page is reachable from the library, lists the signed-in user's soft-archived recipes newest-first, and restores them to the active library.
 - [x] Recipe filter semantics and popup filters: flexible recipes appear under specific meal type filters, and the library can filter by cost rating and difficulty without leaving the page.
 - [x] Recipe filter UI refactor: extract reusable meal-type controls and the filter dialog while keeping query and filter state in the recipe library.
 - [x] Auth signup diagnostics hardening: Supabase Auth 5xx signup failures now show confirmation-email-specific feedback, and the signup profile trigger is idempotent and not directly callable by browser roles.
@@ -439,19 +439,19 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 - Nutrition/macros.
 - Provider-independent recipe import from pasted text or supported links, with a review-and-edit step before saving.
 
-## Upcoming Recipe Library Slice
+## Completed Recipe Library Slice
 
 ### Archived Recipe Recovery
 
-The current archive action is a soft archive: it sets `recipes.archived_at` and hides the recipe from active library and detail queries. The row and its ingredients, steps, meal types, and source links remain in the database, but the app does not yet provide a way to view or restore it. The intended implementation should:
+The archive action is a soft archive: it sets `recipes.archived_at` and hides the recipe from active library and detail queries. The row, ingredients, steps, meal types, source links, and image reference remain intact. The completed recovery flow now:
 
-- Add an Archived Recipes page, such as `/recipes/archived`, that is reachable from the active recipe library.
-- Query only the signed-in user's rows where `archived_at` is not null, relying on the existing owner-scoped Row Level Security boundary.
-- Show enough recipe information to identify an archived item and provide a clear Restore action.
-- Restore a recipe by setting `archived_at` back to null, then invalidate both active and archived recipe query caches.
-- Keep archive terminology distinct from permanent deletion so users understand that archived recipes are recoverable.
+- [x] Adds an authenticated `/recipes/archived` page reachable from the active recipe library.
+- [x] Queries rows where `archived_at` is not null, newest-first, while relying on existing owner-scoped Row Level Security.
+- [x] Reuses recipe cards and private signed image URLs so archived items remain identifiable without exposing an active-detail link.
+- [x] Restores a recipe by setting `archived_at` to null and invalidating the shared recipe query key so both lists refresh.
+- [x] Keeps archive terminology distinct from permanent deletion and shows safe loading, empty, pending, and failure states.
 - Keep permanent deletion out of the archive-recovery slice. If permanent deletion is added later, present a confirmation dialog that names the recipe, explains that the action cannot be undone, and requires explicit confirmation before deleting the row.
-- Add repository, query, UI, and end-to-end coverage for listing and restoring archived recipes.
+- [x] Adds repository, query, route, UI, and signed-out end-to-end coverage for archive recovery.
 
 ## Recipe Form Slices
 

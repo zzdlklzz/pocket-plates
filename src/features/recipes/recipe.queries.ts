@@ -4,9 +4,33 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { queryKeys } from "@/lib/query/query-keys";
 import { getRecipeImageUrl, getRecipeImageUrls } from "./recipe-image.repository";
-import { archiveRecipe, createRecipe, getRecipe, listRecipes, updateRecipe } from "./recipe.repository";
+import {
+  archiveRecipe,
+  createRecipe,
+  getRecipe,
+  listArchivedRecipes,
+  listRecipes,
+  restoreRecipe,
+  updateRecipe
+} from "./recipe.repository";
 import { toRecipeCardDto, toRecipeDetailDto } from "./recipe.mappers";
+import type { RecipeListRow } from "./recipe.mappers";
 import type { RecipeListFilters, RecipeSaveInput } from "./recipe.types";
+
+async function mapRecipeCardsWithImages(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+  rows: RecipeListRow[]
+) {
+  const imageUrls = await getRecipeImageUrls(
+    supabase,
+    rows.map((row) => ({
+      legacyImageUrl: row.image_url,
+      storagePath: row.image_storage_path
+    }))
+  );
+
+  return rows.map((row, index) => toRecipeCardDto(row, imageUrls[index]));
+}
 
 export function useRecipeList(filters: RecipeListFilters) {
   return useQuery({
@@ -14,14 +38,18 @@ export function useRecipeList(filters: RecipeListFilters) {
     queryFn: async () => {
       const supabase = createSupabaseBrowserClient();
       const rows = await listRecipes(supabase, filters);
-      const imageUrls = await getRecipeImageUrls(
-        supabase,
-        rows.map((row) => ({
-          legacyImageUrl: row.image_url,
-          storagePath: row.image_storage_path
-        }))
-      );
-      return rows.map((row, index) => toRecipeCardDto(row, imageUrls[index]));
+      return mapRecipeCardsWithImages(supabase, rows);
+    }
+  });
+}
+
+export function useArchivedRecipeList() {
+  return useQuery({
+    queryKey: queryKeys.recipes.archivedList,
+    queryFn: async () => {
+      const supabase = createSupabaseBrowserClient();
+      const rows = await listArchivedRecipes(supabase);
+      return mapRecipeCardsWithImages(supabase, rows);
     }
   });
 }
@@ -86,6 +114,20 @@ export function useArchiveRecipe() {
         queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.recipes.detail(id) })
       ]);
+    }
+  });
+}
+
+export function useRestoreRecipe() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createSupabaseBrowserClient();
+      return restoreRecipe(supabase, id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
     }
   });
 }

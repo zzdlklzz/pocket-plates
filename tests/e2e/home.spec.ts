@@ -21,3 +21,10 @@ test("shows password reset and resend states", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Resend confirmation" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Resend confirmation" })).toBeVisible();
 });
+
+test("redirects signed-out visitors away from archived recipes", async ({ page }) => {
+  await page.goto("/recipes/archived");
+
+  await expect(page).toHaveURL("/");
+  await expect(page.getByRole("heading", { name: "Your private recipe shelf." })).toBeVisible();
+});

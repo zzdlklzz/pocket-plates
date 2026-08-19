@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Archive, Plus, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { APP_METADATA } from "@/app/app.constants";
@@ -62,7 +62,16 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
             <h1 className="text-xl font-bold text-slate-800">{APP_METADATA.name}</h1>
             <p className="mt-1 truncate text-xs text-slate-500">{profileLabel}</p>
           </div>
-          <SignOutButton />
+          <div className="flex items-center gap-2">
+            <Link
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+              href="/recipes/archived"
+            >
+              <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+              Archived
+            </Link>
+            <SignOutButton />
+          </div>
         </div>
         <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
           <Search className="h-4 w-4" aria-hidden="true" />

@@ -90,6 +90,20 @@ export async function listRecipes(
   return data as RecipeListRow[];
 }
 
+export async function listArchivedRecipes(supabase: SupabaseBrowserClient) {
+  const { data, error } = await supabase
+    .from("recipes")
+    .select(RECIPE_LIST_SELECT)
+    .not("archived_at", "is", null)
+    .order("archived_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data as RecipeListRow[];
+}
+
 export async function getRecipe(supabase: SupabaseBrowserClient, id: string) {
   const { data, error } = await supabase
     .from("recipes")
@@ -304,6 +318,18 @@ export async function archiveRecipe(supabase: SupabaseBrowserClient, id: string)
     .from("recipes")
     .update({ archived_at: new Date().toISOString() } as never)
     .eq("id", id);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function restoreRecipe(supabase: SupabaseBrowserClient, id: string) {
+  const { error } = await supabase
+    .from("recipes")
+    .update({ archived_at: null } as never)
+    .eq("id", id)
+    .not("archived_at", "is", null);
 
   if (error) {
     throw error;

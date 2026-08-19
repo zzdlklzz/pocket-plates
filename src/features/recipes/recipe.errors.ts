@@ -1,9 +1,10 @@
-type RecipeErrorAction = "archive" | "loadDetail" | "loadList" | "save";
+type RecipeErrorAction = "archive" | "loadDetail" | "loadList" | "restore" | "save";
 
 const FALLBACK_MESSAGES: Record<RecipeErrorAction, string> = {
   archive: "We could not archive this recipe. Please try again.",
   loadDetail: "We could not load this recipe. Please try again.",
   loadList: "We could not load your recipes. Please try again.",
+  restore: "We could not restore this recipe. Please try again.",
   save: "We could not save this recipe. Please try again."
 };
 

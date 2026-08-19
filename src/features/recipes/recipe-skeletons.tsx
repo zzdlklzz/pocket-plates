@@ -81,6 +81,24 @@ export function RecipeLibrarySkeleton() {
   );
 }
 
+export function ArchivedRecipeLibrarySkeleton() {
+  return (
+    <AppPageShell spacing="compact">
+      <div role="status" aria-label="Loading archived recipes">
+        <SkeletonBlock className="h-5 w-20 bg-leaf-100" />
+        <section className="mt-5 rounded-b-3xl bg-leaf-100 px-4 pb-5 pt-4">
+          <SkeletonBlock className="h-7 w-48 bg-white/80" />
+          <SkeletonBlock className="mt-3 h-4 w-full bg-white/80" />
+          <SkeletonBlock className="mt-2 h-4 w-4/5 bg-white/80" />
+        </section>
+        <section className="mt-5" aria-label="Archived recipes loading">
+          <RecipeGridSkeleton />
+        </section>
+      </div>
+    </AppPageShell>
+  );
+}
+
 export function RecipeDetailSkeleton() {
   return (
     <AppPageShell>

@@ -52,4 +52,12 @@ describe("RecipeLibrary", () => {
     expect(screen.getByRole("button", { name: "Breakfast" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Filters/ })).not.toBeInTheDocument();
   });
+
+  it("links to archived recipes without removing the existing library controls", () => {
+    renderRecipeLibrary();
+
+    expect(screen.getByRole("link", { name: "Archived" })).toHaveAttribute("href", "/recipes/archived");
+    expect(screen.getByRole("link", { name: "Add recipe" })).toHaveAttribute("href", "/recipes/new");
+    expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument();
+  });
 });
