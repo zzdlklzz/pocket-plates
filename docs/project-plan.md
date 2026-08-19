@@ -227,6 +227,15 @@ Primary screens:
 Visual reference:
 
 - `docs/assets/ui-mockups.svg`: generated mobile UI mockups.
+- `docs/assets/navigation-mockups.svg`: approved near-term Home–Add–More navigation, its More sheet, and a clearly separated five-slot concept that is not confirmed or planned for the near future.
+
+Navigation direction:
+
+- Use three equal bottom-navigation slots for Home, a centered Add Recipe action, and More.
+- Keep filters as local recipe-library controls rather than a global navigation destination.
+- Open secondary destinations such as Archived Recipes from a More bottom sheet so future pages do not push the Add action off center.
+- Retain the five-slot mockup only as a future exploration. It is not confirmed and should not be implemented until multiple new, frequently used top-level pages actually exist.
+- Do not use the header-selector navigation concept.
 
 Design direction:
 

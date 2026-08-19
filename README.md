@@ -34,6 +34,7 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `docs/database-schema.dbml`: relational schema source for dbdiagram.io
 - `docs/assets/architecture.svg`: generated current app architecture image
 - `docs/assets/ui-mockups.svg`: generated mobile UI mockups
+- `docs/assets/navigation-mockups.svg`: approved Home–Add–More navigation reference plus an unconfirmed future five-slot concept
 - `infra/aws/`: Terraform project for the low-cost AWS EC2 learning deployment
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`: initial Supabase schema and RLS migration draft
 
