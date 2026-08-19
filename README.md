@@ -15,7 +15,7 @@ This project folder contains the project plan, architecture diagrams, database s
 - Database: Supabase Postgres
 - Auth: Supabase Auth
 - Images: private, owner-scoped Supabase Storage uploads
-- CI/CD: GitHub Actions and Vercel Git deployments
+- Application CI: GitHub Actions on a pinned Ubuntu 22.04 runner; deployments use Vercel Git integration and a separate Supabase migration workflow
 - Testing: Vitest for unit/integration tests, Playwright for end-to-end tests
 - Auth email: Supabase custom SMTP, initially via a dedicated Gmail or Google Workspace mailbox if suitable
 - Device experience: Progressive Web App added to iPhone Home Screen

@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
     env:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
@@ -26,5 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
-      - run: npx playwright install --with-deps
+      - name: Install Playwright browsers
+        timeout-minutes: 5
+        run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e

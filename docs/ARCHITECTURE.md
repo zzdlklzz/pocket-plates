@@ -18,7 +18,7 @@ PocketPlates is a multi-user, private-first recipe Progressive Web App for stude
 - Hosting: Vercel.
 - Containerization: production Docker image for the AWS migration path, using Next.js standalone output.
 - AWS learning path: begin with a minimal Terraform sandbox in `infra/test`, then compare against the fuller reference implementation in `infra/aws`.
-- CI/CD: GitHub Actions on Node.js 24 plus Vercel Git deployments that run lightweight verification before building.
+- CI/CD: application checks use GitHub Actions on a pinned Ubuntu 22.04 runner with Node.js 24; Vercel Git deployments run lightweight verification before building, and Supabase migrations use a separate deployment workflow.
 - Linting: ESLint 9 flat config with Next.js Core Web Vitals and TypeScript rules.
 - Testing: Vitest 4 for unit/integration tests and Playwright for E2E tests.
 
@@ -311,7 +311,7 @@ SUPABASE_SECRET_KEY=
 npm run dev
 ```
 
-4. Run checks. CI runs these checks on Node.js 24 with placeholder public Supabase values because GitHub Actions does not inherit Vercel environment variables. Playwright starts the local Next.js server on `127.0.0.1:3000` so E2E tests use a deterministic base URL:
+4. Run checks. CI runs these checks on a pinned Ubuntu 22.04 runner with Node.js 24 and placeholder public Supabase values because GitHub Actions does not inherit Vercel environment variables. The workflow installs only the Chromium and WebKit browsers exercised by its desktop Chrome and mobile Safari-size projects, and bounds browser installation to five minutes so an external package or download stall fails promptly. Playwright starts the local Next.js server on `127.0.0.1:3000` so E2E tests use a deterministic base URL:
 
 ```bash
 npm run lint
