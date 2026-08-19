@@ -1,6 +1,6 @@
 import { SlidersHorizontal, X } from "lucide-react";
-import { ActionButton } from "@/components/ui/action-button";
-import { SelectableChip } from "@/components/ui/selectable-chip";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { SelectableChip } from "@/components/ui/SelectableChip";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
 

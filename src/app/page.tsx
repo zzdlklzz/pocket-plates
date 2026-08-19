@@ -1,6 +1,6 @@
-import { AuthPanel } from "@/features/auth/auth-panel";
+import { AuthPanel } from "@/features/auth/AuthPanel";
 import { AUTH_MODE_SEARCH_PARAM, AUTH_SEARCH_PARAM, getAuthMessage, getAuthMode } from "@/features/auth/auth.constants";
-import { RecipeLibrary } from "@/features/recipes/recipe-library";
+import { RecipeLibrary } from "@/features/recipes/RecipeLibrary";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";

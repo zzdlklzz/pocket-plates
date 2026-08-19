@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { RecipeLibrary } from "../recipe-library";
+import { RecipeLibrary } from "../RecipeLibrary";
 
 vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({})

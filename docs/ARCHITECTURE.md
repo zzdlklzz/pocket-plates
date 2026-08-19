@@ -89,7 +89,7 @@ src/
     layout.tsx
     manifest.ts
     page.tsx
-    providers.tsx
+    AppProviders.tsx
     recipes/
       archived/
         loading.tsx
@@ -104,39 +104,39 @@ src/
     ui/
       __tests__/
         shared-ui.test.tsx
-      action-button.tsx
-      app-page-shell.tsx
-      back-link.tsx
-      inline-notice.tsx
-      selectable-chip.tsx
+      ActionButton.tsx
+      AppPageShell.tsx
+      BackLink.tsx
+      InlineNotice.tsx
+      SelectableChip.tsx
   features/
     auth/
       auth.actions.ts
       auth.constants.ts
-      auth-hero.tsx
-      auth-panel.tsx
-      auth-submit-button.tsx
-      sign-out-button.tsx
+      AuthHero.tsx
+      AuthPanel.tsx
+      AuthSubmitButton.tsx
+      SignOutButton.tsx
       __tests__/
         auth.constants.test.ts
     recipes/
-      archived-recipe-library.tsx
-      delete-archived-recipes-dialog.tsx
-      recipe-card.tsx
-      recipe-detail.tsx
-      recipe-edit.tsx
+      ArchivedRecipeLibrary.tsx
+      DeleteArchivedRecipesDialog.tsx
+      RecipeCard.tsx
+      RecipeDetail.tsx
+      RecipeEdit.tsx
       recipe-filters.tsx
-      recipe-form-fields.tsx
+      RecipeFormFields.tsx
       recipe-form-list.tsx
-      recipe-form.tsx
-      recipe-image-field.tsx
+      RecipeForm.tsx
+      RecipeImageField.tsx
       recipe-image.constants.ts
       recipe-image.repository.ts
-      recipe-ingredient-fields.tsx
-      recipe-library.tsx
-      recipe-navigation.tsx
+      RecipeIngredientFields.tsx
+      RecipeLibrary.tsx
+      RecipeNavigation.tsx
       recipe-library.constants.ts
-      recipe-step-fields.tsx
+      RecipeStepFields.tsx
       recipe.mappers.ts
       recipe.queries.ts
       recipe.repository.ts
@@ -182,15 +182,15 @@ vitest.config.mts
 
 ## Shared UI Boundary
 
-Small, application-wide presentation components live under `src/components/ui`:
+Small, application-wide presentation components live under `src/components/ui`. A module that exports one component uses that component's exact PascalCase filename, making imports discoverable without adding barrel files. Next.js route conventions and cohesive multi-export modules keep their framework or descriptive filenames.
 
-- `app-page-shell.tsx` owns the mobile-width page background, horizontal spacing, shadow, and the two established vertical-spacing modes used by full screens and compact error/auth screens.
-- `action-button.tsx` owns primary, secondary, and danger button presentation plus explicit pending rendering. Feature components still own where pending state comes from: `AuthSubmitButton` reads server-form status, while recipe screens pass TanStack Query and redirect state.
-- `selectable-chip.tsx` owns selected-state accessibility and the tinted or plain chip treatments used by recipe forms and filters.
-- `inline-notice.tsx` owns error, informational, and neutral notice treatments with the established padding densities.
-- `back-link.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
+- `AppPageShell.tsx` owns the mobile-width page background, horizontal spacing, shadow, and the two established vertical-spacing modes used by full screens and compact error/auth screens.
+- `ActionButton.tsx` owns primary, secondary, and danger button presentation plus explicit pending rendering. Feature components still own where pending state comes from: `AuthSubmitButton` reads server-form status, while recipe screens pass TanStack Query and redirect state.
+- `SelectableChip.tsx` owns selected-state accessibility and the tinted or plain chip treatments used by recipe forms and filters.
+- `InlineNotice.tsx` owns error, informational, and neutral notice treatments with the established padding densities.
+- `BackLink.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
 
-Feature-specific components remain with their domain. `auth-hero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `recipe-card.tsx` remains the reusable recipe summary card for both active and archived results. `recipe-navigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Archived Recipes is the sheet's only current destination; future secondary pages can be added to its small item definition without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
+Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Archived Recipes is the sheet's only current destination; future secondary pages can be added to its small item definition without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
 
 ## Server-State Rule
 
@@ -214,11 +214,11 @@ The recipe read path keeps database rows, DTOs, and UI state separate:
 - `recipe-image.repository.ts` exchanges durable private object paths for one-hour signed display URLs. Legacy pasted `image_url` values remain readable only when a recipe has no Storage path.
 - `recipe.mappers.ts` converts snake_case Supabase rows into camelCase `RecipeCardDto` and `RecipeDetailDto` objects.
 - `recipe.queries.ts` exposes active-list, archived-list, and detail hooks for TanStack Query caching. Both list hooks reuse the same batched private-image URL mapping.
-- `recipe-library.tsx` owns search and filter state plus active-library query results.
-- `archived-recipe-library.tsx` owns archived results, checkbox selection, select-all state, and restore/permanent-delete interactions without introducing a global store or a second list framework.
-- `delete-archived-recipes-dialog.tsx` owns the explicit irreversible-action confirmation, selected recipe summary, pending state, Escape handling, and safe failure message.
-- `recipe-filters.tsx` renders the single Filters action, active-count badge, applied-filter chips, and filter dialog from state owned by `recipe-library.tsx`. The action, chips, and Clear all control share one wrapping toolbar; each chip removes only its represented value, while the summary and dialog can both clear every active filter without introducing another state owner.
-- `recipe-card.tsx` renders compact mobile-friendly recipe cards.
+- `RecipeLibrary.tsx` owns search and filter state plus active-library query results.
+- `ArchivedRecipeLibrary.tsx` owns archived results, checkbox selection, select-all state, and restore/permanent-delete interactions without introducing a global store or a second list framework.
+- `DeleteArchivedRecipesDialog.tsx` owns the explicit irreversible-action confirmation, selected recipe summary, pending state, Escape handling, and safe failure message.
+- `recipe-filters.tsx` renders the single Filters action, active-count badge, applied-filter chips, and filter dialog from state owned by `RecipeLibrary.tsx`. The action, chips, and Clear all control share one wrapping toolbar; each chip removes only its represented value, while the summary and dialog can both clear every active filter without introducing another state owner.
+- `RecipeCard.tsx` renders compact mobile-friendly recipe cards.
 
 ## Recipe Write Path
 
@@ -227,11 +227,11 @@ Recipe create/edit/archive/restore/permanent-delete flows use the same repositor
 - `/recipes/new` checks the server auth session before rendering the client recipe form.
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
-- `recipe-form.tsx` owns React Hook Form setup, image-change state, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
-- `recipe-form-fields.tsx` coordinates the basic, meal-type, optional metadata, source, ingredient, and step sections. Basic fields and source-link controls remain local, while the cost and difficulty selects reuse the same typed option definitions as the recipe filters.
-- `recipe-image-field.tsx` replaces pasted cover-image URLs with a device file picker. It validates JPEG, PNG, and WebP files against the 2 MB bucket limit, previews a valid selection, and exposes explicit replace and remove actions.
-- `recipe-ingredient-fields.tsx` owns the ingredient field array, compact and expanded ingredient row UI, drag context, active row, field-array moves, and reversible removal state.
-- `recipe-step-fields.tsx` owns the step field array, compact and expanded step row UI, drag context, active row, field-array moves, and reversible removal state.
+- `RecipeForm.tsx` owns React Hook Form setup, image-change state, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
+- `RecipeFormFields.tsx` coordinates the basic, meal-type, optional metadata, source, ingredient, and step sections. Basic fields and source-link controls remain local, while the cost and difficulty selects reuse the same typed option definitions as the recipe filters.
+- `RecipeImageField.tsx` replaces pasted cover-image URLs with a device file picker. It validates JPEG, PNG, and WebP files against the 2 MB bucket limit, previews a valid selection, and exposes explicit replace and remove actions.
+- `RecipeIngredientFields.tsx` owns the ingredient field array, compact and expanded ingredient row UI, drag context, active row, field-array moves, and reversible removal state.
+- `RecipeStepFields.tsx` owns the step field array, compact and expanded step row UI, drag context, active row, field-array moves, and reversible removal state.
 - `recipe-form-list.tsx` contains the repeating-list mechanics shared by source, ingredient, and step sections: add and undo controls, drag sensors, removed-row types, and index adjustments after moves, removals, or restoration. Ingredient and step row markup stays separate because their fields and summaries differ.
 - Repeating source, ingredient, and step sections place explicit add actions after their rows and focus the newly appended field so mobile entry continues down the page.
 - `recipe.validation.ts` defines the Zod rules for title, servings, meal types, ingredients, steps, up to five optional source links with optional labels, notes, cost rating, and difficulty. File validation stays in `recipe-image.constants.ts` because files are upload state rather than database form values.

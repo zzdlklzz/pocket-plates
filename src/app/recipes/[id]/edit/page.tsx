@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { RecipeEdit } from "@/features/recipes/recipe-edit";
+import { RecipeEdit } from "@/features/recipes/RecipeEdit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";

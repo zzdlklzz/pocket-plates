@@ -1,10 +1,10 @@
 import { KeyRound } from "lucide-react";
 import { redirect } from "next/navigation";
-import { AppPageShell } from "@/components/ui/app-page-shell";
-import { InlineNotice } from "@/components/ui/inline-notice";
+import { AppPageShell } from "@/components/ui/AppPageShell";
+import { InlineNotice } from "@/components/ui/InlineNotice";
 import { updatePassword } from "@/features/auth/auth.actions";
-import { AuthHero } from "@/features/auth/auth-hero";
-import { AuthSubmitButton } from "@/features/auth/auth-submit-button";
+import { AuthHero } from "@/features/auth/AuthHero";
+import { AuthSubmitButton } from "@/features/auth/AuthSubmitButton";
 import { AUTH_SEARCH_PARAM, getAuthMessage } from "@/features/auth/auth.constants";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 

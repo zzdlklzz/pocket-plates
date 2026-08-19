@@ -3,8 +3,8 @@
 import { Chrome, KeyRound, Mail, RotateCw, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { AppPageShell } from "@/components/ui/app-page-shell";
-import { InlineNotice } from "@/components/ui/inline-notice";
+import { AppPageShell } from "@/components/ui/AppPageShell";
+import { InlineNotice } from "@/components/ui/InlineNotice";
 import {
   resendConfirmationEmail,
   sendPasswordResetEmail,
@@ -12,8 +12,8 @@ import {
   signInWithGoogle,
   signUpWithEmail
 } from "./auth.actions";
-import { AuthSubmitButton } from "./auth-submit-button";
-import { AuthHero } from "./auth-hero";
+import { AuthSubmitButton } from "./AuthSubmitButton";
+import { AuthHero } from "./AuthHero";
 import type { AuthMode } from "./auth.constants";
 
 type AuthPanelProps = {

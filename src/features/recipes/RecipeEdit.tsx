@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { AppPageShell } from "@/components/ui/app-page-shell";
-import { InlineNotice } from "@/components/ui/inline-notice";
+import { AppPageShell } from "@/components/ui/AppPageShell";
+import { InlineNotice } from "@/components/ui/InlineNotice";
 import { getRecipeErrorMessage } from "./recipe.errors";
 import { toRecipeFormValues } from "./recipe.mappers";
 import { useRecipeDetail } from "./recipe.queries";
-import { RecipeForm } from "./recipe-form";
+import { RecipeForm } from "./RecipeForm";
 import { RecipeFormSkeleton } from "./recipe-skeletons";
 
 type RecipeEditProps = {

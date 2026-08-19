@@ -3,12 +3,12 @@
 import { Trash2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
-import { SelectableChip } from "@/components/ui/selectable-chip";
+import { SelectableChip } from "@/components/ui/SelectableChip";
 import { AddRowButton, type RemovedRow, UndoRemovalNotice } from "./recipe-form-list";
-import { RecipeImageField } from "./recipe-image-field";
-import { RecipeIngredientFields } from "./recipe-ingredient-fields";
+import { RecipeImageField } from "./RecipeImageField";
+import { RecipeIngredientFields } from "./RecipeIngredientFields";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
-import { RecipeStepFields } from "./recipe-step-fields";
+import { RecipeStepFields } from "./RecipeStepFields";
 import type { RecipeFormValues, RecipeImageChange } from "./recipe.types";
 import { MAX_SERVINGS, MAX_SOURCE_LINKS } from "./recipe.validation";
 

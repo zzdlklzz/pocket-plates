@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ArchivedRecipeLibrary } from "../archived-recipe-library";
+import { ArchivedRecipeLibrary } from "../ArchivedRecipeLibrary";
 
 const mocks = vi.hoisted(() => ({
   deleteMutateAsync: vi.fn(),

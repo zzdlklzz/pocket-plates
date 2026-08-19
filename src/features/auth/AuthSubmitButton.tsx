@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { ActionButton, type ActionButtonVariant } from "@/components/ui/action-button";
+import { ActionButton, type ActionButtonVariant } from "@/components/ui/ActionButton";
 
 type AuthSubmitButtonProps = {
   children: ReactNode;

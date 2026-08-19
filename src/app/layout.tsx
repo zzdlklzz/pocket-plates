@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { APP_METADATA } from "./app.constants";
-import { AppProviders } from "./providers";
+import { AppProviders } from "./AppProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {

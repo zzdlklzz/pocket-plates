@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ArchivedRecipeLibrary } from "@/features/recipes/archived-recipe-library";
+import { ArchivedRecipeLibrary } from "@/features/recipes/ArchivedRecipeLibrary";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";

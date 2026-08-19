@@ -1,6 +1,6 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { APP_METADATA } from "@/app/app.constants";
-import { AppPageShell } from "@/components/ui/app-page-shell";
+import { AppPageShell } from "@/components/ui/AppPageShell";
 
 type SkeletonBlockProps = {
   className: string;

@@ -2,13 +2,13 @@
 
 import { RotateCcw, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ActionButton } from "@/components/ui/action-button";
-import { AppPageShell } from "@/components/ui/app-page-shell";
-import { InlineNotice } from "@/components/ui/inline-notice";
-import { DeleteArchivedRecipesDialog } from "./delete-archived-recipes-dialog";
-import { RecipeCard } from "./recipe-card";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { AppPageShell } from "@/components/ui/AppPageShell";
+import { InlineNotice } from "@/components/ui/InlineNotice";
+import { DeleteArchivedRecipesDialog } from "./DeleteArchivedRecipesDialog";
+import { RecipeCard } from "./RecipeCard";
 import { getRecipeErrorMessage } from "./recipe.errors";
-import { RecipeNavigation } from "./recipe-navigation";
+import { RecipeNavigation } from "./RecipeNavigation";
 import { useArchivedRecipeList, useDeleteArchivedRecipes, useRestoreRecipe } from "./recipe.queries";
 import { ArchivedRecipeLibrarySkeleton } from "./recipe-skeletons";
 

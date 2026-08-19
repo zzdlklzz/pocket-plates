@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { RecipeNavigation } from "../recipe-navigation";
+import { RecipeNavigation } from "../RecipeNavigation";
 
 describe("RecipeNavigation", () => {
   it("keeps Add centered between Home and More", () => {

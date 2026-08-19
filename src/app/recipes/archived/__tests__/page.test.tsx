@@ -15,7 +15,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: mocks.createSupabaseServerClient
 }));
 
-vi.mock("@/features/recipes/archived-recipe-library", () => ({
+vi.mock("@/features/recipes/ArchivedRecipeLibrary", () => ({
   ArchivedRecipeLibrary: () => <div>Archived recipe library</div>
 }));
 

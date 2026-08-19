@@ -2,7 +2,7 @@
 
 import { ImagePlus, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { ActionButton } from "@/components/ui/action-button";
+import { ActionButton } from "@/components/ui/ActionButton";
 import {
   getRecipeImageValidationError,
   RECIPE_IMAGE_ACCEPT

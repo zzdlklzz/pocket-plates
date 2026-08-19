@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { Trash2 } from "lucide-react";
-import { ActionButton } from "@/components/ui/action-button";
-import { InlineNotice } from "@/components/ui/inline-notice";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { InlineNotice } from "@/components/ui/InlineNotice";
 import { getRecipeErrorMessage } from "./recipe.errors";
 
 type DeleteArchivedRecipesDialogProps = {

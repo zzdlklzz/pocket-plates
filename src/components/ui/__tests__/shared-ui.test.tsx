@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ActionButton } from "../action-button";
-import { AppPageShell } from "../app-page-shell";
-import { BackLink } from "../back-link";
-import { InlineNotice } from "../inline-notice";
-import { SelectableChip } from "../selectable-chip";
+import { ActionButton } from "../ActionButton";
+import { AppPageShell } from "../AppPageShell";
+import { BackLink } from "../BackLink";
+import { InlineNotice } from "../InlineNotice";
+import { SelectableChip } from "../SelectableChip";
 
 describe("shared UI components", () => {
   it("renders pending action buttons as busy and disabled", () => {

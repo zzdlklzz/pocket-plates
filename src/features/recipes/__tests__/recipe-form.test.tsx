@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { RecipeForm } from "../recipe-form";
+import { RecipeForm } from "../RecipeForm";
 import type { RecipeFormValues } from "../recipe.types";
 
 vi.mock("next/navigation", () => ({
