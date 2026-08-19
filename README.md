@@ -10,7 +10,7 @@ This project folder contains the project plan, architecture diagrams, database s
 - Forms/validation: React Hook Form and Zod
 - Data fetching/cache: TanStack Query from the start, backed by Supabase repository functions
 - Hosting: Vercel free/Hobby tier
-- AWS learning deployment: Terraform-managed EC2, ECR, IAM, networking, and CloudWatch log groups for the Docker migration path
+- AWS learning deployment: Terraform-managed EC2, ECR, IAM, networking, and CloudWatch log groups, with Next.js standalone output enabled outside Vercel for the Docker migration path
 - Backend: Supabase free tier
 - Database: Supabase Postgres
 - Auth: Supabase Auth

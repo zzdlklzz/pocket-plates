@@ -321,7 +321,7 @@ npm run build
 npm run test:e2e
 ```
 
-Vercel deployments use `vercel.json` to run `npm run verify && npm run build`, so lint, typecheck, and unit tests must pass before Vercel produces a deployment build. GitHub branch protection is still required if production deploys should be limited to commits whose full GitHub Actions CI, including Playwright E2E, has passed.
+Vercel deployments use `vercel.json` to run `npm run verify && npm run build`, so lint, typecheck, and unit tests must pass before Vercel produces a deployment build. `next.config.mjs` leaves `output` unset when Vercel supplies its `VERCEL` environment variable because Vercel's build adapter produces the deployment artifacts itself. This avoids a Next.js 16.3 adapter conflict while keeping standalone output for non-Vercel Docker and AWS builds. GitHub branch protection is still required if production deploys should be limited to commits whose full GitHub Actions CI, including Playwright E2E, has passed.
 
 If Playwright browsers are missing:
 
@@ -333,7 +333,7 @@ npx playwright install
 
 The AWS migration path uses a production Docker image built from Next.js standalone output. The image build requires:
 
-- `next.config.mjs` with `output: "standalone"`.
+- `next.config.mjs` with standalone output enabled whenever the build is not running on Vercel.
 - `Dockerfile`.
 - `.dockerignore`.
 

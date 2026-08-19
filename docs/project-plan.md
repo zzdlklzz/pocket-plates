@@ -119,7 +119,7 @@ Goal: create a deployable skeleton before building feature depth.
 - [x] Audit component and test ownership, retain cohesive multi-export modules, and align every single-component module filename with its exported PascalCase component name.
 - [x] Refresh production and development dependency locks to patched framework, CSS, image, lint, and test-tool releases after the August 2026 security audit.
 - [x] Stabilize Playwright CI with a version-matched prebuilt browser container and a bounded job timeout, avoiding live Ubuntu package installation during each run.
-- Add Vercel deployment configuration.
+- [x] Add Vercel deployment configuration and keep Next.js standalone output conditional so Vercel uses its build adapter while Docker/AWS builds retain the standalone server bundle.
 - [x] Document a cost-conscious AWS migration study path covering Docker, Terraform, EC2, CI/CD, observability, SRE practices, and optional later ECS/Kubernetes exploration.
 - [x] Add the Phase 4 production Docker image build inputs for the AWS migration path.
 - [x] Align Supabase SSR cookie handling and Docker auth redirect notes for the self-hosted runtime path.
@@ -348,6 +348,7 @@ Use Vercel's GitHub integration for application deployment:
 - Pull request: Vercel creates a preview deployment.
 - Merge to `main`: Vercel creates a production deployment.
 - `vercel.json` runs `npm run verify && npm run build` so Vercel deployments fail before build output if lint, typecheck, or unit tests fail.
+- `next.config.mjs` disables standalone output only when Vercel sets `VERCEL`; Vercel's adapter owns its deployment artifacts, while local Docker and AWS builds continue to receive `.next/standalone`.
 
 To prevent production deployments from unverified commits, protect the production branch in GitHub and require the CI `checks` job before merging or pushing to `main`.
 
