@@ -14,7 +14,7 @@ import { RecipeCard } from "./RecipeCard";
 import { RecipeNavigation } from "./RecipeNavigation";
 import { RECIPE_SEARCH_DEBOUNCE_MS } from "./recipe-library.constants";
 import { RecipeGridSkeleton } from "./recipe-skeletons";
-import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
+import type { CostRating, DifficultyLevel, MealType, RecipeEffortLabel } from "./recipe.types";
 
 type RecipeLibraryProps = {
   profileLabel: string;
@@ -26,19 +26,22 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [costRatings, setCostRatings] = useState<CostRating[]>([]);
   const [difficulty, setDifficulty] = useState<DifficultyLevel | undefined>();
+  const [effortLabels, setEffortLabels] = useState<RecipeEffortLabel[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filters = useMemo(
     () => ({
       search: debouncedSearch,
       mealTypes,
       costRatings,
-      difficulty
+      difficulty,
+      effortLabels
     }),
-    [costRatings, debouncedSearch, difficulty, mealTypes]
+    [costRatings, debouncedSearch, difficulty, effortLabels, mealTypes]
   );
   const { data: recipes = [], error, isFetching, isLoading } = useRecipeList(filters);
   const normalizedSearch = search.trim();
-  const hasActiveFilters = mealTypes.length > 0 || costRatings.length > 0 || Boolean(difficulty);
+  const hasActiveFilters =
+    mealTypes.length > 0 || costRatings.length > 0 || Boolean(difficulty) || effortLabels.length > 0;
   const hasActiveCriteria = Boolean(normalizedSearch) || hasActiveFilters;
   const isUpdating = !isLoading && (normalizedSearch !== debouncedSearch || isFetching);
 
@@ -62,10 +65,19 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
     );
   }
 
+  function toggleEffortLabel(effortLabel: RecipeEffortLabel) {
+    setEffortLabels((current) =>
+      current.includes(effortLabel)
+        ? current.filter((selected) => selected !== effortLabel)
+        : [...current, effortLabel]
+    );
+  }
+
   function clearFilters() {
     setMealTypes([]);
     setCostRatings([]);
     setDifficulty(undefined);
+    setEffortLabels([]);
   }
 
   return (
@@ -94,10 +106,12 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
       <RecipeFilterControls
         costRatings={costRatings}
         difficulty={difficulty}
+        effortLabels={effortLabels}
         mealTypes={mealTypes}
         onClear={clearFilters}
         onCostRatingRemove={toggleCostRating}
         onDifficultyRemove={() => setDifficulty(undefined)}
+        onEffortLabelRemove={toggleEffortLabel}
         onFilterOpen={() => setIsFilterOpen(true)}
         onMealTypeRemove={toggleMealType}
       />
@@ -106,11 +120,13 @@ export function RecipeLibrary({ profileLabel }: RecipeLibraryProps) {
         <RecipeFilterDialog
           costRatings={costRatings}
           difficulty={difficulty}
+          effortLabels={effortLabels}
           mealTypes={mealTypes}
           onClear={clearFilters}
           onClose={() => setIsFilterOpen(false)}
           onCostRatingToggle={toggleCostRating}
           onDifficultyChange={setDifficulty}
+          onEffortLabelToggle={toggleEffortLabel}
           onMealTypesClear={() => setMealTypes([])}
           onMealTypeToggle={toggleMealType}
         />

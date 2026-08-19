@@ -7,6 +7,7 @@ import { SelectableChip } from "@/components/ui/SelectableChip";
 import { AddRowButton, type RemovedRow, UndoRemovalNotice } from "./recipe-form-list";
 import { RecipeImageField } from "./RecipeImageField";
 import { RecipeIngredientFields } from "./RecipeIngredientFields";
+import { RecipeDiscoveryFields } from "./RecipeDiscoveryFields";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
 import { RecipeStepFields } from "./RecipeStepFields";
 import type { RecipeFormValues, RecipeImageChange } from "./recipe.types";
@@ -24,6 +25,7 @@ export function RecipeFormFields({ initialImageUrl, isEditing, onImageChange }: 
       <RecipeBasicsFields isEditing={isEditing} />
       <RecipeMealTypeFields />
       <RecipeOptionalFields />
+      <RecipeDiscoveryFields />
       <RecipeImageField initialImageUrl={initialImageUrl} onChange={onImageChange} />
       <RecipeSourceFields />
       <RecipeIngredientFields />

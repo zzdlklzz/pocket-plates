@@ -1,4 +1,5 @@
-import type { MealType, RecipeCardDto, RecipeDetailDto, RecipeFormValues } from "./recipe.types";
+import { sortEffortLabels } from "./recipe-discovery.constants";
+import type { MealType, RecipeCardDto, RecipeDetailDto, RecipeEffortLabel, RecipeFormValues } from "./recipe.types";
 
 export type RecipeListRow = {
   id: string;
@@ -19,6 +20,9 @@ export type RecipeDetailRow = RecipeListRow & {
     label: string | null;
     sort_order: number;
     url: string;
+  }[] | null;
+  recipe_effort_labels?: {
+    effort_label: RecipeEffortLabel;
   }[] | null;
   recipe_ingredients?: {
     amount: number | null;
@@ -50,6 +54,9 @@ export function toRecipeDetailDto(row: RecipeDetailRow, imageUrl = row.image_url
     imageStoragePath: row.image_storage_path,
     servings: row.servings,
     notes: row.notes,
+    effortLabels: sortEffortLabels(
+      row.recipe_effort_labels?.map(({ effort_label }) => effort_label) ?? []
+    ),
     sourceLinks: row.recipe_links?.length
       ? row.recipe_links
           .slice()
@@ -78,6 +85,7 @@ export function toRecipeFormValues(recipe: RecipeDetailDto): RecipeFormValues {
     mealTypes: recipe.mealTypes,
     costRating: recipe.costRating ?? "",
     difficulty: recipe.difficulty ?? "",
+    effortLabels: recipe.effortLabels.slice(),
     sourceLinks: recipe.sourceLinks.map(({ label, url }) => ({ label: label ?? "", url })),
     notes: recipe.notes ?? "",
     ingredients: recipe.ingredients.map((ingredient) => ({

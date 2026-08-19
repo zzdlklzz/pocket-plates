@@ -1,16 +1,19 @@
 import { SlidersHorizontal, X } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { SelectableChip } from "@/components/ui/SelectableChip";
+import { EFFORT_PRESETS } from "./recipe-discovery.constants";
 import { COST_RATING_FILTERS, DIFFICULTY_FILTERS, MEAL_TYPE_FILTERS } from "./recipe-library.constants";
-import type { CostRating, DifficultyLevel, MealType } from "./recipe.types";
+import type { CostRating, DifficultyLevel, MealType, RecipeEffortLabel } from "./recipe.types";
 
 type RecipeFilterControlsProps = {
   costRatings: CostRating[];
   difficulty?: DifficultyLevel;
+  effortLabels: RecipeEffortLabel[];
   mealTypes: MealType[];
   onClear: () => void;
   onCostRatingRemove: (costRating: CostRating) => void;
   onDifficultyRemove: () => void;
+  onEffortLabelRemove: (effortLabel: RecipeEffortLabel) => void;
   onFilterOpen: () => void;
   onMealTypeRemove: (mealType: MealType) => void;
 };
@@ -18,10 +21,12 @@ type RecipeFilterControlsProps = {
 type RecipeFilterDialogProps = {
   costRatings: CostRating[];
   difficulty?: DifficultyLevel;
+  effortLabels: RecipeEffortLabel[];
   mealTypes: MealType[];
   onClear: () => void;
   onClose: () => void;
   onDifficultyChange: (difficulty?: DifficultyLevel) => void;
+  onEffortLabelToggle: (effortLabel: RecipeEffortLabel) => void;
   onMealTypesClear: () => void;
   onMealTypeToggle: (mealType: MealType) => void;
   onCostRatingToggle: (costRating: CostRating) => void;
@@ -30,14 +35,17 @@ type RecipeFilterDialogProps = {
 export function RecipeFilterControls({
   costRatings,
   difficulty,
+  effortLabels,
   mealTypes,
   onClear,
   onCostRatingRemove,
   onDifficultyRemove,
+  onEffortLabelRemove,
   onFilterOpen,
   onMealTypeRemove
 }: RecipeFilterControlsProps) {
-  const activeFilterCount = mealTypes.length + costRatings.length + (difficulty ? 1 : 0);
+  const activeFilterCount =
+    mealTypes.length + costRatings.length + effortLabels.length + (difficulty ? 1 : 0);
 
   return (
     <section className="mt-5 flex flex-wrap items-center gap-2" aria-label="Recipe filters">
@@ -63,13 +71,21 @@ export function RecipeFilterControls({
       {activeFilterCount ? (
         <>
           {MEAL_TYPE_FILTERS.filter(({ value }) => mealTypes.includes(value)).map(({ label, value }) => (
-            <AppliedFilterChip key={`meal-${value}`} label={label} onRemove={() => onMealTypeRemove(value)} />
+            <AppliedFilterChip category="Meal type" key={`meal-${value}`} label={label} onRemove={() => onMealTypeRemove(value)} />
           ))}
           {COST_RATING_FILTERS.filter(({ value }) => costRatings.includes(value)).map(({ label, value }) => (
-            <AppliedFilterChip key={`cost-${value}`} label={label} onRemove={() => onCostRatingRemove(value)} />
+            <AppliedFilterChip category="Cost" key={`cost-${value}`} label={label} onRemove={() => onCostRatingRemove(value)} />
           ))}
           {DIFFICULTY_FILTERS.filter(({ value }) => difficulty === value).map(({ label, value }) => (
-            <AppliedFilterChip key={`difficulty-${value}`} label={label} onRemove={onDifficultyRemove} />
+            <AppliedFilterChip category="Difficulty" key={`difficulty-${value}`} label={label} onRemove={onDifficultyRemove} />
+          ))}
+          {EFFORT_PRESETS.filter(({ value }) => effortLabels.includes(value)).map(({ label, value }) => (
+            <AppliedFilterChip
+              category="Effort"
+              key={`effort-${value}`}
+              label={label}
+              onRemove={() => onEffortLabelRemove(value)}
+            />
           ))}
           {activeFilterCount > 1 ? (
             <button className="px-2 text-xs font-semibold text-slate-500" onClick={onClear} type="button">
@@ -82,10 +98,18 @@ export function RecipeFilterControls({
   );
 }
 
-function AppliedFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+function AppliedFilterChip({
+  category,
+  label,
+  onRemove
+}: {
+  category: string;
+  label: string;
+  onRemove: () => void;
+}) {
   return (
     <button
-      aria-label={`Remove ${label} filter`}
+      aria-label={`Remove ${category}: ${label} filter`}
       className="inline-flex items-center gap-1 rounded-full border border-leaf-100 bg-leaf-50 px-3 py-2 text-xs font-medium text-slate-700"
       onClick={onRemove}
       type="button"
@@ -99,11 +123,13 @@ function AppliedFilterChip({ label, onRemove }: { label: string; onRemove: () =>
 export function RecipeFilterDialog({
   costRatings,
   difficulty,
+  effortLabels,
   mealTypes,
   onClear,
   onClose,
   onCostRatingToggle,
   onDifficultyChange,
+  onEffortLabelToggle,
   onMealTypesClear,
   onMealTypeToggle
 }: RecipeFilterDialogProps) {
@@ -183,6 +209,23 @@ export function RecipeFilterDialog({
                   </SelectableChip>
                 );
               })}
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-semibold text-slate-800">Effort</h3>
+            <p className="mt-1 text-xs text-slate-500">Recipes must match every selected effort.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {EFFORT_PRESETS.map((filter) => (
+                <SelectableChip
+                  key={filter.value}
+                  onClick={() => onEffortLabelToggle(filter.value)}
+                  selected={effortLabels.includes(filter.value)}
+                  surface="plain"
+                >
+                  {filter.label}
+                </SelectableChip>
+              ))}
             </div>
           </section>
         </div>

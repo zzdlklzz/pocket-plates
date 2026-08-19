@@ -22,7 +22,7 @@ This project folder contains the project plan, architecture diagrams, database s
 
 ## MVP Goal
 
-Create a multi-user private recipe library that works well on iPhone, lets anyone create an account, save recipes with ingredients, steps, servings, and source links, and find active recipes by title or ingredient while leaving room for richer discovery, public recipes, meal planning, and grocery lists.
+Create a multi-user private recipe library that works well on iPhone, lets anyone create an account, save recipes with ingredients, steps, servings, source links, and optional effort traits, and find active recipes by title, ingredient, or effort while leaving room for richer discovery, public recipes, meal planning, and grocery lists.
 
 ## Included Files
 
@@ -39,6 +39,7 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`: initial Supabase schema and RLS migration draft
 - `supabase/migrations/20260819194346_add_private_library_search.sql`: owner-scoped title/ingredient search function and trigram indexes
 - `supabase/migrations/20260819200746_grant_private_library_search_reads.sql`: authenticated source-table reads required by the security-invoker search function, still constrained by RLS
+- `supabase/migrations/20260819203000_add_recipe_effort_labels.sql`: owner-scoped controlled effort metadata, atomic replacement, and match-all private-library filtering
 
 ## AWS Terraform Lab
 
@@ -57,7 +58,6 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 ## Future Features
 
 - Image optimization and moderation before future public recipe sharing
-- Effort/time filters such as quick, make-ahead, one-pot, and low-cleanup
 - Equipment filters such as rice cooker, microwave, stovetop, and no oven
 - Student-friendly tags such as budget, high-protein, freezer-friendly, and dorm-friendly
 - Weekly meal prep planner

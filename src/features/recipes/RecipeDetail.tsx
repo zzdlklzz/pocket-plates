@@ -10,6 +10,7 @@ import { AppPageShell } from "@/components/ui/AppPageShell";
 import { BackLink } from "@/components/ui/BackLink";
 import { InlineNotice } from "@/components/ui/InlineNotice";
 import { getRecipeErrorMessage } from "./recipe.errors";
+import { EFFORT_LABELS } from "./recipe-discovery.constants";
 import { MEAL_TYPE_LABELS } from "./recipe-library.constants";
 import { useArchiveRecipe, useRecipeDetail } from "./recipe.queries";
 import { RecipeDetailSkeleton } from "./recipe-skeletons";
@@ -105,6 +106,21 @@ export function RecipeDetail({ id }: RecipeDetailProps) {
       {recipe.notes ? (
         <RecipeDetailSection title="Notes">
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{recipe.notes}</p>
+        </RecipeDetailSection>
+      ) : null}
+
+      {recipe.effortLabels.length ? (
+        <RecipeDetailSection title="At a glance">
+          <div className="mt-3 flex flex-wrap gap-2">
+            {recipe.effortLabels.map((effortLabel) => (
+              <span
+                className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-semibold text-slate-600"
+                key={effortLabel}
+              >
+                {EFFORT_LABELS[effortLabel]}
+              </span>
+            ))}
+          </div>
         </RecipeDetailSection>
       ) : null}
 

@@ -80,6 +80,11 @@ describe("toRecipeDetailDto", () => {
           { label: null, sort_order: 1, url: "https://example.com/variation" },
           { label: "Original", sort_order: 0, url: "https://example.com/original" }
         ],
+        recipe_effort_labels: [
+          { effort_label: "low_cleanup" },
+          { effort_label: "quick" },
+          { effort_label: "one_pot" }
+        ],
         recipe_meal_types: [{ meal_type: "dinner" }],
         recipe_ingredients: [
           { amount: 1, name: "Egg", notes: null, sort_order: 1, unit: null },
@@ -93,6 +98,7 @@ describe("toRecipeDetailDto", () => {
     ).toMatchObject({
       title: "Rice Bowl",
       servings: 2,
+      effortLabels: ["quick", "one_pot", "low_cleanup"],
       sourceLinks: [
         { label: "Original", url: "https://example.com/original" },
         { label: null, url: "https://example.com/variation" }
@@ -139,6 +145,7 @@ describe("toRecipeFormValues", () => {
         imageStoragePath: null,
         imageUrl: null,
         mealTypes: ["dinner"],
+        effortLabels: ["make_ahead"],
         servings: 2,
         notes: null,
         sourceLinks: [],
@@ -151,6 +158,7 @@ describe("toRecipeFormValues", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
+      effortLabels: ["make_ahead"],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "2", name: "Rice", notes: "", unit: "cups" }],
@@ -167,6 +175,7 @@ describe("recipeFormSchema", () => {
       mealTypes: [],
       costRating: "",
       difficulty: "",
+      effortLabels: [],
       sourceLinks: [],
       notes: "",
       ingredients: [],
@@ -192,6 +201,7 @@ describe("recipeFormSchema", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
+      effortLabels: [],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
@@ -224,6 +234,7 @@ describe("recipeFormSchema", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
+      effortLabels: [],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "1 1/2", name: "Rice", notes: "cooked", unit: "cup" }],
@@ -242,6 +253,7 @@ describe("recipeFormSchema", () => {
       mealTypes: ["dinner"],
       costRating: "",
       difficulty: "",
+      effortLabels: [],
       sourceLinks: [],
       notes: "",
       ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
@@ -250,6 +262,32 @@ describe("recipeFormSchema", () => {
 
     expect(recipeFormSchema.safeParse({ ...baseValues, servings: 1.5 }).success).toBe(false);
     expect(recipeFormSchema.safeParse({ ...baseValues, servings: 101 }).success).toBe(false);
+  });
+
+  it("accepts optional known effort labels and rejects unknown or duplicate values", () => {
+    const baseValues = {
+      title: "Rice Bowl",
+      servings: 2,
+      mealTypes: ["dinner"],
+      costRating: "",
+      difficulty: "",
+      effortLabels: [] as string[],
+      sourceLinks: [],
+      notes: "",
+      ingredients: [{ amount: "", name: "Rice", notes: "", unit: "" }],
+      steps: [{ instruction: "Cook rice." }]
+    };
+
+    expect(recipeFormSchema.safeParse(baseValues).success).toBe(true);
+    expect(
+      recipeFormSchema.safeParse({ ...baseValues, effortLabels: ["quick", "one_pot"] }).success
+    ).toBe(true);
+    expect(
+      recipeFormSchema.safeParse({ ...baseValues, effortLabels: ["quick", "quick"] }).success
+    ).toBe(false);
+    expect(
+      recipeFormSchema.safeParse({ ...baseValues, effortLabels: ["instant"] }).success
+    ).toBe(false);
   });
 });
 

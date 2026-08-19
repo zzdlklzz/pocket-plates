@@ -10,6 +10,7 @@ erDiagram
 
     recipes ||--o{ recipe_links : has
     recipes ||--o{ recipe_meal_types : categorized_as
+    recipes ||--o{ recipe_effort_labels : described_by
     recipes ||--o{ recipe_ingredients : has
     recipes ||--o{ recipe_steps : has
     recipes ||--o{ recipe_tags : has
@@ -63,6 +64,12 @@ erDiagram
     recipe_meal_types {
         uuid recipe_id PK,FK
         meal_type meal_type PK
+        timestamptz created_at
+    }
+
+    recipe_effort_labels {
+        uuid recipe_id PK,FK
+        recipe_effort_label effort_label PK
         timestamptz created_at
     }
 

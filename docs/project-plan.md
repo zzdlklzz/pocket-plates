@@ -181,12 +181,13 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 - [x] Keep meal type filters from Stage 1 as a core browsing dimension: breakfast, lunch, dinner, snack, and flexible. These are multi-select because a recipe can belong to more than one meal, and flexible recipes appear when filtering by a specific meal type.
 - [x] Add cost rating, such as very cheap, cheap, moderate, or splurge.
 - [x] Add one difficulty rating per recipe, such as easy, medium, hard, or beginner-friendly.
-- Add effort/time filters, such as quick, make-ahead, one-pot, and low-cleanup.
+- [x] Add optional controlled effort labels—quick, make-ahead, one-pot, and low-cleanup—to recipe create/edit/detail flows and match-all private-library filtering.
 - Add equipment filters, such as microwave, rice cooker, stovetop, oven, no oven, and blender.
 - Add tags for student-oriented needs, such as budget, high protein, freezer-friendly, dorm-friendly, no-fridge, and meal prep.
 - [x] Search by ingredient name, combined with title search and all existing active-library filters.
 - [x] Complete local database-backed verification for private-library search: reset/lint the migration chain, regenerate and diff Supabase types, prove two-user RLS and archived exclusion, and inspect representative query plans.
-- [ ] Add a signed-in local Supabase Playwright fixture and run the private-library search workflow end to end on mobile and desktop.
+- [x] Complete controlled effort-label discovery: atomically persist owner-scoped selections, preserve them through edit/detail mapping, and combine one or several required traits with search and existing filters.
+- [ ] Add a signed-in local Supabase Playwright fixture and run the private-library search and discovery-metadata workflows end to end on mobile and desktop (planned with Slice 3 shared filter-sheet verification).
 - [x] Support multiple source links per recipe.
 - [x] Replace pasted image URLs with private Supabase Storage uploads, including 2 MB JPEG/PNG/WebP validation, previews, owner-scoped policies, signed reads, and cleanup behavior.
 
@@ -228,9 +229,9 @@ Primary screens:
 
 - Home / Recipe Library: app header with account action, search, one wrapping toolbar for the filter entry point and applied-filter chips, recipe cards, and shared bottom navigation.
 - Archived Recipes: newest-first archived cards, individual/select-all controls, restore actions, confirmed permanent deletion, and shared bottom navigation.
-- Recipe Detail: image, title, meal types, servings, tags, source links, ingredients, steps, edit action.
-- Add/Edit Recipe: title, servings, meal types, device cover image, source links, ingredients, steps, notes, save/cancel actions.
-- Filters Sheet: multi-select meal types, cost rating, single-select difficulty, future effort/time tags and equipment, clear filters, and done action. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
+- Recipe Detail: image, title, meal types, servings, effort labels, source links, ingredients, steps, edit action.
+- Add/Edit Recipe: title, servings, meal types, optional effort labels, device cover image, source links, ingredients, steps, notes, save/cancel actions.
+- Filters Sheet: multi-select meal types, cost rating, single-select difficulty, match-all effort labels, future equipment, clear filters, and done action. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
 
 Visual reference:
 
@@ -263,6 +264,7 @@ Core MVP tables:
 - `profiles`: app profile for each Supabase Auth user, created automatically when a user signs up.
 - `recipes`: main recipe record with owner, title, notes, servings, times, image URL/storage fields, cost rating, estimated total cost, single difficulty rating, and visibility.
 - `recipe_meal_types`: recipe-to-meal-type join table so a recipe can be breakfast, lunch, dinner, snack, and/or flexible.
+- `recipe_effort_labels`: controlled, owner-scoped-through-recipe effort traits used by form, detail, and active-library filtering.
 - `recipe_links`: up to five ordered source links per recipe with optional labels.
 - `recipe_ingredients`: ordered ingredients.
 - `recipe_steps`: ordered cooking steps.
@@ -283,7 +285,7 @@ Public discovery should build on the `recipes.visibility` and `recipes.published
 
 All user-owned data should be protected by Supabase Row Level Security. Policies should target the `authenticated` role explicitly and use owner checks based on `(select auth.uid())`. The initial policies should support many users, but only owner access. Public-read policies should only be introduced when the community discovery stage is being built.
 
-The active private library uses the authenticated-only, security-invoker `list_private_library_recipes` function to search titles or ingredient names and apply meal, cost, and difficulty criteria in one database operation. The function explicitly selects only the current owner's non-archived recipes while retaining table RLS, and trigram indexes support literal case-insensitive contains matching on both searchable columns.
+The active private library uses the authenticated-only, security-invoker `list_private_library_recipes` function to search titles or ingredient names and apply meal, cost, difficulty, and match-all effort criteria in one database operation. The function explicitly selects only the current owner's non-archived recipes while retaining table RLS, and trigram indexes support literal case-insensitive contains matching on both searchable columns. The separate `replace_recipe_discovery_metadata` function atomically replaces an owner-visible recipe's effort selections and rejects duplicates.
 
 ## DTO Boundary
 

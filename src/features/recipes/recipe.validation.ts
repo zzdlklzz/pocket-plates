@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EFFORT_LABEL_VALUES } from "./recipe-discovery.constants";
 
 export const MAX_RECIPE_TITLE_LENGTH = 120;
 export const MAX_RECIPE_NOTES_LENGTH = 2000;
@@ -47,6 +48,18 @@ const servingsSchema = z.preprocess(
     .max(MAX_SERVINGS, `Servings must be ${MAX_SERVINGS} or less.`)
 );
 
+const effortLabelsSchema = z
+  .array(z.enum(EFFORT_LABEL_VALUES))
+  .max(EFFORT_LABEL_VALUES.length, `Choose no more than ${EFFORT_LABEL_VALUES.length} effort labels.`)
+  .superRefine((effortLabels, context) => {
+    if (new Set(effortLabels).size !== effortLabels.length) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose each effort label only once."
+      });
+    }
+  });
+
 export function parseIngredientAmount(value: string) {
   const trimmed = value.trim();
 
@@ -89,6 +102,7 @@ export const recipeFormSchema = z.object({
   mealTypes: z.array(z.enum(["breakfast", "lunch", "dinner", "snack", "flexible"])).min(1, "Choose at least one meal type."),
   costRating: z.union([z.enum(["very_cheap", "cheap", "moderate", "splurge"]), z.literal("")]),
   difficulty: z.union([z.enum(["easy", "medium", "hard", "beginner_friendly"]), z.literal("")]),
+  effortLabels: effortLabelsSchema,
   sourceLinks: z
     .array(
       z.object({
@@ -143,6 +157,7 @@ export const DEFAULT_RECIPE_FORM_VALUES = {
   mealTypes: [],
   costRating: "",
   difficulty: "",
+  effortLabels: [],
   sourceLinks: [],
   notes: "",
   ingredients: [{ name: "", amount: "", unit: "", notes: "" }],

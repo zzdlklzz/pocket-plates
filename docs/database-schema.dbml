@@ -30,6 +30,13 @@ Enum difficulty_level {
   beginner_friendly
 }
 
+Enum recipe_effort_label {
+  quick
+  make_ahead
+  one_pot
+  low_cleanup
+}
+
 Enum pantry_item_status {
   active
   archived
@@ -88,6 +95,17 @@ Table recipe_meal_types {
   indexes {
     (recipe_id, meal_type) [pk]
     (meal_type)
+  }
+}
+
+Table recipe_effort_labels {
+  recipe_id uuid [not null, ref: > recipes.id]
+  effort_label recipe_effort_label [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (recipe_id, effort_label) [pk]
+    (effort_label, recipe_id) [name: 'recipe_effort_labels_effort_label_idx']
   }
 }
 

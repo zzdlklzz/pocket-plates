@@ -29,13 +29,15 @@ describe("private library recipe filters", () => {
         search: "  rice  ",
         mealTypes: ["lunch", "breakfast", "lunch"],
         costRatings: ["moderate", "cheap", "moderate"],
-        difficulty: "easy"
+        difficulty: "easy",
+        effortLabels: ["one_pot", "quick", "one_pot"]
       })
     ).toEqual({
       search: "rice",
       mealTypes: ["breakfast", "lunch"],
       costRatings: ["cheap", "moderate"],
-      difficulty: "easy"
+      difficulty: "easy",
+      effortLabels: ["one_pot", "quick"]
     });
   });
 
@@ -48,7 +50,8 @@ describe("private library recipe filters", () => {
         search: "  egg  ",
         mealTypes: ["lunch", "breakfast", "lunch"],
         costRatings: ["cheap", "very_cheap"],
-        difficulty: "beginner_friendly"
+        difficulty: "beginner_friendly",
+        effortLabels: ["quick", "one_pot"]
       })
     ).resolves.toBe(rows);
 
@@ -57,7 +60,8 @@ describe("private library recipe filters", () => {
       p_search: "egg",
       p_meal_types: ["breakfast", "lunch", "flexible"],
       p_cost_ratings: ["cheap", "very_cheap"],
-      p_difficulty: "beginner_friendly"
+      p_difficulty: "beginner_friendly",
+      p_effort_labels: ["one_pot", "quick"]
     });
   });
 
@@ -70,7 +74,8 @@ describe("private library recipe filters", () => {
       p_search: null,
       p_meal_types: null,
       p_cost_ratings: null,
-      p_difficulty: null
+      p_difficulty: null,
+      p_effort_labels: null
     });
   });
 });

@@ -83,6 +83,7 @@ describe("RecipeLibrary", () => {
 
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByRole("heading", { name: "Meal type" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Effort" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Breakfast" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Remove .* filter$/ })).not.toBeInTheDocument();
   });
@@ -94,18 +95,20 @@ describe("RecipeLibrary", () => {
     const dialog = screen.getByRole("dialog", { name: "Recipe filters" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Breakfast" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Cheap" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Quick" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
 
     const filterToolbar = screen.getByLabelText("Recipe filters");
     expect(filterToolbar).toHaveClass("flex-wrap");
-    expect(within(filterToolbar).getByRole("button", { name: "Filters, 2 active" })).toBeInTheDocument();
-    expect(within(filterToolbar).getByRole("button", { name: "Remove Breakfast filter" })).toBeInTheDocument();
-    expect(within(filterToolbar).getByRole("button", { name: "Remove Cheap filter" })).toBeInTheDocument();
+    expect(within(filterToolbar).getByRole("button", { name: "Filters, 3 active" })).toBeInTheDocument();
+    expect(within(filterToolbar).getByRole("button", { name: "Remove Meal type: Breakfast filter" })).toBeInTheDocument();
+    expect(within(filterToolbar).getByRole("button", { name: "Remove Cost: Cheap filter" })).toBeInTheDocument();
+    expect(within(filterToolbar).getByRole("button", { name: "Remove Effort: Quick filter" })).toBeInTheDocument();
 
-    fireEvent.click(within(filterToolbar).getByRole("button", { name: "Remove Breakfast filter" }));
-    expect(screen.queryByRole("button", { name: "Remove Breakfast filter" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove Cheap filter" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Filters, 1 active" })).toBeInTheDocument();
+    fireEvent.click(within(filterToolbar).getByRole("button", { name: "Remove Meal type: Breakfast filter" }));
+    expect(screen.queryByRole("button", { name: "Remove Meal type: Breakfast filter" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove Cost: Cheap filter" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filters, 2 active" })).toBeInTheDocument();
     expect(within(screen.getByRole("navigation")).queryByRole("button", { name: /^Filters/ })).not.toBeInTheDocument();
   });
 
@@ -133,8 +136,8 @@ describe("RecipeLibrary", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "All" }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
 
-    expect(screen.queryByRole("button", { name: "Remove Breakfast filter" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove Cheap filter" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove Meal type: Breakfast filter" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove Cost: Cheap filter" })).toBeInTheDocument();
   });
 
   it("links to archived recipes from More without crowding the bottom bar", () => {

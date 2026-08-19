@@ -177,6 +177,7 @@ describe("RecipeForm", () => {
       mealTypes: ["breakfast"],
       costRating: "cheap",
       difficulty: "easy",
+      effortLabels: ["make_ahead"],
       sourceLinks: [
         { label: "First source", url: "https://example.com/first" },
         { label: "Second source", url: "https://example.com/second" }
@@ -262,6 +263,7 @@ describe("RecipeForm", () => {
       mealTypes: ["dinner"],
       costRating: "cheap",
       difficulty: "easy",
+      effortLabels: ["quick", "low_cleanup"],
       sourceLinks: [],
       notes: "",
       ingredients: [
@@ -277,6 +279,17 @@ describe("RecipeForm", () => {
     renderRecipeForm(initialValues);
 
     expect(screen.getByRole("heading", { name: "Edit recipe" })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Title" }), {
+      target: { value: "Updated egg fried rice" }
+    });
+    expect(getSection("Effort").getByRole("button", { name: "Quick" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(getSection("Effort").getByRole("button", { name: "Low cleanup" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
 
     const ingredients = getSection("Ingredients");
     expect(ingredients.getByRole("button", { name: "Edit ingredient 1: 2 cups Rice · cooked" })).toBeInTheDocument();
@@ -288,5 +301,16 @@ describe("RecipeForm", () => {
     expect(steps.getByRole("button", { name: "Edit step 1: Scramble the eggs." })).toBeInTheDocument();
     fireEvent.click(steps.getByRole("button", { name: "Edit step 2: Stir-fry the rice." }));
     expect(steps.getByPlaceholderText("Step 2")).toHaveValue("Stir-fry the rice.");
+  });
+
+  it("selects optional effort labels", () => {
+    renderRecipeForm();
+
+    const effort = getSection("Effort");
+    expect(effort.getByText("Optional. Choose every description that applies.")).toBeInTheDocument();
+    fireEvent.click(effort.getByRole("button", { name: "Quick" }));
+    fireEvent.click(effort.getByRole("button", { name: "One pot" }));
+    expect(effort.getByRole("button", { name: "Quick" })).toHaveAttribute("aria-pressed", "true");
+    expect(effort.getByRole("button", { name: "One pot" })).toHaveAttribute("aria-pressed", "true");
   });
 });

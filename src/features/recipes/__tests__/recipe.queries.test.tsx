@@ -32,13 +32,15 @@ vi.mock("../recipe.repository", () => ({
   normalizeRecipeListFilters: (filters: {
     costRatings?: string[];
     difficulty?: string;
+    effortLabels?: string[];
     mealTypes?: string[];
     search?: string;
   }) => ({
     search: filters.search?.trim() || undefined,
     mealTypes: filters.mealTypes?.length ? Array.from(new Set(filters.mealTypes)).sort() : undefined,
     costRatings: filters.costRatings?.length ? Array.from(new Set(filters.costRatings)).sort() : undefined,
-    difficulty: filters.difficulty
+    difficulty: filters.difficulty,
+    effortLabels: filters.effortLabels?.length ? Array.from(new Set(filters.effortLabels)).sort() : undefined
   }),
   restoreRecipe: mocks.restoreRecipe,
   updateRecipe: vi.fn()
@@ -165,7 +167,8 @@ describe("active recipe queries", () => {
         useRecipeList({
           search: "  egg  ",
           mealTypes: ["lunch", "breakfast", "lunch"],
-          costRatings: []
+          costRatings: [],
+          effortLabels: ["quick", "one_pot", "quick"]
         }),
       { wrapper: createWrapper(queryClient) }
     );
@@ -177,7 +180,8 @@ describe("active recipe queries", () => {
         search: "egg",
         mealTypes: ["breakfast", "lunch"],
         costRatings: undefined,
-        difficulty: undefined
+        difficulty: undefined,
+        effortLabels: ["one_pot", "quick"]
       }
     );
     expect(result.current.data).toEqual([

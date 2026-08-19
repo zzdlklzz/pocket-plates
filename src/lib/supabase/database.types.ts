@@ -293,6 +293,32 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_effort_labels: {
+        Row: {
+          created_at: string
+          effort_label: Database["public"]["Enums"]["recipe_effort_label"]
+          recipe_id: string
+        }
+        Insert: {
+          created_at?: string
+          effort_label: Database["public"]["Enums"]["recipe_effort_label"]
+          recipe_id: string
+        }
+        Update: {
+          created_at?: string
+          effort_label?: Database["public"]["Enums"]["recipe_effort_label"]
+          recipe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_effort_labels_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_equipment: {
         Row: {
           created_at: string
@@ -629,6 +655,7 @@ export type Database = {
         Args: {
           p_cost_ratings?: Database["public"]["Enums"]["cost_rating"][] | null
           p_difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          p_effort_labels?: Database["public"]["Enums"]["recipe_effort_label"][] | null
           p_meal_types?: Database["public"]["Enums"]["meal_type"][] | null
           p_search?: string | null
         }
@@ -643,12 +670,20 @@ export type Database = {
           title: string
         }[]
       }
+      replace_recipe_discovery_metadata: {
+        Args: {
+          p_effort_labels?: Database["public"]["Enums"]["recipe_effort_label"][] | null
+          p_recipe_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       cost_rating: "very_cheap" | "cheap" | "moderate" | "splurge"
       difficulty_level: "easy" | "medium" | "hard" | "beginner_friendly"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack" | "flexible"
       pantry_item_status: "active" | "archived"
+      recipe_effort_label: "quick" | "make_ahead" | "one_pot" | "low_cleanup"
       recipe_visibility: "private" | "shared" | "public"
     }
     CompositeTypes: {
@@ -781,6 +816,7 @@ export const Constants = {
       difficulty_level: ["easy", "medium", "hard", "beginner_friendly"],
       meal_type: ["breakfast", "lunch", "dinner", "snack", "flexible"],
       pantry_item_status: ["active", "archived"],
+      recipe_effort_label: ["quick", "make_ahead", "one_pot", "low_cleanup"],
       recipe_visibility: ["private", "shared", "public"],
     },
   },
