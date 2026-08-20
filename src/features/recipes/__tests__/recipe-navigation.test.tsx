@@ -22,11 +22,26 @@ describe("RecipeNavigation", () => {
     fireEvent.click(moreButton);
 
     const dialog = screen.getByRole("dialog", { name: "More" });
+    const plannerLink = within(dialog).getByRole("link", { name: "Meal planner" });
     const archivedLink = within(dialog).getByRole("link", { name: "Archived recipes" });
+    expect(plannerLink).toHaveAttribute("href", "/meal-planner");
     expect(archivedLink).toHaveAttribute("href", "/recipes/archived");
     expect(archivedLink).toHaveAttribute("aria-current", "page");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "More" })).not.toBeInTheDocument();
+  });
+
+  it("marks More and the meal planner destination active", () => {
+    render(<RecipeNavigation activePage="meal-planner" />);
+
+    const moreButton = screen.getByRole("button", { name: "More" });
+    expect(moreButton).toHaveAttribute("aria-current", "page");
+    fireEvent.click(moreButton);
+
+    expect(screen.getByRole("link", { name: "Meal planner" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
   });
 });

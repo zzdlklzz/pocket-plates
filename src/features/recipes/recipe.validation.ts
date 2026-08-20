@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { EFFORT_LABEL_VALUES, EQUIPMENT_PRESET_VALUES } from "./recipe-discovery.constants";
+import { MAX_SERVINGS } from "./recipe.constants";
+
+export { MAX_SERVINGS } from "./recipe.constants";
 
 export const MAX_RECIPE_TITLE_LENGTH = 120;
 export const MAX_RECIPE_NOTES_LENGTH = 2000;
@@ -8,7 +11,6 @@ export const MAX_INGREDIENT_NAME_LENGTH = 120;
 export const MAX_INGREDIENT_NOTES_LENGTH = 180;
 export const MAX_STEPS = 40;
 export const MAX_STEP_INSTRUCTION_LENGTH = 1000;
-export const MAX_SERVINGS = 100;
 export const MAX_SOURCE_LINKS = 5;
 export const MAX_SOURCE_LABEL_LENGTH = 100;
 

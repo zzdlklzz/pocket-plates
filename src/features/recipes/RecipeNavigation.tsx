@@ -1,10 +1,19 @@
 "use client";
 
-import { Archive, ChevronRight, Ellipsis, House, Plus, X, type LucideIcon } from "lucide-react";
+import {
+  Archive,
+  CalendarDays,
+  ChevronRight,
+  Ellipsis,
+  House,
+  Plus,
+  X,
+  type LucideIcon
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-export type RecipeNavigationPage = "archived" | "home";
+export type RecipeNavigationPage = "archived" | "home" | "meal-planner";
 
 type RecipeNavigationProps = {
   activePage: RecipeNavigationPage;
@@ -18,12 +27,19 @@ type NavigationItem = {
 };
 
 const MORE_NAVIGATION_ITEMS: NavigationItem[] = [
+  {
+    href: "/meal-planner",
+    icon: CalendarDays,
+    id: "meal-planner",
+    label: "Meal planner"
+  },
   { href: "/recipes/archived", icon: Archive, id: "archived", label: "Archived recipes" }
 ];
 
 export function RecipeNavigation({ activePage }: RecipeNavigationProps) {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const isMoreActive = MORE_NAVIGATION_ITEMS.some(({ id }) => id === activePage);
 
   function closeMoreMenu() {
     setIsMoreOpen(false);
@@ -50,10 +66,10 @@ export function RecipeNavigation({ activePage }: RecipeNavigationProps) {
         </Link>
 
         <button
-          aria-current={activePage === "archived" ? "page" : undefined}
+          aria-current={isMoreActive ? "page" : undefined}
           aria-expanded={isMoreOpen}
           aria-haspopup="dialog"
-          className={activePage === "archived" ? "flex flex-col items-center gap-1 font-semibold text-leaf-700" : "flex flex-col items-center gap-1"}
+          className={isMoreActive ? "flex flex-col items-center gap-1 font-semibold text-leaf-700" : "flex flex-col items-center gap-1"}
           onClick={() => setIsMoreOpen(true)}
           ref={moreButtonRef}
           type="button"

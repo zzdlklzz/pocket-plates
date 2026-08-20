@@ -199,7 +199,7 @@ Goal: help users turn recipes into weekly cooking decisions.
 
 - [ ] Weekly meal planning.
   - [x] Slice 1: establish authenticated table access, owner/week and exact-entry uniqueness, and tested Monday/date helpers.
-  - [ ] Slice 2: add the current-week agenda with read, add, direct remove, and Undo.
+  - [x] Slice 2: add the current-week agenda with read, add, direct remove, and Undo.
   - [ ] Slice 3: add week navigation and entry editing.
   - [ ] Slice 4: add deliberate day/week copy and paste.
   - [ ] Slice 5: complete the signed-in localhost acceptance journey and documentation sweep.
@@ -239,17 +239,19 @@ Primary screens:
 - Recipe Detail: image, title, meal types, servings, effort labels, equipment/setup, source links, ingredients, steps, edit action.
 - Add/Edit Recipe: title, servings, meal types, optional effort and equipment/setup metadata, device cover image, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types and cost ratings, single-select difficulty, match-all effort and equipment/setup values, clear filters, and done action. The sheet is viewport-bounded, scrollable, focus-contained, and usable with enlarged mobile text. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
+- Meal Planner: browser-local current-week date strip, seven vertical day sections, persistent per-day add actions, direct entry removal, and bounded inline Undo. Week navigation, editing, and copy/paste remain pending.
 
 Visual reference:
 
 - `docs/assets/ui-mockups.svg`: generated mobile UI mockups.
 - `docs/assets/navigation-mockups.svg`: approved near-term Home–Add–More navigation, its More sheet, and a clearly separated five-slot concept that is not confirmed or planned for the near future.
+- `docs/assets/meal-planner-mockups.svg`: approved weekly-list planner and interaction-state reference; the calendar-grid concept is not retained.
 
 Navigation direction:
 
 - Use three equal bottom-navigation slots for Home, a centered Add Recipe action, and More.
 - Keep filters as local recipe-library controls rather than a global navigation destination.
-- Open secondary destinations such as Archived Recipes from a More bottom sheet so future pages do not push the Add action off center.
+- Open Meal Planner and Archived Recipes from the More bottom sheet so secondary pages do not push the Add action off center.
 - Retain the five-slot mockup only as a future exploration. It is not confirmed and should not be implemented until multiple new, frequently used top-level pages actually exist.
 - Do not use the header-selector navigation concept.
 
@@ -459,7 +461,7 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 
 ## Future Enhancements
 
-- Weekly meal prep planner.
+- Complete meal-planner week navigation, entry editing, and day/week copy and paste.
 - Grocery list generated from selected recipes.
 - Cost estimate per serving, derived from optional total SGD cost and serving count.
 - Pantry tracking.

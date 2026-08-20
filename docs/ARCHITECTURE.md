@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library and discovery Slices 1–3: it has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, title-or-ingredient search, optional controlled effort and equipment/setup metadata, match-all discovery filtering, a mobile-safe filter dialog, private device image uploads, the Next.js app shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy client boundaries, auth callback handling, email and Google sign-in actions, password reset and confirmation resend flows, profile-aware signed-in display, recipe DTO/repository/query structure, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented tags remain deferred as discovery Slice 4.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, and the first two weekly meal-planning slices. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, and a current-week vertical meal agenda with add, direct remove, and Undo. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented tags and the remaining planner navigation/edit/copy slices are still pending.
 
 ## Stack
 
@@ -33,12 +33,12 @@ flowchart TD
     C --> F["TanStack Query hooks"]
     C --> Q["Auth panel + server actions"]
     Q --> I["Supabase Auth"]
-    F --> G["Recipe repository layer"]
+    F --> G["Feature repository layers"]
     G --> H["Supabase client"]
     H --> I["Supabase Auth"]
     H --> J["Supabase Postgres + RLS"]
     H --> K["Supabase Storage"]
-    J --> L["Private owner-scoped recipe library"]
+    J --> L["Private recipes and weekly meal plans"]
     M["GitHub Actions on Node.js 24"] --> N["ESLint, typecheck, Vitest, build, Playwright"]
     M --> O["Supabase migration deploy"]
     P["Vercel verify + build"] --> B
@@ -54,6 +54,7 @@ The database schema is migration-first and represented in:
 - `supabase/migrations/20260819200746_grant_private_library_search_reads.sql`
 - `supabase/migrations/20260819203000_add_recipe_effort_labels.sql`
 - `supabase/migrations/20260819205000_add_equipment_presets.sql`
+- `supabase/migrations/20260821090000_prepare_meal_planner_foundation.sql`
 - `docs/database-schema.dbml`
 - `docs/database-erd.mmd`
 
@@ -80,7 +81,9 @@ Other future-ready entities:
 - `grocery_lists`
 - `grocery_list_items`
 
-Authenticated browser clients have explicit CRUD grants on both planner tables, while their existing RLS policies remain the ownership boundary. The owner/week and exact-entry uniqueness constraints make lazy plan creation and duplicate prevention safe under repeated requests. Pure planner date helpers use local calendar parts rather than parsing date-only values as UTC timestamps; they normalize any viewed date to Monday, generate the seven ISO dates in a week, and validate week membership without timezone drift. The user-facing planner route is added in the next implementation slice.
+Authenticated browser clients have explicit CRUD grants on both planner tables, while their existing RLS policies remain the ownership boundary. The owner/week and exact-entry uniqueness constraints make lazy plan creation and duplicate prevention safe under repeated requests. Pure planner date helpers use local calendar parts rather than parsing date-only values as UTC timestamps; they normalize any viewed date to Monday, generate the seven ISO dates in a week, and validate week membership without timezone drift.
+
+The authenticated `/meal-planner` route currently shows the browser's local Monday-through-Sunday week as the approved vertical agenda. Reading an empty week remains read-only. The first valid add lazily upserts its owner/week plan, validates an active owned recipe and planned servings, and inserts one entry. Active picker options are loaded once without images and filtered locally by title or ingredient. Direct removal deletes only the planning reference; the latest removal exposes a six-second inline Undo. Undo shares the validated insert path but uses a dedicated ownership check that permits restoring an already planned archived recipe without offering it for new selection. All successful mutations invalidate only the affected week. Week navigation, entry editing, and copy/paste remain in later slices.
 
 Recipe create and edit flows write sources to `recipe_links`. The legacy `recipes.source_url` column remains readable as a fallback for recipes created before multi-source support, but new saves clear it and use the child rows. Source rows follow recipe ownership through existing Row Level Security policies.
 
@@ -114,6 +117,11 @@ src/
         page.tsx
       new/
         page.tsx
+    meal-planner/
+      __tests__/
+        page.test.tsx
+      loading.tsx
+      page.tsx
   components/
     ui/
       __tests__/
@@ -164,10 +172,19 @@ src/
         recipe-image.repository.test.ts
         recipe.mappers.test.ts
     meal-planning/
+      MealPlanEntrySheet.tsx
+      MealPlanner.tsx
+      meal-planning.constants.ts
       meal-planning.dates.ts
+      meal-planning.queries.ts
+      meal-planning.repository.ts
       meal-planning.types.ts
       __tests__/
+        MealPlanEntrySheet.test.tsx
+        MealPlanner.test.tsx
         meal-planning.dates.test.ts
+        meal-planning.queries.test.tsx
+        meal-planning.repository.test.ts
   lib/
     env/
       __tests__/
@@ -212,11 +229,13 @@ Small, application-wide presentation components live under `src/components/ui`. 
 - `InlineNotice.tsx` owns error, informational, and neutral notice treatments with the established padding densities.
 - `BackLink.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
 
-Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Archived Recipes is the sheet's only current destination; future secondary pages can be added to its small item definition without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
+Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Meal Planner and Archived Recipes live in that sheet without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
 
 ## Server-State Rule
 
 Use TanStack Query for server state from the start. Components should consume feature-level query hooks, such as `useRecipeList`, instead of making ad hoc API calls in `useEffect`. Keep `useEffect` for true browser-side effects such as focus handling, subscriptions, or direct browser APIs.
+
+Meal-planner queries follow the same boundary. Week data is keyed by normalized Monday, recipe options use one shared active-library cache, and entry mutations invalidate only the affected week. The component owns only transient UI state: selected add day, recipe search, and the latest bounded Undo snapshot.
 
 ## Supabase Client Boundary
 
