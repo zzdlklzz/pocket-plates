@@ -4,7 +4,7 @@
 
 Build PocketPlates, a multi-user, private-first, mobile-first Progressive Web App for students and beginner cooks who want practical recipes that are cheap, approachable, and realistic in small kitchens. The app should open from a URL, install cleanly to the iPhone Home Screen, and feel app-like without requiring App Store distribution.
 
-The first release should stay intentionally small: save recipes, view them clearly, and find them again. Future phases should extend naturally into cost-aware filtering, beginner difficulty labels, meal planning, grocery lists, serving scaling, community recipe discovery, and nutrition/macros.
+The first release grew in small verified slices from saving, viewing, and finding recipes into controlled discovery and weekly meal planning. Future phases can extend naturally into student-oriented tags, grocery lists, serving scaling, community recipe discovery, and nutrition/macros.
 
 ## Working Name
 
@@ -197,12 +197,12 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 
 Goal: help users turn recipes into weekly cooking decisions.
 
-- [ ] Weekly meal planning.
+- [x] Weekly meal planning.
   - [x] Slice 1: establish authenticated table access, owner/week and exact-entry uniqueness, and tested Monday/date helpers.
   - [x] Slice 2: add the current-week agenda with read, add, direct remove, and Undo.
   - [x] Slice 3: add week navigation and entry editing.
   - [x] Slice 4: add deliberate day/week copy and paste.
-  - [ ] Slice 5: complete the signed-in localhost acceptance journey and documentation sweep.
+  - [x] Slice 5: complete the signed-in localhost acceptance journey and documentation sweep.
 - Grocery list generated from selected recipes.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
