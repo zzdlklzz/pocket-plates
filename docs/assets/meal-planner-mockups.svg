@@ -1,0 +1,240 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+  <title id="title">PocketPlates weekly meal planner mockups</title>
+  <desc id="desc">Four mobile list-view mockups showing the approved weekly agenda, copying a week into an empty target, adding a meal, and day copy, direct removal, Undo, and entry editing. No calendar-grid view is included.</desc>
+  <defs>
+    <style>
+      .canvas { fill: #f7faf7; }
+      .phone { fill: #172019; }
+      .screen { fill: #f7fbf8; stroke: #d4ded7; stroke-width: 1; }
+      .appbar { fill: #ffffff; }
+      .surface { fill: #ffffff; stroke: #d7e2da; stroke-width: 1.1; }
+      .soft { fill: #edf6ef; stroke: #cee0d2; stroke-width: 1; }
+      .accent-soft { fill: #e8f4eb; stroke: #b9d5c1; stroke-width: 1; }
+      .accent { fill: #2f6f50; }
+      .danger-soft { fill: #f8eeee; }
+      .muted-fill { fill: #edf1ee; }
+      .overlay { fill: #183126; opacity: 0.28; }
+      .sheet { fill: #ffffff; stroke: #d4ded7; stroke-width: 1.2; }
+      .divider { stroke: #dce6df; stroke-width: 1; }
+      .dash { fill: none; stroke: #9fc4aa; stroke-width: 1; stroke-dasharray: 4 3; }
+      .title { font: 700 28px Arial, sans-serif; fill: #1c3528; }
+      .screen-title { font: 700 22px Arial, sans-serif; fill: #193326; }
+      .heading { font: 700 15px Arial, sans-serif; fill: #193326; }
+      .label { font: 700 12px Arial, sans-serif; fill: #263c30; }
+      .body { font: 500 11px Arial, sans-serif; fill: #52655a; }
+      .small { font: 500 9px Arial, sans-serif; fill: #687970; }
+      .tiny { font: 700 8px Arial, sans-serif; fill: #4b6e5a; }
+      .accent-text { font: 700 10px Arial, sans-serif; fill: #2f6f50; }
+      .white { font: 700 10px Arial, sans-serif; fill: #ffffff; }
+      .white-large { font: 700 17px Arial, sans-serif; fill: #ffffff; }
+      .danger { font: 700 11px Arial, sans-serif; fill: #8c5055; }
+      .center { text-anchor: middle; }
+      .end { text-anchor: end; }
+    </style>
+    <clipPath id="clip1"><rect x="52" y="112" width="326" height="796" rx="23"/></clipPath>
+    <clipPath id="clip2"><rect x="442" y="112" width="326" height="796" rx="23"/></clipPath>
+    <clipPath id="clip3"><rect x="832" y="112" width="326" height="796" rx="23"/></clipPath>
+    <clipPath id="clip4"><rect x="1222" y="112" width="326" height="796" rx="23"/></clipPath>
+  </defs>
+
+  <rect class="canvas" width="1600" height="1040"/>
+  <text class="title" x="40" y="52">PocketPlates weekly meal planner</text>
+  <text class="body" x="40" y="75">Approved direction: compact date strip + vertical weekly agenda</text>
+
+  <!-- Phone frames -->
+  <rect class="phone" x="40" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="52" y="112" width="326" height="796" rx="23"/>
+  <rect class="phone" x="430" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="442" y="112" width="326" height="796" rx="23"/>
+  <rect class="phone" x="820" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="832" y="112" width="326" height="796" rx="23"/>
+  <rect class="phone" x="1210" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="1222" y="112" width="326" height="796" rx="23"/>
+
+  <!-- Phone 1: full weekly agenda -->
+  <g clip-path="url(#clip1)">
+    <rect class="appbar" x="52" y="112" width="326" height="50"/>
+    <rect class="accent-soft" x="66" y="122" width="29" height="29" rx="9"/>
+    <text class="accent-text center" x="80.5" y="141">♨</text>
+    <text class="label" x="103" y="141">PocketPlates</text>
+    <circle class="muted-fill" cx="353" cy="136" r="15"/>
+    <text class="body center" x="353" y="140">○</text>
+
+    <text class="screen-title" x="68" y="194">Meal planner</text>
+    <text class="body" x="68" y="212">17–23 August 2026</text>
+    <rect class="surface" x="294" y="174" width="68" height="34" rx="10"/>
+    <text class="small center" x="328" y="195">⧉ Copy week</text>
+
+    <rect class="surface" x="68" y="225" width="35" height="34" rx="10"/>
+    <text class="body center" x="85.5" y="247">‹</text>
+    <rect class="surface" x="110" y="225" width="210" height="34" rx="10"/>
+    <text class="label center" x="215" y="247">This week</text>
+    <rect class="surface" x="327" y="225" width="35" height="34" rx="10"/>
+    <text class="body center" x="344.5" y="247">›</text>
+
+    <text class="tiny center" x="84" y="278">MON</text><text class="body center" x="84" y="294">17</text>
+    <text class="tiny center" x="128" y="278">TUE</text><text class="body center" x="128" y="294">18</text>
+    <text class="tiny center" x="172" y="278">WED</text><text class="body center" x="172" y="294">19</text>
+    <rect class="accent" x="194" y="264" width="38" height="38" rx="11"/>
+    <text class="white center" x="213" y="278">THU</text><text class="white center" x="213" y="294">20</text>
+    <text class="tiny center" x="257" y="278">FRI</text><text class="body center" x="257" y="294">21</text>
+    <text class="tiny center" x="301" y="278">SAT</text><text class="body center" x="301" y="294">22</text>
+    <text class="tiny center" x="345" y="278">SUN</text><text class="body center" x="345" y="294">23</text>
+
+    <!-- Monday -->
+    <text class="heading" x="68" y="327">Monday</text><text class="small" x="128" y="327">17 Aug</text><text class="small end" x="360" y="327">⧉ Copy</text>
+    <rect class="surface" x="68" y="338" width="294" height="43" rx="10"/>
+    <text class="tiny" x="78" y="355">BREAKFAST</text><text class="label" x="139" y="355">Berry overnight oats</text>
+    <text class="small" x="139" y="370">2 servings</text><text class="danger center" x="348" y="364">×</text>
+    <rect class="dash" x="68" y="387" width="294" height="26" rx="9"/><text class="accent-text center" x="215" y="404">＋ Add meal</text>
+    <line class="divider" x1="68" y1="421" x2="362" y2="421"/>
+
+    <!-- Tuesday -->
+    <text class="heading" x="68" y="443">Tuesday</text><text class="small" x="132" y="443">18 Aug</text><text class="small end" x="360" y="443">⧉ Copy</text>
+    <rect class="surface" x="68" y="454" width="294" height="43" rx="10"/>
+    <text class="tiny" x="78" y="471">LUNCH</text><text class="label" x="139" y="471">Roasted vegetable wraps</text>
+    <text class="small" x="139" y="486">2 servings</text><text class="danger center" x="348" y="480">×</text>
+    <rect class="dash" x="68" y="503" width="294" height="26" rx="9"/><text class="accent-text center" x="215" y="520">＋ Add meal</text>
+    <line class="divider" x1="68" y1="537" x2="362" y2="537"/>
+
+    <!-- Wednesday -->
+    <text class="heading" x="68" y="559">Wednesday</text><text class="small" x="151" y="559">19 Aug</text>
+    <text class="small" x="68" y="577">Nothing planned yet</text>
+    <rect class="dash" x="68" y="585" width="294" height="26" rx="9"/><text class="accent-text center" x="215" y="602">＋ Add meal</text>
+    <line class="divider" x1="68" y1="619" x2="362" y2="619"/>
+
+    <!-- Thursday -->
+    <text class="heading" x="68" y="641">Thursday</text><text class="small" x="136" y="641">20 Aug · Today</text><text class="small end" x="360" y="641">⧉ Copy</text>
+    <rect class="surface" x="68" y="652" width="294" height="43" rx="10"/>
+    <text class="tiny" x="78" y="669">DINNER</text><text class="label" x="139" y="669">Coconut lentil curry</text>
+    <text class="small" x="139" y="684">4 servings</text><text class="danger center" x="348" y="678">×</text>
+    <rect class="dash" x="68" y="701" width="294" height="26" rx="9"/><text class="accent-text center" x="215" y="718">＋ Add meal</text>
+
+    <!-- Compact remaining days -->
+    <line class="divider" x1="68" y1="735" x2="362" y2="735"/>
+    <text class="label" x="68" y="756">Friday</text><text class="small" x="108" y="756">21 Aug</text><text class="body" x="160" y="756">Mushroom pasta · 3 servings</text><text class="accent-text end" x="360" y="756">＋ Add</text>
+    <line class="divider" x1="68" y1="766" x2="362" y2="766"/>
+    <text class="label" x="68" y="787">Saturday</text><text class="small" x="126" y="787">22 Aug</text><text class="body" x="178" y="787">Banana oat muffins</text><text class="accent-text end" x="360" y="787">＋ Add</text>
+    <line class="divider" x1="68" y1="797" x2="362" y2="797"/>
+    <text class="label" x="68" y="818">Sunday</text><text class="small" x="118" y="818">23 Aug</text><text class="small" x="170" y="818">Nothing planned</text><text class="accent-text end" x="360" y="818">＋ Add</text>
+
+    <rect class="appbar" x="52" y="850" width="326" height="58"/>
+    <line class="divider" x1="52" y1="850" x2="378" y2="850"/>
+    <text class="accent-text center" x="106" y="877">⌂</text><text class="tiny center" x="106" y="894">HOME</text>
+    <circle class="accent" cx="215" cy="875" r="18"/><text class="white-large center" x="215" y="881">＋</text>
+    <text class="body center" x="324" y="877">•••</text><text class="tiny center" x="324" y="894">MORE</text>
+  </g>
+
+  <!-- Phone 2: copy week and empty target -->
+  <g clip-path="url(#clip2)">
+    <rect class="appbar" x="442" y="112" width="326" height="50"/>
+    <rect class="accent-soft" x="456" y="122" width="29" height="29" rx="9"/>
+    <text class="accent-text center" x="470.5" y="141">♨</text><text class="label" x="493" y="141">PocketPlates</text>
+    <text class="screen-title" x="458" y="194">Meal planner</text><text class="body" x="458" y="212">24–30 August 2026</text>
+    <rect class="surface" x="684" y="174" width="68" height="34" rx="10"/><text class="small center" x="718" y="195">⧉ Copy week</text>
+    <rect class="surface" x="458" y="225" width="35" height="34" rx="10"/><text class="body center" x="475.5" y="247">‹</text>
+    <rect class="surface" x="500" y="225" width="210" height="34" rx="10"/><text class="label center" x="605" y="247">This week</text>
+    <rect class="surface" x="717" y="225" width="35" height="34" rx="10"/><text class="body center" x="734.5" y="247">›</text>
+
+    <text class="tiny center" x="474" y="278">MON</text><text class="body center" x="474" y="294">24</text>
+    <text class="tiny center" x="518" y="278">TUE</text><text class="body center" x="518" y="294">25</text>
+    <text class="tiny center" x="562" y="278">WED</text><text class="body center" x="562" y="294">26</text>
+    <text class="tiny center" x="606" y="278">THU</text><text class="body center" x="606" y="294">27</text>
+    <text class="tiny center" x="650" y="278">FRI</text><text class="body center" x="650" y="294">28</text>
+    <text class="tiny center" x="694" y="278">SAT</text><text class="body center" x="694" y="294">29</text>
+    <text class="tiny center" x="738" y="278">SUN</text><text class="body center" x="738" y="294">30</text>
+
+    <rect class="accent-soft" x="458" y="314" width="294" height="50" rx="11"/>
+    <text class="body" x="472" y="335">▣ 6 meals copied from 17–23 Aug</text>
+    <rect class="accent" x="690" y="323" width="50" height="32" rx="9"/><text class="white center" x="715" y="343">Paste</text>
+
+    <rect class="dash" x="458" y="389" width="294" height="210" rx="16"/>
+    <rect class="accent-soft" x="583" y="417" width="44" height="44" rx="14"/>
+    <text class="accent-text center" x="605" y="444">▣＋</text>
+    <text class="heading center" x="605" y="478">This week is ready to plan</text>
+    <text class="body center" x="605" y="500">Add meals one day at a time, or reuse</text>
+    <text class="body center" x="605" y="516">the week you just copied.</text>
+    <rect class="accent" x="520" y="536" width="170" height="38" rx="10"/>
+    <text class="white center" x="605" y="560">Paste copied week</text>
+    <text class="accent-text center" x="605" y="590">＋ Add first meal</text>
+
+    <path class="sheet" d="M442 664 Q442 642 464 642 H746 Q768 642 768 664 V908 H442 Z"/>
+    <rect x="585" y="654" width="40" height="4" rx="2" fill="#cbd6ce"/>
+    <text class="heading" x="464" y="690">Paste copied week?</text><text class="body end" x="746" y="690">×</text>
+    <text class="label" x="464" y="724">6 meals will be added</text>
+    <text class="body" x="464" y="746">Existing meals stay in place.</text>
+    <text class="body" x="464" y="764">Exact duplicates are skipped automatically.</text>
+    <rect class="accent" x="464" y="788" width="282" height="43" rx="11"/>
+    <text class="white center" x="605" y="814">Paste 6 meals</text>
+  </g>
+
+  <!-- Phone 3: add meal sheet -->
+  <g clip-path="url(#clip3)">
+    <rect class="appbar" x="832" y="112" width="326" height="50"/>
+    <rect class="accent-soft" x="846" y="122" width="29" height="29" rx="9"/>
+    <text class="accent-text center" x="860.5" y="141">♨</text><text class="label" x="883" y="141">PocketPlates</text>
+    <text class="screen-title" x="848" y="194">Meal planner</text><text class="body" x="848" y="212">17–23 August 2026</text>
+    <rect class="surface" x="848" y="229" width="294" height="38" rx="10"/><text class="label center" x="995" y="253">‹     This week     ›</text>
+    <text class="heading" x="848" y="306">Wednesday</text><text class="small" x="931" y="306">19 Aug</text>
+    <text class="small" x="848" y="329">Nothing planned yet</text>
+    <rect class="dash" x="848" y="341" width="294" height="38" rx="10"/><text class="accent-text center" x="995" y="364">＋ Add meal</text>
+    <line class="divider" x1="848" y1="397" x2="1142" y2="397"/>
+    <text class="heading" x="848" y="425">Thursday</text><text class="small" x="916" y="425">20 Aug · Today</text>
+    <rect class="surface" x="848" y="438" width="294" height="49" rx="10"/>
+    <text class="tiny" x="860" y="458">DINNER</text><text class="label" x="920" y="458">Coconut lentil curry</text><text class="small" x="920" y="476">4 servings</text>
+    <rect class="overlay" x="832" y="112" width="326" height="796"/>
+
+    <path class="sheet" d="M832 405 Q832 383 854 383 H1136 Q1158 383 1158 405 V908 H832 Z"/>
+    <rect x="975" y="395" width="40" height="4" rx="2" fill="#cbd6ce"/>
+    <text class="heading" x="854" y="435">Add meal</text><text class="body end" x="1136" y="435">×</text>
+    <text class="small" x="854" y="467">DAY</text>
+    <rect class="muted-fill" x="854" y="476" width="282" height="39" rx="10"/><text class="body" x="866" y="500">Wednesday, 19 August</text>
+    <text class="small" x="854" y="543">RECIPE</text>
+    <rect class="surface" x="854" y="552" width="282" height="43" rx="10"/><text class="body" x="866" y="578">Ginger tofu bowls</text><text class="body end" x="1124" y="578">⌄</text>
+    <text class="small" x="854" y="623">MEAL</text><text class="small" x="1000" y="623">SERVINGS</text>
+    <rect class="surface" x="854" y="632" width="136" height="43" rx="10"/><text class="body" x="866" y="658">Dinner</text><text class="body end" x="978" y="658">⌄</text>
+    <rect class="surface" x="1000" y="632" width="136" height="43" rx="10"/><text class="body" x="1012" y="658">2</text><text class="body end" x="1124" y="658">−  ＋</text>
+    <rect class="accent" x="854" y="706" width="282" height="45" rx="11"/><text class="white center" x="995" y="733">Add to Wednesday</text>
+  </g>
+
+  <!-- Phone 4: day copy, remove, Undo, edit -->
+  <g clip-path="url(#clip4)">
+    <rect class="appbar" x="1222" y="112" width="326" height="50"/>
+    <rect class="accent-soft" x="1236" y="122" width="29" height="29" rx="9"/>
+    <text class="accent-text center" x="1250.5" y="141">♨</text><text class="label" x="1273" y="141">PocketPlates</text>
+    <text class="screen-title" x="1238" y="194">Meal planner</text><text class="body" x="1238" y="212">17–23 August 2026</text>
+    <rect class="surface" x="1238" y="229" width="294" height="38" rx="10"/><text class="label center" x="1385" y="253">‹     This week     ›</text>
+    <rect class="accent-soft" x="1238" y="284" width="294" height="43" rx="11"/>
+    <text class="body" x="1250" y="310">▣ 2 meals copied from Monday</text>
+
+    <text class="heading" x="1238" y="359">Wednesday</text><text class="small" x="1321" y="359">19 Aug</text>
+    <rect class="accent-soft" x="1468" y="338" width="64" height="31" rx="9"/><text class="accent-text center" x="1500" y="358">▣ Paste</text>
+    <rect class="surface" x="1238" y="377" width="294" height="49" rx="10"/>
+    <text class="tiny" x="1250" y="397">DINNER</text><text class="label" x="1310" y="397">Tomato basil soup</text><text class="small" x="1310" y="415">3 servings</text>
+    <rect class="danger-soft" x="1493" y="384" width="30" height="30" rx="9"/><text class="danger center" x="1508" y="404">×</text>
+    <rect class="muted-fill" x="1238" y="434" width="294" height="39" rx="10"/>
+    <text class="body" x="1250" y="458">Meal removed</text><text class="accent-text end" x="1518" y="458">Undo</text>
+    <rect class="dash" x="1238" y="481" width="294" height="36" rx="10"/><text class="accent-text center" x="1385" y="503">＋ Add meal</text>
+
+    <path class="sheet" d="M1222 573 Q1222 551 1244 551 H1526 Q1548 551 1548 573 V908 H1222 Z"/>
+    <rect x="1365" y="563" width="40" height="4" rx="2" fill="#cbd6ce"/>
+    <text class="heading" x="1244" y="603">Edit meal</text><text class="body end" x="1526" y="603">×</text>
+    <text class="small" x="1244" y="635">DAY</text><text class="small" x="1390" y="635">MEAL</text>
+    <rect class="surface" x="1244" y="644" width="136" height="41" rx="10"/><text class="body" x="1256" y="669">Wednesday</text><text class="body end" x="1368" y="669">⌄</text>
+    <rect class="surface" x="1390" y="644" width="136" height="41" rx="10"/><text class="body" x="1402" y="669">Dinner</text><text class="body end" x="1514" y="669">⌄</text>
+    <text class="small" x="1244" y="713">SERVINGS</text>
+    <rect class="surface" x="1244" y="722" width="282" height="41" rx="10"/><text class="body" x="1256" y="747">3</text><text class="body end" x="1514" y="747">−  ＋</text>
+    <rect class="accent" x="1244" y="786" width="282" height="43" rx="11"/><text class="white center" x="1385" y="812">Save changes</text>
+    <text class="danger center" x="1385" y="858">Remove meal</text>
+  </g>
+
+  <!-- Captions -->
+  <text class="heading center" x="215" y="960">Approved weekly list</text>
+  <text class="body center" x="215" y="981">All seven days keep Add visible; entries remove directly.</text>
+  <text class="heading center" x="605" y="960">Copy week</text>
+  <text class="body center" x="605" y="981">Empty targets prioritize an additive paste with preview.</text>
+  <text class="heading center" x="995" y="960">Add meal</text>
+  <text class="body center" x="995" y="981">A compact sheet fixes the day and asks only what is needed.</text>
+  <text class="heading center" x="1385" y="960">Manage with low friction</text>
+  <text class="body center" x="1385" y="981">Copy day, paste, remove, Undo, or edit without drag-and-drop.</text>
+</svg>
