@@ -222,7 +222,7 @@ Table meal_plans {
   updated_at timestamptz [not null, default: `now()`]
 
   indexes {
-    (owner_id, week_start_date)
+    (owner_id, week_start_date) [unique]
   }
 }
 
@@ -237,7 +237,7 @@ Table meal_plan_entries {
   created_at timestamptz [not null, default: `now()`]
 
   indexes {
-    (meal_plan_id, planned_for)
+    (meal_plan_id, planned_for, meal_type, recipe_id) [unique]
     (recipe_id)
   }
 }

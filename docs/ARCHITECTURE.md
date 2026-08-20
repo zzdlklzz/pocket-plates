@@ -69,13 +69,18 @@ Core entities:
 - `tags` and `recipe_tags`: user-owned tags and recipe/tag joins.
 - `equipment` and `recipe_equipment`: user-owned equipment labels and recipe/equipment joins. Controlled equipment rows have a nullable stable `preset_key`; custom null-key rows remain compatible but are not shown in the preset-only interface.
 
-Future-ready entities:
+Meal-planning foundation entities:
+
+- `meal_plans`: one private row per owner and Monday-based week.
+- `meal_plan_entries`: scheduled recipe references, with exact duplicates prevented per plan/date/slot/recipe.
+
+Other future-ready entities:
 
 - `pantry_items`
-- `meal_plans`
-- `meal_plan_entries`
 - `grocery_lists`
 - `grocery_list_items`
+
+Authenticated browser clients have explicit CRUD grants on both planner tables, while their existing RLS policies remain the ownership boundary. The owner/week and exact-entry uniqueness constraints make lazy plan creation and duplicate prevention safe under repeated requests. Pure planner date helpers use local calendar parts rather than parsing date-only values as UTC timestamps; they normalize any viewed date to Monday, generate the seven ISO dates in a week, and validate week membership without timezone drift. The user-facing planner route is added in the next implementation slice.
 
 Recipe create and edit flows write sources to `recipe_links`. The legacy `recipes.source_url` column remains readable as a fallback for recipes created before multi-source support, but new saves clear it and use the child rows. Source rows follow recipe ownership through existing Row Level Security policies.
 
@@ -158,6 +163,11 @@ src/
         recipe-image.constants.test.ts
         recipe-image.repository.test.ts
         recipe.mappers.test.ts
+    meal-planning/
+      meal-planning.dates.ts
+      meal-planning.types.ts
+      __tests__/
+        meal-planning.dates.test.ts
   lib/
     env/
       __tests__/
@@ -516,13 +526,14 @@ A clean result means the local migration chain applies and the schema linter fou
 
 For normal development, `npm run dev:local` runs `supabase migration up --local` before starting the app. This forward-applies new migrations while preserving local accounts and recipes. Use the reset command periodically, and before releases, to prove a clean database can still be recreated from scratch.
 
-Run the transactional equipment/RLS integration checks after a reset:
+Run the transactional database/RLS integration checks after a reset:
 
 ```bash
 docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/equipment_presets.sql
+docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/meal_planner_foundation.sql
 ```
 
-The SQL test rolls its fixtures back. It verifies owner catalog reuse, match-all and combined filters, conflict atomicity, custom null-key preservation, owner isolation, cross-owner join rejection, and anonymous function denial.
+The SQL tests roll their fixtures back. They verify recipe-discovery behavior and planner table grants, owner isolation, cross-owner recipe protection, and both planner uniqueness rules.
 
 Supabase Studio is available at the Studio URL printed by `npx supabase status`, usually `http://127.0.0.1:54323`. Stop the local containers when they are no longer needed:
 

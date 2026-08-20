@@ -197,7 +197,12 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 
 Goal: help users turn recipes into weekly cooking decisions.
 
-- Weekly meal planning.
+- [ ] Weekly meal planning.
+  - [x] Slice 1: establish authenticated table access, owner/week and exact-entry uniqueness, and tested Monday/date helpers.
+  - [ ] Slice 2: add the current-week agenda with read, add, direct remove, and Undo.
+  - [ ] Slice 3: add week navigation and entry editing.
+  - [ ] Slice 4: add deliberate day/week copy and paste.
+  - [ ] Slice 5: complete the signed-in localhost acceptance journey and documentation sweep.
 - Grocery list generated from selected recipes.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.

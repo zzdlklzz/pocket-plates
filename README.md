@@ -42,7 +42,9 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `supabase/migrations/20260819200746_grant_private_library_search_reads.sql`: authenticated source-table reads required by the security-invoker search function, still constrained by RLS
 - `supabase/migrations/20260819203000_add_recipe_effort_labels.sql`: owner-scoped controlled effort metadata, atomic replacement, and match-all private-library filtering
 - `supabase/migrations/20260819205000_add_equipment_presets.sql`: owner-scoped equipment presets, atomic effort/equipment replacement, match-all equipment filtering, and fresh-install recipe CRUD grants
+- `supabase/migrations/20260821090000_prepare_meal_planner_foundation.sql`: authenticated meal-planner CRUD grants and uniqueness guarantees for one plan per owner/week and one exact recipe/slot entry
 - `supabase/tests/equipment_presets.sql`: transactional local SQL checks for preset reuse, filter semantics, validation, and RLS
+- `supabase/tests/meal_planner_foundation.sql`: transactional local SQL checks for planner grants, uniqueness, and owner isolation
 - `scripts/run-local-e2e.mjs`: isolated local-Supabase Playwright runner for signed-in mobile and desktop workflows
 
 ## Local Development

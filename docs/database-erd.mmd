@@ -146,8 +146,8 @@ erDiagram
 
     meal_plans {
         uuid id PK
-        uuid owner_id FK
-        date week_start_date
+        uuid owner_id FK "unique with week_start_date"
+        date week_start_date "unique with owner_id"
         text title
         timestamptz created_at
         timestamptz updated_at
@@ -155,10 +155,10 @@ erDiagram
 
     meal_plan_entries {
         uuid id PK
-        uuid meal_plan_id FK
-        uuid recipe_id FK
-        date planned_for
-        meal_type meal_type
+        uuid meal_plan_id FK "exact-entry unique key"
+        uuid recipe_id FK "exact-entry unique key"
+        date planned_for "exact-entry unique key"
+        meal_type meal_type "exact-entry unique key"
         int servings
         text notes
         timestamptz created_at
