@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1990" height="1040" viewBox="0 0 1990 1040" role="img" aria-labelledby="title desc">
   <title id="title">PocketPlates weekly meal planner mockups</title>
-  <desc id="desc">Four mobile list-view mockups showing the approved weekly agenda, copying a week into an empty target, adding a meal, and day copy, direct removal, Undo, and entry editing. No calendar-grid view is included.</desc>
+  <desc id="desc">Five mobile list-view mockups showing the approved weekly agenda, copying a week into an empty target, adding a meal with an editable day and one-serving default, day copy, direct removal, Undo, entry editing, and a weekly preparation summary. No calendar-grid view is included.</desc>
   <defs>
     <style>
       .canvas { fill: #f7faf7; }
@@ -35,9 +35,10 @@
     <clipPath id="clip2"><rect x="442" y="112" width="326" height="796" rx="23"/></clipPath>
     <clipPath id="clip3"><rect x="832" y="112" width="326" height="796" rx="23"/></clipPath>
     <clipPath id="clip4"><rect x="1222" y="112" width="326" height="796" rx="23"/></clipPath>
+    <clipPath id="clip5"><rect x="1612" y="112" width="326" height="796" rx="23"/></clipPath>
   </defs>
 
-  <rect class="canvas" width="1600" height="1040"/>
+  <rect class="canvas" width="1990" height="1040"/>
   <text class="title" x="40" y="52">PocketPlates weekly meal planner</text>
   <text class="body" x="40" y="75">Approved direction: compact date strip + vertical weekly agenda</text>
 
@@ -50,6 +51,8 @@
   <rect class="screen" x="832" y="112" width="326" height="796" rx="23"/>
   <rect class="phone" x="1210" y="100" width="350" height="820" rx="31"/>
   <rect class="screen" x="1222" y="112" width="326" height="796" rx="23"/>
+  <rect class="phone" x="1600" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="1612" y="112" width="326" height="796" rx="23"/>
 
   <!-- Phone 1: full weekly agenda -->
   <g clip-path="url(#clip1)">
@@ -188,13 +191,60 @@
     <rect x="975" y="395" width="40" height="4" rx="2" fill="#cbd6ce"/>
     <text class="heading" x="854" y="435">Add meal</text><text class="body end" x="1136" y="435">×</text>
     <text class="small" x="854" y="467">DAY</text>
-    <rect class="muted-fill" x="854" y="476" width="282" height="39" rx="10"/><text class="body" x="866" y="500">Wednesday, 19 August</text>
+    <rect class="surface" x="854" y="476" width="282" height="39" rx="10"/><text class="body" x="866" y="500">Wednesday, 19 August</text><text class="body end" x="1124" y="500">⌄</text>
     <text class="small" x="854" y="543">RECIPE</text>
     <rect class="surface" x="854" y="552" width="282" height="43" rx="10"/><text class="body" x="866" y="578">Ginger tofu bowls</text><text class="body end" x="1124" y="578">⌄</text>
     <text class="small" x="854" y="623">MEAL</text><text class="small" x="1000" y="623">SERVINGS</text>
     <rect class="surface" x="854" y="632" width="136" height="43" rx="10"/><text class="body" x="866" y="658">Dinner</text><text class="body end" x="978" y="658">⌄</text>
-    <rect class="surface" x="1000" y="632" width="136" height="43" rx="10"/><text class="body" x="1012" y="658">2</text><text class="body end" x="1124" y="658">−  ＋</text>
-    <rect class="accent" x="854" y="706" width="282" height="45" rx="11"/><text class="white center" x="995" y="733">Add to Wednesday</text>
+    <rect class="surface" x="1000" y="632" width="136" height="43" rx="10"/><text class="body" x="1012" y="658">1</text><text class="body end" x="1124" y="658">−  ＋</text>
+    <text class="small" x="854" y="697">Planned portions · defaults to 1</text><text class="small end" x="1136" y="697">Recipe makes 4</text>
+    <rect class="accent" x="854" y="718" width="282" height="45" rx="11"/><text class="white center" x="995" y="745">Add to Wednesday</text>
+  </g>
+
+  <!-- Phone 5: weekly preparation summary -->
+  <g clip-path="url(#clip5)">
+    <rect class="appbar" x="1612" y="112" width="326" height="50"/>
+    <rect class="accent-soft" x="1626" y="122" width="29" height="29" rx="9"/>
+    <text class="accent-text center" x="1640.5" y="141">♨</text><text class="label" x="1663" y="141">PocketPlates</text>
+    <text class="screen-title" x="1628" y="194">Meal planner</text><text class="body" x="1628" y="212">17–23 August 2026</text>
+    <rect class="surface" x="1628" y="229" width="294" height="38" rx="10"/><text class="label center" x="1775" y="253">‹     This week     ›</text>
+    <rect class="surface" x="1628" y="284" width="94" height="34" rx="10"/><text class="small center" x="1675" y="305">⧉ Copy week</text>
+    <rect class="accent-soft" x="1730" y="284" width="192" height="34" rx="10"/><text class="accent-text center" x="1826" y="305">Prep summary · 3 recipes</text>
+
+    <text class="heading" x="1628" y="352">Tuesday</text><text class="small" x="1692" y="352">18 Aug</text>
+    <rect class="surface" x="1628" y="365" width="294" height="45" rx="10"/>
+    <text class="tiny" x="1640" y="383">DINNER</text><text class="label" x="1700" y="383">Coconut lentil curry</text><text class="small" x="1700" y="400">1 serving</text>
+    <text class="heading" x="1628" y="443">Thursday</text><text class="small" x="1696" y="443">20 Aug</text>
+    <rect class="surface" x="1628" y="456" width="294" height="45" rx="10"/>
+    <text class="tiny" x="1640" y="474">DINNER</text><text class="label" x="1700" y="474">Coconut lentil curry</text><text class="small" x="1700" y="491">1 serving</text>
+    <rect class="overlay" x="1612" y="112" width="326" height="796"/>
+
+    <path class="sheet" d="M1612 329 Q1612 307 1634 307 H1916 Q1938 307 1938 329 V908 H1612 Z"/>
+    <rect x="1755" y="319" width="40" height="4" rx="2" fill="#cbd6ce"/>
+    <text class="heading" x="1634" y="359">Weekly prep summary</text><text class="body end" x="1916" y="359">×</text>
+    <text class="body" x="1634" y="381">3 recipes · 9 planned servings</text>
+
+    <rect class="soft" x="1634" y="399" width="282" height="105" rx="11"/>
+    <text class="label" x="1648" y="422">Coconut lentil curry</text><text class="small end" x="1902" y="422">Tue · Thu</text>
+    <text class="body" x="1648" y="445">Need 2 servings</text>
+    <text class="small" x="1648" y="464">Saved recipe makes 4</text>
+    <rect class="accent" x="1816" y="441" width="86" height="31" rx="9"/><text class="white center" x="1859" y="461">Scale 0.5×</text>
+    <text class="small" x="1648" y="488">Repeated days are combined once.</text>
+
+    <rect class="surface" x="1634" y="516" width="282" height="86" rx="11"/>
+    <text class="label" x="1648" y="539">Berry overnight oats</text><text class="small end" x="1902" y="539">Mon</text>
+    <text class="body" x="1648" y="562">Need 2 servings</text><text class="small" x="1648" y="583">Saved recipe makes 2</text>
+    <rect class="accent-soft" x="1816" y="553" width="86" height="31" rx="9"/><text class="accent-text center" x="1859" y="573">Scale 1×</text>
+
+    <rect class="surface" x="1634" y="614" width="282" height="86" rx="11"/>
+    <text class="label" x="1648" y="637">Mushroom pasta</text><text class="small end" x="1902" y="637">Fri · Sat</text>
+    <text class="body" x="1648" y="660">Need 5 servings</text><text class="small" x="1648" y="681">Saved recipe makes 4</text>
+    <rect class="accent-soft" x="1816" y="651" width="86" height="31" rx="9"/><text class="accent-text center" x="1859" y="671">Scale 1.25×</text>
+
+    <rect class="muted-fill" x="1634" y="716" width="282" height="58" rx="10"/>
+    <text class="body" x="1648" y="740">Totals use planned portions, not saved yield.</text>
+    <text class="small" x="1648" y="759">No batch rounding or plan changes are applied.</text>
+    <rect class="surface" x="1634" y="792" width="282" height="43" rx="11"/><text class="accent-text center" x="1775" y="818">Close</text>
   </g>
 
   <!-- Phone 4: day copy, remove, Undo, edit -->
@@ -234,7 +284,10 @@
   <text class="heading center" x="605" y="960">Copy week</text>
   <text class="body center" x="605" y="981">Empty targets prioritize an additive paste with preview.</text>
   <text class="heading center" x="995" y="960">Add meal</text>
-  <text class="body center" x="995" y="981">A compact sheet fixes the day and asks only what is needed.</text>
+  <text class="body center" x="995" y="981">The tapped day is preselected but editable within the week.</text>
+  <text class="body center" x="995" y="999">Planned servings defaults to 1; saved yield stays contextual.</text>
   <text class="heading center" x="1385" y="960">Manage with low friction</text>
   <text class="body center" x="1385" y="981">Copy day, paste, remove, Undo, or edit without drag-and-drop.</text>
+  <text class="heading center" x="1775" y="960">Weekly prep summary</text>
+  <text class="body center" x="1775" y="981">Repeated recipes combine into planned portions and scale.</text>
 </svg>
