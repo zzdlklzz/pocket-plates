@@ -201,7 +201,7 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Slice 1: establish authenticated table access, owner/week and exact-entry uniqueness, and tested Monday/date helpers.
   - [x] Slice 2: add the current-week agenda with read, add, direct remove, and Undo.
   - [x] Slice 3: add week navigation and entry editing.
-  - [ ] Slice 4: add deliberate day/week copy and paste.
+  - [x] Slice 4: add deliberate day/week copy and paste.
   - [ ] Slice 5: complete the signed-in localhost acceptance journey and documentation sweep.
 - Grocery list generated from selected recipes.
 - Pantry and staple-item tracking.
@@ -239,7 +239,7 @@ Primary screens:
 - Recipe Detail: image, title, meal types, servings, effort labels, equipment/setup, source links, ingredients, steps, edit action.
 - Add/Edit Recipe: title, servings, meal types, optional effort and equipment/setup metadata, device cover image, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types and cost ratings, single-select difficulty, match-all effort and equipment/setup values, clear filters, and done action. The sheet is viewport-bounded, scrollable, focus-contained, and usable with enlarged mobile text. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
-- Meal Planner: canonical Monday-based week URLs, previous/current/next navigation, seven vertical day sections, persistent per-day add actions, a compact add/edit sheet, direct entry removal, and bounded inline Undo. Day/week copy and paste remains pending.
+- Meal Planner: canonical Monday-based week URLs, previous/current/next navigation, seven vertical day sections, persistent per-day add actions, a compact add/edit sheet, direct entry removal with bounded Undo, and one temporary in-app buffer for deliberate additive day/week copy and paste.
 
 Visual reference:
 
@@ -461,7 +461,6 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 
 ## Future Enhancements
 
-- Complete meal-planner day/week copy and paste.
 - Grocery list generated from selected recipes.
 - Cost estimate per serving, derived from optional total SGD cost and serving count.
 - Pantry tracking.

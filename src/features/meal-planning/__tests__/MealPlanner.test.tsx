@@ -5,12 +5,26 @@ import type { MealPlanWeekDto } from "../meal-planning.types";
 
 const mocks = vi.hoisted(() => ({
   addEntry: vi.fn(),
+  pasteEntries: vi.fn(),
+  pasteError: null as unknown,
+  pastePending: false,
+  previewData: null as null | {
+    archivedCount: number;
+    deletedCount: number;
+    eligibleCount: number;
+    exactDuplicateCount: number;
+  },
+  previewEntries: vi.fn(),
+  previewError: null as unknown,
+  previewPending: false,
   removeEntry: vi.fn(),
   removeError: null as unknown,
   removePending: false,
   refetchRecipeOptions: vi.fn(),
   recipeOptionsResult: {} as Record<string, unknown>,
   resetAdd: vi.fn(),
+  resetPaste: vi.fn(),
+  resetPreview: vi.fn(),
   resetRemove: vi.fn(),
   resetRestore: vi.fn(),
   restoreEntry: vi.fn(),
@@ -44,6 +58,19 @@ vi.mock("../meal-planning.queries", () => ({
     isPending: false,
     mutateAsync: mocks.addEntry,
     reset: mocks.resetAdd
+  }),
+  useAddMealPlanEntries: () => ({
+    error: mocks.pasteError,
+    isPending: mocks.pastePending,
+    mutateAsync: mocks.pasteEntries,
+    reset: mocks.resetPaste
+  }),
+  usePreviewMealPlanEntries: () => ({
+    data: mocks.previewData,
+    error: mocks.previewError,
+    isPending: mocks.previewPending,
+    mutate: mocks.previewEntries,
+    reset: mocks.resetPreview
   }),
   useRemoveMealPlanEntry: () => ({
     error: mocks.removeError,
@@ -125,6 +152,11 @@ describe("MealPlanner", () => {
     mocks.removePending = false;
     mocks.updateError = null;
     mocks.updatePending = false;
+    mocks.pasteError = null;
+    mocks.pastePending = false;
+    mocks.previewData = null;
+    mocks.previewError = null;
+    mocks.previewPending = false;
     mocks.recipeOptionsResult = {
       data: [
         {
@@ -143,6 +175,12 @@ describe("MealPlanner", () => {
     const week = currentWeek();
     loadedWeek(week);
     mocks.addEntry.mockResolvedValue(undefined);
+    mocks.pasteEntries.mockResolvedValue({
+      addedCount: 2,
+      archivedCount: 0,
+      deletedCount: 0,
+      exactDuplicateCount: 0
+    });
     mocks.updateEntry.mockResolvedValue(undefined);
     mocks.restoreEntry.mockResolvedValue(undefined);
     mocks.removeEntry.mockImplementation(async ({ entryId, weekStartDate }) =>
@@ -464,6 +502,150 @@ describe("MealPlanner", () => {
     })).toBeInTheDocument();
   });
 
+  it("keeps a copied week through navigation and pastes it additively", async () => {
+    const week = currentWeek();
+    const nextWeekStart = getNextWeekStart(week.weekStartDate);
+    const nextWeekDates = getWeekDates(nextWeekStart);
+    const view = render(<MealPlanner requestedWeek={week.weekStartDate} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Copy week" }));
+    expect(screen.getByRole("status")).toHaveTextContent("2 meals copied from");
+
+    loadedWeek({ entries: [], planId: null, weekStartDate: nextWeekStart });
+    view.rerender(<MealPlanner requestedWeek={nextWeekStart} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("2 meals copied from");
+    const pasteTrigger = screen.getByRole("button", { name: "Paste copied week" });
+    fireEvent.click(pasteTrigger);
+    expect(mocks.previewEntries).toHaveBeenCalledWith({
+      entries: [
+        expect.objectContaining({
+          plannedFor: nextWeekDates[0],
+          recipeId: "recipe-1"
+        }),
+        expect.objectContaining({
+          plannedFor: nextWeekDates[3],
+          recipeId: "recipe-2"
+        })
+      ],
+      weekStartDate: nextWeekStart
+    });
+
+    mocks.previewData = {
+      archivedCount: 0,
+      deletedCount: 0,
+      eligibleCount: 1,
+      exactDuplicateCount: 1
+    };
+    let finishPaste: ((value: {
+      addedCount: number;
+      archivedCount: number;
+      deletedCount: number;
+      exactDuplicateCount: number;
+    }) => void) | undefined;
+    mocks.pasteEntries.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        finishPaste = resolve;
+      })
+    );
+    view.rerender(<MealPlanner requestedWeek={nextWeekStart} />);
+    const dialog = screen.getByRole("dialog", { name: "Paste copied week?" });
+    expect(within(dialog).getByText("Duplicates").nextSibling).toHaveTextContent("1");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Paste 1 meal" }));
+
+    loadedWeek({
+      entries: week.entries.map((entry, index) => ({
+        ...entry,
+        id: `pasted-${index}`,
+        planId: "next-plan",
+        plannedFor: index === 0 ? nextWeekDates[0] : nextWeekDates[3]
+      })),
+      planId: "next-plan",
+      weekStartDate: nextWeekStart
+    });
+    view.rerender(<MealPlanner requestedWeek={nextWeekStart} />);
+    expect(document.body).not.toContainElement(pasteTrigger);
+    const replacementPasteTrigger = screen.getByRole("button", { name: "Paste week" });
+
+    await act(async () =>
+      finishPaste?.({
+        addedCount: 1,
+        archivedCount: 0,
+        deletedCount: 0,
+        exactDuplicateCount: 1
+      })
+    );
+
+    await waitFor(() => expect(mocks.pasteEntries).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("dialog", { name: "Paste copied week?" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "1 meal added. Skipped: 1 duplicate, 0 archived, 0 deleted or unavailable. Copied week remains ready to paste again."
+    );
+    expect(replacementPasteTrigger).toBeInTheDocument();
+    await waitFor(() => expect(replacementPasteTrigger).toHaveFocus());
+  });
+
+  it("copies one day to any target day and restores focus after preview", async () => {
+    const week = currentWeek();
+    const [, , , thursday] = getWeekDates(week.weekStartDate);
+    const view = render(<MealPlanner requestedWeek={week.weekStartDate} />);
+    const monday = await screen.findByRole("region", { name: /^Monday / });
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy week" }));
+    expect(screen.getByRole("button", { name: "Paste week" })).toBeInTheDocument();
+    fireEvent.click(within(monday).getByRole("button", {
+      name: "Copy meals from Monday"
+    }));
+    expect(screen.getByRole("status")).toHaveTextContent("1 meal copied from Monday");
+    expect(screen.queryByRole("button", { name: "Paste week" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Paste copied day to / })).toHaveLength(7);
+
+    const thursdaySection = screen.getByRole("region", { name: /^Thursday / });
+    const pasteTrigger = within(thursdaySection).getByRole("button", {
+      name: "Paste copied day to Thursday"
+    });
+    fireEvent.click(pasteTrigger);
+    expect(mocks.previewEntries).toHaveBeenCalledWith({
+      entries: [
+        {
+          mealType: "breakfast",
+          plannedFor: thursday,
+          recipeId: "recipe-1",
+          servings: 2
+        }
+      ],
+      weekStartDate: week.weekStartDate
+    });
+
+    mocks.previewData = {
+      archivedCount: 0,
+      deletedCount: 0,
+      eligibleCount: 1,
+      exactDuplicateCount: 0
+    };
+    view.rerender(<MealPlanner requestedWeek={week.weekStartDate} />);
+    fireEvent.click(screen.getByRole("button", { name: "Close paste preview" }));
+
+    expect(screen.queryByRole("dialog", { name: "Paste copied day?" })).not.toBeInTheDocument();
+    await waitFor(() => expect(pasteTrigger).toHaveFocus());
+  });
+
+  it("keeps the copy buffer and retries when paste preview fails", async () => {
+    const week = currentWeek();
+    const view = render(<MealPlanner requestedWeek={week.weekStartDate} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Copy week" }));
+    fireEvent.click(screen.getByRole("button", { name: "Paste week" }));
+
+    mocks.previewError = new Error("preview failed");
+    view.rerender(<MealPlanner requestedWeek={week.weekStartDate} />);
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(mocks.previewEntries).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByRole("button", { name: "Close paste preview" }));
+    expect(screen.getByRole("button", { name: "Paste week" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("2 meals copied from");
+  });
+
   it("removes a meal, restores it with Undo, and expires the latest Undo", async () => {
     render(<MealPlanner />);
     await screen.findByRole("heading", { name: "Meal planner" });
@@ -586,6 +768,10 @@ describe("MealPlanner", () => {
     expect(await screen.findByText("Archived recipe", { exact: false })).toBeInTheDocument();
     expect(screen.queryByRole("link", {
       name: "View Berry overnight oats recipe"
+    })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy week" })).toBeDisabled();
+    expect(screen.queryByRole("button", {
+      name: "Copy meals from Monday"
     })).not.toBeInTheDocument();
     const editButton = screen.getByRole("button", {
       name: "Edit Berry overnight oats on Monday"

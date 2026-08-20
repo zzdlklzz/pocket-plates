@@ -137,5 +137,80 @@ test.describe("with local Supabase", () => {
     );
     await expect(editedMeal).toContainText("Lunch");
     await expect(editedMeal).toContainText("5 servings");
+
+    const tuesday = page.getByRole("region", { name: /^Tuesday / });
+    await tuesday.getByRole("button", { name: "Copy meals from Tuesday" }).click();
+    await expect(page.getByText(/1 meal copied from Tuesday/)).toBeVisible();
+
+    await page.getByRole("button", { name: "Paste copied day to Wednesday" }).click();
+    const dayPasteDialog = page.getByRole("dialog", { name: "Paste copied day?" });
+    await expect(
+      dayPasteDialog.getByText("Ready to add", { exact: true }).locator("..")
+    ).toContainText("1");
+    await expect(
+      dayPasteDialog.getByText("Duplicates", { exact: true }).locator("..")
+    ).toContainText("0");
+    await dayPasteDialog.getByRole("button", { name: "Paste 1 meal" }).click();
+    await expect(
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Wednesday` })
+    ).toContainText("5 servings");
+
+    await page.getByRole("button", { name: "Copy week" }).click();
+    await expect(page.getByText(/2 meals copied from/)).toBeVisible();
+    await page.getByRole("button", { name: "Next week" }).click();
+    const nextWeek = addIsoDays(currentWeek!, 7);
+    await expect(page).toHaveURL(new RegExp(`/meal-planner\\?week=${nextWeek}$`));
+
+    await page.getByRole("button", { name: "Paste copied week" }).click();
+    const firstWeekPasteDialog = page.getByRole("dialog", {
+      name: "Paste copied week?"
+    });
+    await expect(
+      firstWeekPasteDialog.getByText("Ready to add", { exact: true }).locator("..")
+    ).toContainText("2");
+    await expect(
+      firstWeekPasteDialog.getByText("Duplicates", { exact: true }).locator("..")
+    ).toContainText("0");
+    await firstWeekPasteDialog.getByRole("button", { name: "Paste 2 meals" }).click();
+
+    await expect(
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Wednesday` })
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: `Remove ${recipeTitle} from Tuesday` }).click();
+    await expect(
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
+    ).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Wednesday` })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Paste week" }).click();
+    const repeatedWeekPasteDialog = page.getByRole("dialog", {
+      name: "Paste copied week?"
+    });
+    await expect(
+      repeatedWeekPasteDialog.getByText("Ready to add", { exact: true }).locator("..")
+    ).toContainText("1");
+    await expect(
+      repeatedWeekPasteDialog.getByText("Duplicates", { exact: true }).locator("..")
+    ).toContainText("1");
+    await repeatedWeekPasteDialog.getByRole("button", { name: "Paste 1 meal" }).click();
+
+    await expect(
+      page.getByRole("button", { name: new RegExp(`^Edit ${recipeTitle} on `) })
+    ).toHaveCount(2);
+    await expect(page.getByText(/1 meal added\. Skipped: 1 duplicate/)).toBeVisible();
+
+    await page.reload();
+    await expect(page).toHaveURL(new RegExp(`/meal-planner\\?week=${nextWeek}$`));
+    await expect(
+      page.getByRole("button", { name: new RegExp(`^Edit ${recipeTitle} on `) })
+    ).toHaveCount(2);
+    await expect(page.getByRole("button", { name: "Paste week" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Paste copied day to / })).toHaveCount(0);
+    await expect(page.getByText(/Copied week remains ready to paste again/)).toHaveCount(0);
   });
 });

@@ -18,3 +18,4 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
 };
 
 export const MAX_PLANNED_SERVINGS = MAX_SERVINGS;
+export const MAX_MEAL_PLAN_PASTE_ENTRIES = 100;

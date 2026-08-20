@@ -4,19 +4,25 @@ import {
   CalendarPlus,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
-  Plus,
-  Trash2
+  ClipboardPaste,
+  Copy
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { AppPageShell } from "@/components/ui/AppPageShell";
 import { InlineNotice } from "@/components/ui/InlineNotice";
 import { RecipeNavigation } from "@/features/recipes/RecipeNavigation";
+import { formatMealPlanDay, MealPlanDay } from "./MealPlanDay";
 import { MealPlanEntrySheet } from "./MealPlanEntrySheet";
-import { MEAL_TYPE_LABELS } from "./meal-planning.constants";
+import { MealPlanPasteDialog } from "./MealPlanPasteDialog";
+import {
+  createDayCopyBuffer,
+  createWeekCopyBuffer,
+  mapMealPlanCopyBuffer,
+  type MealPlanCopyBuffer,
+  type MealPlanPasteInput
+} from "./meal-planning.copy";
 import {
   formatIsoDate,
   getNextWeekStart,
@@ -28,8 +34,10 @@ import {
 } from "./meal-planning.dates";
 import {
   useAddMealPlanEntry,
+  useAddMealPlanEntries,
   useMealPlanRecipeOptions,
   useMealPlanWeek,
+  usePreviewMealPlanEntries,
   useRemoveMealPlanEntry,
   useRestoreMealPlanEntry,
   useUpdateMealPlanEntry
@@ -41,8 +49,10 @@ import type {
 } from "./meal-planning.types";
 
 type LocalWeek = {
+  copiedMealPlan: CopiedMealPlan | null;
   currentWeekStartDate: IsoDate;
   navigationFocus: WeekNavigationFocus | null;
+  onCopy: (copy: CopiedMealPlan) => void;
   onNavigate: (weekStartDate: IsoDate, focus: WeekNavigationFocus) => void;
   today: IsoDate;
   weekStartDate: IsoDate;
@@ -53,6 +63,17 @@ type WeekNavigationFocus = "current" | "next" | "previous";
 type RemovedMeal = {
   input: AddMealPlanEntryInput;
   recipeTitle: string;
+};
+
+type CopiedMealPlan = {
+  buffer: MealPlanCopyBuffer;
+  mealCount: number;
+  sourceLabel: string;
+};
+
+type PasteRequest = {
+  copyKind: MealPlanCopyBuffer["kind"];
+  input: MealPlanPasteInput;
 };
 
 const subscribeToBrowser = () => () => {};
@@ -87,33 +108,10 @@ function formatWeekRange(weekStartDate: IsoDate) {
   return `${startFormatter.format(start)}–${endFormatter.format(end)}`;
 }
 
-function formatDay(date: IsoDate) {
-  const parsedDate = parseIsoDate(date)!;
-
-  return {
-    date: new Intl.DateTimeFormat(undefined, {
-      day: "numeric",
-      month: "short"
-    }).format(parsedDate),
-    dateLong: new Intl.DateTimeFormat(undefined, {
-      day: "numeric",
-      month: "long"
-    }).format(parsedDate),
-    dayNumber: parsedDate.getDate(),
-    weekday: new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(
-      parsedDate
-    ),
-    weekdayShort: new Intl.DateTimeFormat(undefined, { weekday: "short" })
-      .format(parsedDate)
-      .toUpperCase()
-  };
-}
-
-function getPlannerErrorMessage(action: "load" | "remove" | "undo") {
+function getPlannerErrorMessage(action: "load" | "remove") {
   const messages = {
     load: "We could not load this week. Please try again.",
-    remove: "We could not remove that meal. Please try again.",
-    undo: "We could not restore that meal. Please try again."
+    remove: "We could not remove that meal. Please try again."
   };
 
   return messages[action];
@@ -121,6 +119,7 @@ function getPlannerErrorMessage(action: "load" | "remove" | "undo") {
 
 export function MealPlanner({ requestedWeek }: { requestedWeek?: string }) {
   const router = useRouter();
+  const [copiedMealPlan, setCopiedMealPlan] = useState<CopiedMealPlan | null>(null);
   const [pendingNavigation, setPendingNavigation] = useState<{
     focus: WeekNavigationFocus;
     weekStartDate: IsoDate;
@@ -156,6 +155,7 @@ export function MealPlanner({ requestedWeek }: { requestedWeek?: string }) {
         Viewing week {formatWeekRange(weekStartDate)}
       </p>
       <CurrentWeekPlanner
+        copiedMealPlan={copiedMealPlan}
         currentWeekStartDate={currentWeekStartDate}
         key={weekStartDate}
         navigationFocus={
@@ -163,6 +163,7 @@ export function MealPlanner({ requestedWeek }: { requestedWeek?: string }) {
             ? pendingNavigation.focus
             : null
         }
+        onCopy={setCopiedMealPlan}
         onNavigate={(nextWeek, focus) => {
           setPendingNavigation({ focus, weekStartDate: nextWeek });
           router.push(`/meal-planner?week=${nextWeek}`, { scroll: false });
@@ -186,8 +187,10 @@ function MealPlannerInitialLoading() {
 }
 
 function CurrentWeekPlanner({
+  copiedMealPlan,
   currentWeekStartDate,
   navigationFocus,
+  onCopy,
   onNavigate,
   today,
   weekStartDate
@@ -197,13 +200,18 @@ function CurrentWeekPlanner({
   const [search, setSearch] = useState("");
   const recipeOptionsQuery = useMealPlanRecipeOptions(search);
   const addMutation = useAddMealPlanEntry();
+  const pasteMutation = useAddMealPlanEntries();
+  const previewPasteMutation = usePreviewMealPlanEntries();
   const restoreMutation = useRestoreMealPlanEntry();
   const removeMutation = useRemoveMealPlanEntry();
   const updateMutation = useUpdateMealPlanEntry();
   const [selectedDay, setSelectedDay] = useState<IsoDate | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<MealPlanEntryDto | null>(null);
   const [removedMeal, setRemovedMeal] = useState<RemovedMeal | null>(null);
+  const [pasteRequest, setPasteRequest] = useState<PasteRequest | null>(null);
+  const [pasteFeedback, setPasteFeedback] = useState<string | null>(null);
   const sheetTriggerRef = useRef<HTMLButtonElement>(null);
+  const pasteTriggerRef = useRef<HTMLButtonElement>(null);
   const dayAddButtonRefs = useRef(new Map<IsoDate, HTMLButtonElement>());
   const previousWeekRef = useRef<HTMLButtonElement>(null);
   const currentWeekRef = useRef<HTMLButtonElement>(null);
@@ -328,7 +336,98 @@ function CurrentWeekPlanner({
     }
   }
 
+  function copyWeek() {
+    if (!weekQuery.data) {
+      return;
+    }
+
+    const buffer = createWeekCopyBuffer(weekQuery.data.entries, weekStartDate);
+    if (buffer.entries.length === 0) {
+      return;
+    }
+
+    onCopy({
+      buffer,
+      mealCount: buffer.entries.length,
+      sourceLabel: formatWeekRange(weekStartDate)
+    });
+    setPasteFeedback(null);
+  }
+
+  function copyDay(date: IsoDate, entries: MealPlanEntryDto[]) {
+    const buffer = createDayCopyBuffer(entries, date);
+    if (buffer.entries.length === 0) {
+      return;
+    }
+
+    const day = formatMealPlanDay(date);
+    onCopy({
+      buffer,
+      mealCount: buffer.entries.length,
+      sourceLabel: `${day.weekday}, ${day.dateLong}`
+    });
+    setPasteFeedback(null);
+  }
+
+  function openPastePreview(targetDate: IsoDate | undefined, trigger: HTMLButtonElement) {
+    if (!copiedMealPlan) {
+      return;
+    }
+
+    const input = {
+      entries: mapMealPlanCopyBuffer(copiedMealPlan.buffer, {
+        targetDate,
+        weekStartDate
+      }),
+      weekStartDate
+    };
+
+    pasteTriggerRef.current = trigger;
+    pasteMutation.reset();
+    previewPasteMutation.reset();
+    setPasteFeedback(null);
+    setPasteRequest({ copyKind: copiedMealPlan.buffer.kind, input });
+    previewPasteMutation.mutate(input);
+  }
+
+  function closePastePreview() {
+    setPasteRequest(null);
+    pasteMutation.reset();
+    previewPasteMutation.reset();
+  }
+
+  function retryPastePreview() {
+    if (!pasteRequest) {
+      return;
+    }
+
+    pasteMutation.reset();
+    previewPasteMutation.mutate(pasteRequest.input);
+  }
+
+  async function pasteMeals() {
+    if (!pasteRequest) {
+      return;
+    }
+
+    pasteMutation.reset();
+
+    try {
+      const result = await pasteMutation.mutateAsync(pasteRequest.input);
+      const addedLabel = `${result.addedCount} meal${result.addedCount === 1 ? "" : "s"} added`;
+      setPasteFeedback(
+        `${addedLabel}. Skipped: ${result.exactDuplicateCount} duplicate${result.exactDuplicateCount === 1 ? "" : "s"}, ${result.archivedCount} archived, ${result.deletedCount} deleted or unavailable. Copied ${pasteRequest.copyKind} remains ready to paste again.`
+      );
+      closePastePreview();
+    } catch {
+      // The mutation error is rendered inside the paste preview.
+    }
+  }
+
   const firstMealDay = weekDates.includes(today) ? today : weekDates[0];
+  const hasCopyableWeekEntries = Boolean(
+    weekQuery.data?.entries.some((entry) => !entry.recipe.archived)
+  );
 
   return (
     <>
@@ -377,7 +476,7 @@ function CurrentWeekPlanner({
           className="mt-5 grid grid-cols-7 gap-1 rounded-xl border border-slate-200 bg-white p-2"
         >
           {weekDates.map((date) => {
-            const day = formatDay(date);
+            const day = formatMealPlanDay(date);
             const isToday = date === today;
 
             return (
@@ -397,6 +496,18 @@ function CurrentWeekPlanner({
           })}
         </ol>
 
+        {copiedMealPlan ? (
+          <InlineNotice
+            aria-live="polite"
+            className="mt-4"
+            role="status"
+            tone="info"
+          >
+            {pasteFeedback ??
+              `${copiedMealPlan.mealCount} meal${copiedMealPlan.mealCount === 1 ? "" : "s"} copied from ${copiedMealPlan.sourceLabel}.`}
+          </InlineNotice>
+        ) : null}
+
         {weekQuery.isPending ? (
           <AgendaLoading weekRange={formatWeekRange(weekStartDate)} />
         ) : weekQuery.isError ? (
@@ -414,6 +525,31 @@ function CurrentWeekPlanner({
           </section>
         ) : (
           <>
+            {weekQuery.data.entries.length > 0 ? (
+              <div className="mt-5 flex flex-wrap gap-2" aria-label="Week copy actions">
+                <button
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 disabled:text-slate-400"
+                  disabled={!hasCopyableWeekEntries}
+                  onClick={copyWeek}
+                  type="button"
+                >
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                  Copy week
+                </button>
+                {copiedMealPlan?.buffer.kind === "week" ? (
+                  <button
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-leaf-300 bg-leaf-50 px-3 text-sm font-semibold text-leaf-700"
+                    onClick={(event) => openPastePreview(undefined, event.currentTarget)}
+                    ref={pasteTriggerRef}
+                    type="button"
+                  >
+                    <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
+                    Paste week
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
             {weekQuery.data.entries.length === 0 ? (
               <section className="mt-6 rounded-2xl border border-leaf-100 bg-leaf-50 p-5 text-center">
                 <CalendarPlus className="mx-auto h-7 w-7 text-leaf-700" aria-hidden="true" />
@@ -421,9 +557,20 @@ function CurrentWeekPlanner({
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Add meals one day at a time from your saved recipes.
                 </p>
+                {copiedMealPlan?.buffer.kind === "week" ? (
+                  <button
+                    className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg bg-leaf-700 px-4 py-3 text-sm font-semibold text-white"
+                    onClick={(event) => openPastePreview(undefined, event.currentTarget)}
+                    ref={pasteTriggerRef}
+                    type="button"
+                  >
+                    Paste copied week
+                  </button>
+                ) : null}
                 <ActionButton
-                  className="mt-4"
+                  className={copiedMealPlan?.buffer.kind === "week" ? "mt-2" : "mt-4"}
                   onClick={(event) => openEntrySheet(firstMealDay, event.currentTarget)}
+                  variant={copiedMealPlan?.buffer.kind === "week" ? "secondary" : "primary"}
                 >
                   Add your first meal
                 </ActionButton>
@@ -437,36 +584,44 @@ function CurrentWeekPlanner({
             ) : null}
 
             <div className="mt-6 divide-y divide-slate-200">
-              {weekDates.map((date) => (
-                <MealPlanDay
-                  date={date}
-                  entries={weekQuery.data.entries.filter(
-                    (entry) => entry.plannedFor === date
-                  )}
-                  isRemoving={
-                    removeMutation.isPending &&
-                    removeMutation.variables?.entryId !== undefined
-                  }
-                  isToday={date === today}
-                  key={date}
-                  onAdd={openEntrySheet}
-                  onAddButtonChange={(button) => {
-                    if (button) {
-                      dayAddButtonRefs.current.set(date, button);
-                    } else {
-                      dayAddButtonRefs.current.delete(date);
+              {weekDates.map((date) => {
+                const entries = weekQuery.data.entries.filter(
+                  (entry) => entry.plannedFor === date
+                );
+
+                return (
+                  <MealPlanDay
+                    canCopy={entries.some((entry) => !entry.recipe.archived)}
+                    canPaste={copiedMealPlan?.buffer.kind === "day"}
+                    date={date}
+                    entries={entries}
+                    isRemoving={
+                      removeMutation.isPending &&
+                      removeMutation.variables?.entryId !== undefined
                     }
-                  }}
-                  onEdit={openEditSheet}
-                  onRemove={removeEntry}
-                  onUndo={undoRemoval}
-                  removedMeal={
-                    removedMeal?.input.plannedFor === date ? removedMeal : null
-                  }
-                  restoreError={restoreMutation.error}
-                  restoring={restoreMutation.isPending}
-                />
-              ))}
+                    isToday={date === today}
+                    key={date}
+                    onAdd={openEntrySheet}
+                    onAddButtonChange={(button) => {
+                      if (button) {
+                        dayAddButtonRefs.current.set(date, button);
+                      } else {
+                        dayAddButtonRefs.current.delete(date);
+                      }
+                    }}
+                    onCopy={() => copyDay(date, entries)}
+                    onEdit={openEditSheet}
+                    onPaste={(trigger) => openPastePreview(date, trigger)}
+                    onRemove={removeEntry}
+                    onUndo={undoRemoval}
+                    removedMeal={
+                      removedMeal?.input.plannedFor === date ? removedMeal : null
+                    }
+                    restoreError={restoreMutation.error}
+                    restoring={restoreMutation.isPending}
+                  />
+                );
+              })}
             </div>
           </>
         )}
@@ -497,6 +652,25 @@ function CurrentWeekPlanner({
           weekStartDate={weekStartDate}
         />
       ) : null}
+
+      {pasteRequest ? (
+        <MealPlanPasteDialog
+          addCount={previewPasteMutation.data?.eligibleCount ?? 0}
+          archivedCount={previewPasteMutation.data?.archivedCount ?? 0}
+          copyKind={pasteRequest.copyKind}
+          deletedCount={previewPasteMutation.data?.deletedCount ?? 0}
+          duplicateCount={previewPasteMutation.data?.exactDuplicateCount ?? 0}
+          error={pasteMutation.error}
+          hasPreview={Boolean(previewPasteMutation.data)}
+          isPending={pasteMutation.isPending}
+          isPreviewPending={previewPasteMutation.isPending}
+          onClose={closePastePreview}
+          onConfirm={() => void pasteMeals()}
+          onRetryPreview={retryPastePreview}
+          previewError={previewPasteMutation.error}
+          returnFocusRef={pasteTriggerRef}
+        />
+      ) : null}
     </>
   );
 }
@@ -517,136 +691,5 @@ function AgendaLoading({ weekRange }: { weekRange: string }) {
         </section>
       ))}
     </div>
-  );
-}
-
-type MealPlanDayProps = {
-  date: IsoDate;
-  entries: MealPlanEntryDto[];
-  isRemoving: boolean;
-  isToday: boolean;
-  onAdd: (day: IsoDate, trigger: HTMLButtonElement) => void;
-  onAddButtonChange: (button: HTMLButtonElement | null) => void;
-  onEdit: (entry: MealPlanEntryDto, trigger: HTMLButtonElement) => void;
-  onRemove: (entry: MealPlanEntryDto) => Promise<void>;
-  onUndo: () => Promise<void>;
-  removedMeal: RemovedMeal | null;
-  restoreError: unknown;
-  restoring: boolean;
-};
-
-function MealPlanDay({
-  date,
-  entries,
-  isRemoving,
-  isToday,
-  onAdd,
-  onAddButtonChange,
-  onEdit,
-  onRemove,
-  onUndo,
-  removedMeal,
-  restoreError,
-  restoring
-}: MealPlanDayProps) {
-  const day = formatDay(date);
-
-  return (
-    <section
-      aria-label={`${day.weekday} ${day.dateLong}`}
-      className="py-5 first:pt-0"
-    >
-      <div className="flex items-baseline gap-2">
-        <h2 className="text-base font-bold text-slate-900">{day.weekday}</h2>
-        <p className="text-xs text-slate-500">
-          {day.date}{isToday ? " · Today" : ""}
-        </p>
-      </div>
-
-      {entries.length > 0 ? (
-        <ul className="mt-3 space-y-2">
-          {entries.map((entry) => (
-            <li
-              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
-              key={entry.id}
-            >
-              <button
-                aria-label={`Edit ${entry.recipe.title} on ${day.weekday}`}
-                className="min-w-0 flex-1 text-left"
-                onClick={(event) => onEdit(entry, event.currentTarget)}
-                type="button"
-              >
-                <p className="text-[0.65rem] font-bold uppercase tracking-wide text-leaf-700">
-                  {MEAL_TYPE_LABELS[entry.mealType]}
-                </p>
-                <p className="mt-1 truncate text-sm font-semibold text-slate-900">
-                  {entry.recipe.title}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {entry.servings} serving{entry.servings === 1 ? "" : "s"}
-                  {entry.recipe.archived ? " · Archived recipe" : ""}
-                </p>
-              </button>
-              {!entry.recipe.archived ? (
-                <Link
-                  aria-label={`View ${entry.recipe.title} recipe`}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600"
-                  href={`/recipes/${entry.recipe.id}`}
-                >
-                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              ) : null}
-              <button
-                aria-label={`Remove ${entry.recipe.title} from ${day.weekday}`}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700 disabled:text-slate-400"
-                disabled={isRemoving || restoring}
-                onClick={() => onRemove(entry)}
-                type="button"
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-3 text-sm text-slate-500">Nothing planned yet</p>
-      )}
-
-      {removedMeal ? (
-        <InlineNotice
-          aria-live="polite"
-          className="mt-3 flex items-center justify-between gap-3"
-          role="status"
-          tone="neutral"
-        >
-          <span>{removedMeal.recipeTitle} removed</span>
-          <button
-            className="font-semibold text-leaf-700 disabled:text-slate-400"
-            disabled={restoring}
-            onClick={onUndo}
-            type="button"
-          >
-            {restoring ? "Restoring..." : "Undo"}
-          </button>
-        </InlineNotice>
-      ) : null}
-
-      {removedMeal && restoreError ? (
-        <InlineNotice className="mt-2" role="alert" tone="error">
-          {getPlannerErrorMessage("undo")}
-        </InlineNotice>
-      ) : null}
-
-      <button
-        aria-label={`Add meal to ${day.weekday}, ${day.dateLong}`}
-        className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-leaf-300 bg-leaf-50 px-4 py-2 text-sm font-semibold text-leaf-700"
-        onClick={(event) => onAdd(date, event.currentTarget)}
-        ref={onAddButtonChange}
-        type="button"
-      >
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        Add meal
-      </button>
-    </section>
   );
 }

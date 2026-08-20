@@ -1,9 +1,18 @@
 import type { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
 import {
+  MAX_MEAL_PLAN_PASTE_ENTRIES,
   MAX_PLANNED_SERVINGS,
   MEAL_TYPE_VALUES
 } from "./meal-planning.constants";
+import {
+  classifyMealPlanPaste,
+  type ExistingMealPlanEntry,
+  type MealPlanPasteInput,
+  type MealPlanPastePreview,
+  type MealPlanPasteResult,
+  type MealPlanRecipeAvailability
+} from "./meal-planning.copy";
 import {
   getWeekStart,
   isDateInWeek,
@@ -68,6 +77,20 @@ type MealPlanRecipeOptionRow = {
   title: string;
 };
 
+type PasteRecipeRow = {
+  archived_at: string | null;
+  id: string;
+};
+
+type PasteTargetPlanRow = {
+  id: string;
+  meal_plan_entries: {
+    meal_type: MealType;
+    planned_for: string;
+    recipe_id: string;
+  }[] | null;
+};
+
 const MEAL_PLAN_WEEK_SELECT =
   "id,week_start_date,meal_plan_entries(id,meal_plan_id,recipe_id,planned_for,meal_type,servings,recipes(id,title,servings,archived_at))";
 
@@ -117,6 +140,20 @@ function validateEntryValues(
     throw new Error(
       `Servings must be a whole number from 1 to ${MAX_PLANNED_SERVINGS}.`
     );
+  }
+}
+
+function validatePasteInput(input: MealPlanPasteInput) {
+  assertMonday(input.weekStartDate);
+
+  if (input.entries.length > MAX_MEAL_PLAN_PASTE_ENTRIES) {
+    throw new Error(
+      `Paste no more than ${MAX_MEAL_PLAN_PASTE_ENTRIES} meals at once.`
+    );
+  }
+
+  for (const entry of input.entries) {
+    validateEntryValues({ ...entry, weekStartDate: input.weekStartDate });
   }
 }
 
@@ -170,6 +207,77 @@ async function getAuthenticatedOwnerId(supabase: SupabaseBrowserClient) {
   }
 
   return user.id;
+}
+
+async function getPasteRecipeAvailability(
+  supabase: SupabaseBrowserClient,
+  ownerId: string,
+  recipeIds: string[]
+): Promise<MealPlanRecipeAvailability[]> {
+  const uniqueRecipeIds = Array.from(new Set(recipeIds));
+
+  if (!uniqueRecipeIds.length) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("recipes")
+    .select("id,archived_at")
+    .eq("owner_id", ownerId)
+    .in("id", uniqueRecipeIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const recipesById = new Map(
+    ((data ?? []) as PasteRecipeRow[]).map((recipe) => [recipe.id, recipe])
+  );
+
+  return uniqueRecipeIds.map((recipeId) => {
+    const recipe = recipesById.get(recipeId);
+
+    return {
+      recipeId,
+      status: !recipe
+        ? "unavailable"
+        : recipe.archived_at
+          ? "archived"
+          : "active"
+    };
+  });
+}
+
+async function getPasteTarget(
+  supabase: SupabaseBrowserClient,
+  weekStartDate: IsoDate
+): Promise<{ entries: ExistingMealPlanEntry[]; planId: string | null }> {
+  const { data, error } = await supabase
+    .from("meal_plans")
+    .select("id,meal_plan_entries(recipe_id,planned_for,meal_type)")
+    .eq("week_start_date", weekStartDate)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const plan = data as unknown as PasteTargetPlanRow | null;
+
+  return {
+    entries: (plan?.meal_plan_entries ?? []).flatMap((entry) =>
+      parseIsoDate(entry.planned_for)
+        ? [
+            {
+              mealType: entry.meal_type,
+              plannedFor: entry.planned_for as IsoDate,
+              recipeId: entry.recipe_id
+            }
+          ]
+        : []
+    ),
+    planId: plan?.id ?? null
+  };
 }
 
 async function getOwnedRecipe(
@@ -435,6 +543,120 @@ export async function updateMealPlanEntry(
   }
 
   return mappedEntry;
+}
+
+export async function previewMealPlanEntries(
+  supabase: SupabaseBrowserClient,
+  input: MealPlanPasteInput
+): Promise<MealPlanPastePreview> {
+  validatePasteInput(input);
+
+  if (!input.entries.length) {
+    return {
+      archivedCount: 0,
+      deletedCount: 0,
+      eligibleCount: 0,
+      exactDuplicateCount: 0
+    };
+  }
+
+  const ownerId = await getAuthenticatedOwnerId(supabase);
+  const [recipeAvailability, target] = await Promise.all([
+    getPasteRecipeAvailability(
+      supabase,
+      ownerId,
+      input.entries.map(({ recipeId }) => recipeId)
+    ),
+    getPasteTarget(supabase, input.weekStartDate)
+  ]);
+  const classification = classifyMealPlanPaste(
+    input.entries,
+    target.entries,
+    recipeAvailability
+  );
+
+  return {
+    archivedCount: classification.archivedCount,
+    deletedCount: classification.deletedCount,
+    eligibleCount: classification.eligibleCount,
+    exactDuplicateCount: classification.exactDuplicateCount
+  };
+}
+
+export async function addMealPlanEntries(
+  supabase: SupabaseBrowserClient,
+  input: MealPlanPasteInput
+): Promise<MealPlanPasteResult> {
+  validatePasteInput(input);
+
+  if (!input.entries.length) {
+    return {
+      addedCount: 0,
+      archivedCount: 0,
+      deletedCount: 0,
+      exactDuplicateCount: 0
+    };
+  }
+
+  const ownerId = await getAuthenticatedOwnerId(supabase);
+  const [recipeAvailability, target] = await Promise.all([
+    getPasteRecipeAvailability(
+      supabase,
+      ownerId,
+      input.entries.map(({ recipeId }) => recipeId)
+    ),
+    getPasteTarget(supabase, input.weekStartDate)
+  ]);
+  const classification = classifyMealPlanPaste(
+    input.entries,
+    target.entries,
+    recipeAvailability
+  );
+
+  if (!classification.eligibleEntries.length) {
+    return {
+      addedCount: 0,
+      archivedCount: classification.archivedCount,
+      deletedCount: classification.deletedCount,
+      exactDuplicateCount: classification.exactDuplicateCount
+    };
+  }
+
+  const planId =
+    target.planId ??
+    (await resolveMealPlanId(supabase, ownerId, input.weekStartDate));
+  const rows: MealPlanEntryInsert[] = classification.eligibleEntries.map(
+    (entry) => ({
+      meal_plan_id: planId,
+      meal_type: entry.mealType,
+      planned_for: entry.plannedFor,
+      recipe_id: entry.recipeId,
+      servings: entry.servings
+    })
+  );
+  const { data, error } = await supabase
+    .from("meal_plan_entries")
+    .upsert(rows as never[], {
+      ignoreDuplicates: true,
+      onConflict: "meal_plan_id,planned_for,meal_type,recipe_id"
+    })
+    .select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  const addedCount = (data ?? []).length;
+
+  return {
+    addedCount,
+    archivedCount: classification.archivedCount,
+    deletedCount: classification.deletedCount,
+    exactDuplicateCount:
+      classification.exactDuplicateCount +
+      classification.eligibleEntries.length -
+      addedCount
+  };
 }
 
 export async function removeMealPlanEntry(

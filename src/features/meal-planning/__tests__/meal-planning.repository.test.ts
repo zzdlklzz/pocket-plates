@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   addMealPlanEntry,
+  addMealPlanEntries,
   DuplicateMealPlanEntryError,
   getMealPlanWeek,
   listMealPlanRecipeOptions,
+  previewMealPlanEntries,
   removeMealPlanEntry,
   restoreMealPlanEntry,
   updateMealPlanEntry
 } from "../meal-planning.repository";
+import type { MealPlanPasteInput } from "../meal-planning.copy";
 import type { AddMealPlanEntryInput } from "../meal-planning.types";
 
 const baseInput: AddMealPlanEntryInput = {
@@ -142,6 +145,104 @@ function createUpdateClient({
 
   return { client: { from }, currentEq, entryEq, planEq, update };
 }
+
+function createPasteClient({
+  batchError = null,
+  insertedIds = ["inserted-1"],
+  recipeRows = [
+    { archived_at: null, id: "active-1" },
+    { archived_at: null, id: "active-2" },
+    { archived_at: "2026-08-20T00:00:00Z", id: "archived-1" }
+  ],
+  targetEntries = []
+}: {
+  batchError?: Error | null;
+  insertedIds?: string[];
+  recipeRows?: { archived_at: string | null; id: string }[];
+  targetEntries?: {
+    meal_type: "breakfast" | "dinner" | "lunch";
+    planned_for: string;
+    recipe_id: string;
+  }[];
+} = {}) {
+  const getUser = vi.fn().mockResolvedValue({
+    data: { user: { id: "owner-1" } },
+    error: null
+  });
+  const recipeIn = vi.fn().mockResolvedValue({ data: recipeRows, error: null });
+  const recipeOwnerEq = vi.fn(() => ({ in: recipeIn }));
+  const planMaybeSingle = vi.fn().mockResolvedValue({
+    data: targetEntries.length
+      ? { id: "plan-1", meal_plan_entries: targetEntries }
+      : null,
+    error: null
+  });
+  const planEq = vi.fn(() => ({ maybeSingle: planMaybeSingle }));
+  const planSingle = vi.fn().mockResolvedValue({
+    data: { id: "plan-1" },
+    error: null
+  });
+  const planUpsert = vi.fn(() => ({
+    select: vi.fn(() => ({ single: planSingle }))
+  }));
+  const batchSelect = vi.fn().mockResolvedValue({
+    data: batchError ? null : insertedIds.map((id) => ({ id })),
+    error: batchError
+  });
+  const entryUpsert = vi.fn(() => ({ select: batchSelect }));
+  const from = vi.fn((table: string) => {
+    if (table === "recipes") {
+      return {
+        select: vi.fn(() => ({ eq: recipeOwnerEq }))
+      };
+    }
+    if (table === "meal_plans") {
+      return {
+        select: vi.fn(() => ({ eq: planEq })),
+        upsert: planUpsert
+      };
+    }
+    return { upsert: entryUpsert };
+  });
+
+  return {
+    batchSelect,
+    client: { auth: { getUser }, from },
+    entryUpsert,
+    planUpsert,
+    recipeIn
+  };
+}
+
+const pasteInput: MealPlanPasteInput = {
+  entries: [
+    {
+      mealType: "dinner",
+      plannedFor: "2026-08-17",
+      recipeId: "active-1",
+      servings: 2
+    },
+    {
+      mealType: "lunch",
+      plannedFor: "2026-08-18",
+      recipeId: "active-2",
+      servings: 3
+    },
+    {
+      mealType: "dinner",
+      plannedFor: "2026-08-19",
+      recipeId: "archived-1",
+      servings: 2
+    },
+    {
+      mealType: "breakfast",
+      plannedFor: "2026-08-20",
+      recipeId: "missing-1",
+      servings: 1
+    }
+  ],
+  weekStartDate: "2026-08-17"
+};
 
 describe("meal planner week reads", () => {
   it("returns an empty DTO without creating a plan row", async () => {
@@ -582,5 +683,151 @@ describe("meal planner entry writes", () => {
     ).resolves.toEqual(baseInput);
 
     expect(eq).toHaveBeenCalledWith("id", "entry-1");
+  });
+});
+
+describe("meal planner batch paste", () => {
+  it("previews a partial target without writing a plan or entries", async () => {
+    const { client, entryUpsert, planUpsert } = createPasteClient({
+      targetEntries: [
+        {
+          meal_type: "dinner",
+          planned_for: "2026-08-17",
+          recipe_id: "active-1"
+        }
+      ]
+    });
+
+    await expect(
+      previewMealPlanEntries(client as never, pasteInput)
+    ).resolves.toEqual({
+      archivedCount: 1,
+      deletedCount: 1,
+      eligibleCount: 1,
+      exactDuplicateCount: 1
+    });
+    expect(planUpsert).not.toHaveBeenCalled();
+    expect(entryUpsert).not.toHaveBeenCalled();
+  });
+
+  it("rechecks active ownership, resolves one plan, and writes one bounded batch", async () => {
+    const { client, entryUpsert, planUpsert, recipeIn } = createPasteClient({
+      insertedIds: ["inserted-1"]
+    });
+
+    await expect(addMealPlanEntries(client as never, pasteInput)).resolves.toEqual({
+      addedCount: 1,
+      archivedCount: 1,
+      deletedCount: 1,
+      exactDuplicateCount: 1
+    });
+
+    expect(recipeIn).toHaveBeenCalledWith("id", [
+      "active-1",
+      "active-2",
+      "archived-1",
+      "missing-1"
+    ]);
+    expect(planUpsert).toHaveBeenCalledTimes(1);
+    expect(entryUpsert).toHaveBeenCalledTimes(1);
+    expect(entryUpsert).toHaveBeenCalledWith(
+      [
+        {
+          meal_plan_id: "plan-1",
+          meal_type: "dinner",
+          planned_for: "2026-08-17",
+          recipe_id: "active-1",
+          servings: 2
+        },
+        {
+          meal_plan_id: "plan-1",
+          meal_type: "lunch",
+          planned_for: "2026-08-18",
+          recipe_id: "active-2",
+          servings: 3
+        }
+      ],
+      {
+        ignoreDuplicates: true,
+        onConflict: "meal_plan_id,planned_for,meal_type,recipe_id"
+      }
+    );
+  });
+
+  it("does not create a target plan when every copied recipe is unavailable", async () => {
+    const { client, entryUpsert, planUpsert } = createPasteClient({
+      recipeRows: [
+        {
+          archived_at: "2026-08-20T00:00:00Z",
+          id: "archived-1"
+        }
+      ]
+    });
+
+    await expect(addMealPlanEntries(client as never, pasteInput)).resolves.toEqual({
+      addedCount: 0,
+      archivedCount: 1,
+      deletedCount: 3,
+      exactDuplicateCount: 0
+    });
+    expect(planUpsert).not.toHaveBeenCalled();
+    expect(entryUpsert).not.toHaveBeenCalled();
+  });
+
+  it("does not write when a repeated paste is already present", async () => {
+    const { client, entryUpsert, planUpsert } = createPasteClient({
+      targetEntries: [
+        {
+          meal_type: "dinner",
+          planned_for: "2026-08-17",
+          recipe_id: "active-1"
+        },
+        {
+          meal_type: "lunch",
+          planned_for: "2026-08-18",
+          recipe_id: "active-2"
+        }
+      ]
+    });
+
+    await expect(addMealPlanEntries(client as never, pasteInput)).resolves.toMatchObject({
+      addedCount: 0,
+      exactDuplicateCount: 2
+    });
+    expect(planUpsert).not.toHaveBeenCalled();
+    expect(entryUpsert).not.toHaveBeenCalled();
+  });
+
+  it("counts a duplicate created after the target read from actual inserts", async () => {
+    const { client, entryUpsert } = createPasteClient({ insertedIds: [] });
+
+    await expect(addMealPlanEntries(client as never, pasteInput)).resolves.toMatchObject({
+      addedCount: 0,
+      exactDuplicateCount: 2
+    });
+    expect(entryUpsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("propagates one atomic batch failure without retrying individual rows", async () => {
+    const error = new Error("batch failed");
+    const { client, entryUpsert } = createPasteClient({ batchError: error });
+
+    await expect(addMealPlanEntries(client as never, pasteInput)).rejects.toBe(error);
+    expect(entryUpsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects oversized paste input before making a request", async () => {
+    const getUser = vi.fn();
+
+    await expect(
+      addMealPlanEntries(
+        { auth: { getUser } } as never,
+        {
+          entries: Array.from({ length: 101 }, () => pasteInput.entries[0]),
+          weekStartDate: "2026-08-17"
+        }
+      )
+    ).rejects.toThrow("100 meals");
+    expect(getUser).not.toHaveBeenCalled();
   });
 });

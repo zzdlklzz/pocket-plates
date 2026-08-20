@@ -5,12 +5,15 @@ import { queryKeys } from "@/lib/query/query-keys";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   addMealPlanEntry,
+  addMealPlanEntries,
   getMealPlanWeek,
   listMealPlanRecipeOptions,
   removeMealPlanEntry,
+  previewMealPlanEntries,
   restoreMealPlanEntry,
   updateMealPlanEntry
 } from "./meal-planning.repository";
+import type { MealPlanPasteInput } from "./meal-planning.copy";
 import type {
   AddMealPlanEntryInput,
   IsoDate,
@@ -103,6 +106,27 @@ export function useUpdateMealPlanEntry() {
   return useMutation({
     mutationFn: (input: UpdateMealPlanEntryInput) =>
       updateMealPlanEntry(createSupabaseBrowserClient(), input),
+    onSuccess: async (_, input) => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.mealPlanning.week(input.weekStartDate)
+      });
+    }
+  });
+}
+
+export function usePreviewMealPlanEntries() {
+  return useMutation({
+    mutationFn: (input: MealPlanPasteInput) =>
+      previewMealPlanEntries(createSupabaseBrowserClient(), input)
+  });
+}
+
+export function useAddMealPlanEntries() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: MealPlanPasteInput) =>
+      addMealPlanEntries(createSupabaseBrowserClient(), input),
     onSuccess: async (_, input) => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.mealPlanning.week(input.weekStartDate)

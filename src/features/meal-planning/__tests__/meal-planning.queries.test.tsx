@@ -6,9 +6,11 @@ import { queryKeys } from "@/lib/query/query-keys";
 
 const mocks = vi.hoisted(() => ({
   addMealPlanEntry: vi.fn(),
+  addMealPlanEntries: vi.fn(),
   createSupabaseBrowserClient: vi.fn(),
   getMealPlanWeek: vi.fn(),
   listMealPlanRecipeOptions: vi.fn(),
+  previewMealPlanEntries: vi.fn(),
   removeMealPlanEntry: vi.fn(),
   restoreMealPlanEntry: vi.fn(),
   updateMealPlanEntry: vi.fn()
@@ -20,8 +22,10 @@ vi.mock("@/lib/supabase/client", () => ({
 
 vi.mock("../meal-planning.repository", () => ({
   addMealPlanEntry: mocks.addMealPlanEntry,
+  addMealPlanEntries: mocks.addMealPlanEntries,
   getMealPlanWeek: mocks.getMealPlanWeek,
   listMealPlanRecipeOptions: mocks.listMealPlanRecipeOptions,
+  previewMealPlanEntries: mocks.previewMealPlanEntries,
   removeMealPlanEntry: mocks.removeMealPlanEntry,
   restoreMealPlanEntry: mocks.restoreMealPlanEntry,
   updateMealPlanEntry: mocks.updateMealPlanEntry
@@ -29,8 +33,10 @@ vi.mock("../meal-planning.repository", () => ({
 
 import {
   useAddMealPlanEntry,
+  useAddMealPlanEntries,
   useMealPlanRecipeOptions,
   useMealPlanWeek,
+  usePreviewMealPlanEntries,
   useRemoveMealPlanEntry,
   useRestoreMealPlanEntry,
   useUpdateMealPlanEntry
@@ -197,6 +203,68 @@ describe("meal planner queries", () => {
       queryKey: queryKeys.mealPlanning.week("2026-08-17")
     });
     expect(invalidateQueries).toHaveBeenNthCalledWith(4, {
+      queryKey: queryKeys.mealPlanning.week("2026-08-17")
+    });
+  });
+
+  it("previews without invalidation and invalidates only after batch paste", async () => {
+    const preview = {
+      archivedCount: 1,
+      deletedCount: 0,
+      eligibleCount: 1,
+      exactDuplicateCount: 1
+    };
+    mocks.previewMealPlanEntries.mockResolvedValue(preview);
+    mocks.addMealPlanEntries.mockResolvedValue({
+      addedCount: 1,
+      archivedCount: 1,
+      deletedCount: 0,
+      exactDuplicateCount: 1
+    });
+    const queryClient = createQueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const wrapper = createWrapper(queryClient);
+    const { result: previewResult } = renderHook(
+      () => usePreviewMealPlanEntries(),
+      { wrapper }
+    );
+    const { result: pasteResult } = renderHook(
+      () => useAddMealPlanEntries(),
+      { wrapper }
+    );
+    const input = {
+      entries: [
+        {
+          mealType: "dinner" as const,
+          plannedFor: "2026-08-19" as const,
+          recipeId: "recipe-1",
+          servings: 2
+        }
+      ],
+      weekStartDate: "2026-08-17" as const
+    };
+
+    await act(async () => {
+      await expect(previewResult.current.mutateAsync(input)).resolves.toEqual(
+        preview
+      );
+    });
+    expect(invalidateQueries).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await pasteResult.current.mutateAsync(input);
+    });
+
+    expect(mocks.previewMealPlanEntries).toHaveBeenCalledWith(
+      { client: "supabase" },
+      input
+    );
+    expect(mocks.addMealPlanEntries).toHaveBeenCalledWith(
+      { client: "supabase" },
+      input
+    );
+    expect(invalidateQueries).toHaveBeenCalledOnce();
+    expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: queryKeys.mealPlanning.week("2026-08-17")
     });
   });
