@@ -1,8 +1,24 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RecipeForm } from "../RecipeForm";
+import { RecipeImageField } from "../RecipeImageField";
 import type { RecipeFormValues } from "../recipe.types";
+
+const mocks = vi.hoisted(() => ({
+  createRecipe: vi.fn(),
+  updateRecipe: vi.fn(),
+  processRecipeImage: vi.fn<(file: File) => Promise<File>>()
+}));
+
+vi.mock("../recipe-image.processor", () => ({
+  processRecipeImage: mocks.processRecipeImage
+}));
+
+vi.mock("../recipe.queries", () => ({
+  useCreateRecipe: () => ({ error: null, isPending: false, mutateAsync: mocks.createRecipe }),
+  useUpdateRecipe: () => ({ error: null, isPending: false, mutateAsync: mocks.updateRecipe })
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() })
@@ -11,6 +27,13 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({})
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.createRecipe.mockResolvedValue("recipe-1");
+  mocks.updateRecipe.mockResolvedValue("recipe-1");
+  mocks.processRecipeImage.mockImplementation(async (file) => file);
+});
 
 function renderRecipeForm(initialValues?: RecipeFormValues, initialImageUrl?: string) {
   const queryClient = new QueryClient({
@@ -73,7 +96,7 @@ describe("RecipeForm", () => {
     ]);
   });
 
-  it("selects, previews, replaces, and removes a device image", () => {
+  it("selects, previews, replaces, and removes a device image", async () => {
     const createObjectUrl = vi.fn(() => "blob:recipe-cover");
     const revokeObjectUrl = vi.fn();
     Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectUrl });
@@ -83,7 +106,7 @@ describe("RecipeForm", () => {
     const file = new File(["image"], "dinner.webp", { type: "image/webp" });
     fireEvent.change(screen.getByLabelText("Choose image"), { target: { files: [file] } });
 
-    expect(screen.getByAltText("Recipe cover preview")).toHaveAttribute("src", "blob:recipe-cover");
+    expect(await screen.findByAltText("Recipe cover preview")).toHaveAttribute("src", "blob:recipe-cover");
     expect(screen.getByText("Selected: dinner.webp")).toBeInTheDocument();
     expect(screen.getByLabelText("Replace image")).toHaveAttribute(
       "accept",
@@ -93,6 +116,148 @@ describe("RecipeForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     expect(screen.queryByAltText("Recipe cover preview")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Choose image")).toBeInTheDocument();
+  });
+
+  it("waits for image processing before previewing or emitting a replacement", async () => {
+    const processedFile = new File(["processed"], "dinner.webp", { type: "image/webp" });
+    let finishProcessing: ((file: File) => void) | undefined;
+    const processing = new Promise<File>((resolve) => {
+      finishProcessing = resolve;
+    });
+    mocks.processRecipeImage.mockReturnValueOnce(processing);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:processed-cover")
+    });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+    const onChange = vi.fn();
+    render(<RecipeImageField onChange={onChange} />);
+
+    const sourceFile = new File(["source"], "dinner.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("Choose image"), { target: { files: [sourceFile] } });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Processing image...");
+    expect(screen.queryByAltText("Recipe cover preview")).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+
+    finishProcessing?.(processedFile);
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith({ file: processedFile, type: "replace" });
+    });
+    expect(screen.getByAltText("Recipe cover preview")).toHaveAttribute("src", "blob:processed-cover");
+    expect(screen.getByText("Selected: dinner.webp")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("does not submit the recipe until image processing finishes", async () => {
+    const processedFile = new File(["processed"], "dinner.webp", { type: "image/webp" });
+    let finishProcessing: ((file: File) => void) | undefined;
+    const processing = new Promise<File>((resolve) => {
+      finishProcessing = resolve;
+    });
+    mocks.processRecipeImage.mockReturnValueOnce(processing);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:processed-cover")
+    });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+    const values: RecipeFormValues = {
+      title: "Dinner",
+      servings: 2,
+      mealTypes: ["dinner"],
+      costRating: "",
+      difficulty: "",
+      effortLabels: [],
+      equipmentKeys: [],
+      sourceLinks: [],
+      notes: "",
+      ingredients: [{ name: "Rice", amount: "", unit: "", notes: "" }],
+      steps: [{ instruction: "Cook the rice." }]
+    };
+    renderRecipeForm(values);
+
+    const sourceFile = new File(["source"], "dinner.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("Choose image"), { target: { files: [sourceFile] } });
+
+    const processingButton = screen.getByRole("button", { name: "Processing image..." });
+    expect(processingButton).toBeDisabled();
+    fireEvent.click(processingButton);
+    expect(mocks.updateRecipe).not.toHaveBeenCalled();
+
+    finishProcessing?.(processedFile);
+    const saveButton = await screen.findByRole("button", { name: "Save recipe" });
+    expect(saveButton).toBeEnabled();
+    fireEvent.click(saveButton);
+
+    await waitFor(() => expect(mocks.updateRecipe).toHaveBeenCalledTimes(1));
+  });
+
+  it("ignores a processing result after the image field unmounts", async () => {
+    const processedFile = new File(["processed"], "dinner.webp", { type: "image/webp" });
+    let finishProcessing: ((file: File) => void) | undefined;
+    const processing = new Promise<File>((resolve) => {
+      finishProcessing = resolve;
+    });
+    mocks.processRecipeImage.mockReturnValueOnce(processing);
+    const createObjectUrl = vi.fn(() => "blob:unused-cover");
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectUrl
+    });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+    const onChange = vi.fn();
+    const { unmount } = render(<RecipeImageField onChange={onChange} />);
+
+    const sourceFile = new File(["source"], "dinner.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("Choose image"), { target: { files: [sourceFile] } });
+    unmount();
+
+    await act(async () => {
+      finishProcessing?.(processedFile);
+      await processing;
+    });
+
+    expect(createObjectUrl).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("keeps the pending replacement when processing another image fails", async () => {
+    const firstProcessedFile = new File(["processed"], "first.webp", { type: "image/webp" });
+    mocks.processRecipeImage
+      .mockResolvedValueOnce(firstProcessedFile)
+      .mockRejectedValueOnce(new Error("This image could not be processed. Choose a different file."));
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:first-cover")
+    });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+    const onChange = vi.fn();
+    render(
+      <RecipeImageField
+        initialImageUrl="https://example.com/current.jpg"
+        onChange={onChange}
+      />
+    );
+
+    const firstSourceFile = new File(["first"], "first.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("Replace image"), {
+      target: { files: [firstSourceFile] }
+    });
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+
+    const failedSourceFile = new File(["broken"], "broken.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("Replace image"), {
+      target: { files: [failedSourceFile] }
+    });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This image could not be processed. Choose a different file."
+    );
+    expect(screen.getByAltText("Recipe cover preview")).toHaveAttribute("src", "blob:first-cover");
+    expect(screen.getByText("Selected: first.webp")).toBeInTheDocument();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith({ file: firstProcessedFile, type: "replace" });
   });
 
   it("keeps an existing cover until the user removes or replaces it", () => {

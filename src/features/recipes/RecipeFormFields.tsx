@@ -17,16 +17,26 @@ type RecipeFormFieldsProps = {
   initialImageUrl?: string | null;
   isEditing: boolean;
   onImageChange: (change: RecipeImageChange) => void;
+  onImageProcessingChange: (isProcessing: boolean) => void;
 };
 
-export function RecipeFormFields({ initialImageUrl, isEditing, onImageChange }: RecipeFormFieldsProps) {
+export function RecipeFormFields({
+  initialImageUrl,
+  isEditing,
+  onImageChange,
+  onImageProcessingChange
+}: RecipeFormFieldsProps) {
   return (
     <>
       <RecipeBasicsFields isEditing={isEditing} />
       <RecipeMealTypeFields />
       <RecipeOptionalFields />
       <RecipeDiscoveryFields />
-      <RecipeImageField initialImageUrl={initialImageUrl} onChange={onImageChange} />
+      <RecipeImageField
+        initialImageUrl={initialImageUrl}
+        onChange={onImageChange}
+        onProcessingChange={onImageProcessingChange}
+      />
       <RecipeSourceFields />
       <RecipeIngredientFields />
       <RecipeStepFields />

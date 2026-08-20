@@ -25,6 +25,7 @@ export function RecipeForm({ initialImageUrl, initialValues, recipeId }: RecipeF
   const router = useRouter();
   const [isRedirecting, startRedirect] = useTransition();
   const [imageChange, setImageChange] = useState<RecipeImageChange>({ type: "keep" });
+  const [isImageProcessing, setIsImageProcessing] = useState(false);
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe(recipeId ?? "");
   const form = useForm<RecipeFormValues>({
@@ -32,9 +33,13 @@ export function RecipeForm({ initialImageUrl, initialValues, recipeId }: RecipeF
     resolver: zodResolver(recipeFormSchema)
   });
   const mutation = recipeId ? updateRecipe : createRecipe;
-  const isSaving = mutation.isPending || isRedirecting;
+  const isSaving = mutation.isPending || isRedirecting || isImageProcessing;
 
   async function onSubmit(values: RecipeFormValues) {
+    if (isImageProcessing) {
+      return;
+    }
+
     const id = await mutation.mutateAsync({ imageChange, values });
     startRedirect(() => {
       router.push(`/recipes/${id}`);
@@ -54,6 +59,7 @@ export function RecipeForm({ initialImageUrl, initialValues, recipeId }: RecipeF
               initialImageUrl={initialImageUrl}
               isEditing={Boolean(recipeId)}
               onImageChange={setImageChange}
+              onImageProcessingChange={setIsImageProcessing}
             />
 
             {mutation.error ? (
@@ -62,7 +68,12 @@ export function RecipeForm({ initialImageUrl, initialValues, recipeId }: RecipeF
               </InlineNotice>
             ) : null}
 
-            <ActionButton fullWidth pending={isSaving} pendingLabel="Saving..." type="submit">
+            <ActionButton
+              fullWidth
+              pending={isSaving}
+              pendingLabel={isImageProcessing ? "Processing image..." : "Saving..."}
+              type="submit"
+            >
               <Save className="h-4 w-4" aria-hidden="true" />
               Save recipe
             </ActionButton>

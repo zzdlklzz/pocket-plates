@@ -1,7 +1,7 @@
 import type { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   getRecipeImageExtension,
-  getRecipeImageValidationError,
+  getRecipeImageUploadValidationError,
   RECIPE_IMAGE_BUCKET,
   RECIPE_IMAGE_SIGNED_URL_TTL_SECONDS
 } from "./recipe-image.constants";
@@ -65,7 +65,7 @@ export async function uploadRecipeImage(
   recipeId: string,
   file: File
 ) {
-  const validationError = getRecipeImageValidationError(file);
+  const validationError = getRecipeImageUploadValidationError(file);
   const extension = getRecipeImageExtension(file.type);
 
   if (validationError || !extension) {

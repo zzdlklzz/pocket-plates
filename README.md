@@ -1,6 +1,6 @@
 # PocketPlates
 
-PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, private images, title-or-ingredient search, controlled effort labels, and controlled equipment/setup metadata with combined filtering.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, title-or-ingredient search, controlled effort labels, and controlled equipment/setup metadata with combined filtering.
 
 ## Recommended Stack
 
@@ -14,7 +14,7 @@ PocketPlates is a multi-user, private-first mobile recipe app for students and b
 - Backend: Supabase free tier
 - Database: Supabase Postgres
 - Auth: Supabase Auth
-- Images: private, owner-scoped Supabase Storage uploads
+- Images: browser-optimized, owner-scoped private Supabase Storage uploads
 - Application CI: GitHub Actions using a version-matched Playwright container; deployments use Vercel Git integration and a separate Supabase migration workflow
 - Testing: Vitest for unit/integration tests, Playwright for end-to-end tests
 - Auth email: Supabase custom SMTP, initially via a dedicated Gmail or Google Workspace mailbox if suitable
@@ -74,7 +74,7 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 
 ## Future Features
 
-- Image optimization and moderation before future public recipe sharing
+- Image moderation before future public recipe sharing
 - Student-friendly tags such as budget, high-protein, freezer-friendly, and dorm-friendly
 - Weekly meal prep planner
 - Grocery list from selected recipes

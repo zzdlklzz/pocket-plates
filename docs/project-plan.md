@@ -191,6 +191,7 @@ Goal: make saved recipes easier to choose when budget, effort, and equipment mat
 - [x] Add an isolated signed-in local Supabase Playwright runner and verify create/edit, discovery-metadata persistence, combined filters, chip removal, clear actions, no-match recovery, reloads, enlarged-text mobile usability, and signed-out protection on mobile and desktop.
 - [x] Support multiple source links per recipe.
 - [x] Replace pasted image URLs with private Supabase Storage uploads, including 2 MB JPEG/PNG/WebP validation, previews, owner-scoped policies, signed reads, and cleanup behavior.
+- [x] Optimize selected recipe covers in the browser before upload, including orientation-aware decoding, aspect-ratio-preserving 1600-pixel bounds, WebP output, safe replacement failures, and processed-file size validation.
 
 ### Stage 3: Meal Prep Utilities
 
@@ -482,20 +483,22 @@ The archive action is a soft archive: it sets `recipes.archived_at` and hides th
 
 This section records the completed image-upload slice and the remaining cost-entry work after the validation, error feedback, pending-state, filter, component-refactor, public Supabase config, and multiple-source-link slices.
 
-### Supabase Storage Image Upload — Completed
+### Supabase Storage Image Upload And Optimization — Completed
 
 The pasted Image URL field has been replaced with a private upload flow:
 
 - [x] Use a file input for JPEG, PNG, and WebP images.
-- [x] Enforce the configured 2 MB bucket limit before upload.
+- [x] Accept JPEG, PNG, and WebP source photos larger than 2 MB, optimize them locally, and enforce the configured 2 MB bucket limit on the processed upload.
+- [x] Decode common mobile-camera orientation metadata, preserve aspect ratio, bound the longest edge to 1600 pixels without enlargement, and export one WebP cover at 0.82 quality.
 - [x] Show a selected-image preview and allow remove or replace actions.
+- [x] Keep the current or pending cover unchanged when source decoding or processed-output validation fails.
 - [x] Store image files in the private `recipe-images` Supabase Storage bucket.
 - [x] Keep images private to the recipe owner unless public recipe sharing is intentionally added.
 - [x] Store the durable path in `recipes.image_storage_path` and preserve `recipes.image_url` only as a legacy fallback.
 - [x] Add owner-scoped Storage policies through a forward migration.
 - [x] Create a recipe before uploading, replace old files only after a new upload and reference update succeed, and clean up failed or superseded objects where safe.
 
-Follow-up image work remains intentionally separate: resize/compress large device photos before upload, moderate images before future public sharing, and add public delivery only alongside recipe visibility rules.
+Follow-up image work remains intentionally separate: moderate images before future public sharing and add public delivery only alongside recipe visibility rules.
 
 ### Dynamic Cost Entry And Cost Rating
 

@@ -239,10 +239,11 @@ Recipe create/edit/archive/restore/permanent-delete flows use the same repositor
 - `/recipes/new` checks the server auth session before rendering the client recipe form.
 - `/recipes/[id]` checks the server auth session before rendering recipe detail.
 - `/recipes/[id]/edit` checks the server auth session before rendering the edit form.
-- `RecipeForm.tsx` owns React Hook Form setup, image-change state, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider`.
+- `RecipeForm.tsx` owns React Hook Form setup, image-change and image-processing state, save mutations, submission errors, and redirect state. It provides form state to its field sections through `FormProvider` and blocks submission until a selected cover finishes processing.
 - `RecipeFormFields.tsx` coordinates the basic, meal-type, optional metadata, discovery, image, source, ingredient, and step sections. Basic fields and source-link controls remain local, while the cost and difficulty selects reuse the same typed option definitions as the recipe filters.
 - `RecipeDiscoveryFields.tsx` owns the optional effort and equipment/setup selection UI. It stores stable keys in React Hook Form, renders controlled labels and descriptions from `recipe-discovery.constants.ts`, automatically replaces `Oven` with `No oven needed` or vice versa, and inherits the form fieldset's pending disabled state.
-- `RecipeImageField.tsx` replaces pasted cover-image URLs with a device file picker. It validates JPEG, PNG, and WebP files against the 2 MB bucket limit, previews a valid selection, and exposes explicit replace and remove actions.
+- `RecipeImageField.tsx` replaces pasted cover-image URLs with a device file picker. It processes a supported selection before changing its preview or pending save state, announces processing, preserves the current cover on failure, and exposes explicit replace and remove actions.
+- `recipe-image.processor.ts` owns browser-side cover normalization. It decodes JPEG, PNG, or WebP input with image orientation applied, fits the decoded image inside a 1600-pixel bound without enlargement, draws once to Canvas, and exports WebP at 0.82 quality. Original phone photos may exceed 2 MB because only the processed result is passed to the existing upload boundary.
 - `RecipeIngredientFields.tsx` owns the ingredient field array, compact and expanded ingredient row UI, drag context, active row, field-array moves, and reversible removal state.
 - `RecipeStepFields.tsx` owns the step field array, compact and expanded step row UI, drag context, active row, field-array moves, and reversible removal state.
 - `recipe-form-list.tsx` contains the repeating-list mechanics shared by source, ingredient, and step sections: add and undo controls, drag sensors, removed-row types, and index adjustments after moves, removals, or restoration. Ingredient and step row markup stays separate because their fields and summaries differ.
@@ -272,11 +273,12 @@ The `recipe-images` bucket is private. Reads, uploads, and deletes are owner-sco
 <auth-user-id>/<recipe-id>/<generated-id>.<extension>
 ```
 
-Only JPEG, PNG, and WebP objects up to 2 MB are accepted. The browser never receives a Supabase secret key: authenticated uploads use the existing publishable client and RLS, while private reads use one-hour signed URLs. Making recipes shareable later does not require changing the current owner boundary; a future sharing layer can issue signed URLs after checking recipe visibility or promote moderated public images into a separate public bucket.
+Source selections may be JPEG, PNG, or WebP and may exceed 2 MB. Before upload, the browser applies image orientation, preserves aspect ratio while limiting the longest edge to 1600 pixels, and produces one WebP cover at 0.82 quality. Only the processed result reaches the repository, where the private bucket's 2 MB hard limit remains enforced. The browser never receives a Supabase secret key: authenticated uploads use the existing publishable client and RLS, while private reads use one-hour signed URLs. Making recipes shareable later does not require changing the current owner boundary; a future sharing layer can issue signed URLs after checking recipe visibility or promote moderated public images into a separate public bucket.
 
 ```mermaid
 flowchart LR
-    picker["Device image picker"] --> validation["JPEG, PNG, or WebP; 2 MB maximum"]
+    picker["JPEG, PNG, or WebP device image"] --> process["Orient, fit within 1600px, export WebP"]
+    process --> validation["Processed output; 2 MB maximum"]
     validation --> upload["Private recipe-images object"]
     upload --> path["recipes.image_storage_path"]
     path --> signed["One-hour signed display URL"]

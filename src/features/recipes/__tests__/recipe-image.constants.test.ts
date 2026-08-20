@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   getRecipeImageExtension,
-  getRecipeImageValidationError,
-  MAX_RECIPE_IMAGE_FILE_SIZE
+  getRecipeImageSourceValidationError,
+  getRecipeImageUploadValidationError,
+  MAX_RECIPE_IMAGE_FILE_SIZE,
+  RECIPE_IMAGE_TOO_LARGE_ERROR
 } from "../recipe-image.constants";
 
 describe("recipe image validation", () => {
@@ -10,17 +12,26 @@ describe("recipe image validation", () => {
     expect(getRecipeImageExtension("image/jpeg")).toBe("jpg");
     expect(getRecipeImageExtension("image/png")).toBe("png");
     expect(getRecipeImageExtension("image/webp")).toBe("webp");
-    expect(getRecipeImageValidationError(new File(["image"], "meal.webp", { type: "image/webp" }))).toBeNull();
+    expect(getRecipeImageSourceValidationError(new File(["image"], "meal.webp", { type: "image/webp" }))).toBeNull();
+    expect(getRecipeImageUploadValidationError(new File(["image"], "meal.webp", { type: "image/webp" }))).toBeNull();
   });
 
-  it("rejects unsupported formats and files over 2 MB", () => {
-    expect(getRecipeImageValidationError(new File(["image"], "meal.svg", { type: "image/svg+xml" }))).toBe(
+  it("rejects unsupported source formats without limiting the original size", () => {
+    expect(getRecipeImageSourceValidationError(new File(["image"], "meal.svg", { type: "image/svg+xml" }))).toBe(
       "Choose a JPEG, PNG, or WebP image."
     );
     expect(
-      getRecipeImageValidationError(
+      getRecipeImageSourceValidationError(
         new File([new Uint8Array(MAX_RECIPE_IMAGE_FILE_SIZE + 1)], "large.jpg", { type: "image/jpeg" })
       )
-    ).toBe("Choose an image that is 2 MB or smaller.");
+    ).toBeNull();
+  });
+
+  it("keeps the 2 MB hard limit for processed uploads", () => {
+    expect(
+      getRecipeImageUploadValidationError(
+        new File([new Uint8Array(MAX_RECIPE_IMAGE_FILE_SIZE + 1)], "large.jpg", { type: "image/jpeg" })
+      )
+    ).toBe(RECIPE_IMAGE_TOO_LARGE_ERROR);
   });
 });
