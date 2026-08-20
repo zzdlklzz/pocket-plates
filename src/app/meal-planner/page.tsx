@@ -4,7 +4,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function MealPlannerPage() {
+type MealPlannerPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function MealPlannerPage({ searchParams }: MealPlannerPageProps = {}) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user }
@@ -14,5 +18,12 @@ export default async function MealPlannerPage() {
     redirect("/");
   }
 
-  return <MealPlanner />;
+  const resolvedSearchParams = await searchParams;
+  const requestedWeek = resolvedSearchParams?.week;
+
+  return (
+    <MealPlanner
+      requestedWeek={Array.isArray(requestedWeek) ? undefined : requestedWeek}
+    />
+  );
 }

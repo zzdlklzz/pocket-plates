@@ -55,4 +55,12 @@ export type RemoveMealPlanEntryInput = {
   weekStartDate: IsoDate;
 };
 
+export type UpdateMealPlanEntryInput = {
+  entryId: string;
+  mealType: MealType;
+  plannedFor: IsoDate;
+  servings: number;
+  weekStartDate: IsoDate;
+};
+
 export type RemovedMealPlanEntry = AddMealPlanEntryInput;

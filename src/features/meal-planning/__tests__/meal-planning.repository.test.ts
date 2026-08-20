@@ -5,7 +5,8 @@ import {
   getMealPlanWeek,
   listMealPlanRecipeOptions,
   removeMealPlanEntry,
-  restoreMealPlanEntry
+  restoreMealPlanEntry,
+  updateMealPlanEntry
 } from "../meal-planning.repository";
 import type { AddMealPlanEntryInput } from "../meal-planning.types";
 
@@ -83,6 +84,63 @@ function createRestoreClient({
     recipeIs,
     recipeOwnerEq
   };
+}
+
+function createUpdateClient({
+  currentWeekStart = "2026-08-17",
+  updateError = null
+}: {
+  currentWeekStart?: string;
+  updateError?: { code: string; message: string } | null;
+} = {}) {
+  const currentMaybeSingle = vi.fn().mockResolvedValue({
+    data: {
+      id: "entry-1",
+      meal_plan_id: "plan-1",
+      meal_plans: { week_start_date: currentWeekStart },
+      meal_type: "dinner",
+      planned_for: "2026-08-19",
+      recipe_id: "recipe-1",
+      recipes: {
+        archived_at: "2026-08-20T00:00:00Z",
+        id: "recipe-1",
+        servings: 4,
+        title: "Archived noodles"
+      },
+      servings: 2
+    },
+    error: null
+  });
+  const currentEq = vi.fn(() => ({ maybeSingle: currentMaybeSingle }));
+  const updatedMaybeSingle = vi.fn().mockResolvedValue({
+    data: updateError
+      ? null
+      : {
+          id: "entry-1",
+          meal_plan_id: "plan-1",
+          meal_type: "lunch",
+          planned_for: "2026-08-21",
+          recipe_id: "recipe-1",
+          recipes: {
+            archived_at: "2026-08-20T00:00:00Z",
+            id: "recipe-1",
+            servings: 4,
+            title: "Archived noodles"
+          },
+          servings: 3
+        },
+    error: updateError
+  });
+  const updateSelect = vi.fn(() => ({ maybeSingle: updatedMaybeSingle }));
+  const planEq = vi.fn(() => ({ select: updateSelect }));
+  const entryEq = vi.fn(() => ({ eq: planEq }));
+  const update = vi.fn(() => ({ eq: entryEq }));
+  const from = vi.fn(() => ({
+    select: vi.fn(() => ({ eq: currentEq })),
+    update
+  }));
+
+  return { client: { from }, currentEq, entryEq, planEq, update };
 }
 
 describe("meal planner week reads", () => {
@@ -417,6 +475,87 @@ describe("meal planner entry writes", () => {
 
     await expect(
       restoreMealPlanEntry(client as never, baseInput)
+    ).rejects.toBeInstanceOf(DuplicateMealPlanEntryError);
+  });
+
+  it("edits only day, meal type, and servings for an archived entry", async () => {
+    const { client, entryEq, planEq, update } = createUpdateClient();
+    const input = {
+      entryId: "entry-1",
+      mealType: "lunch" as const,
+      plannedFor: "2026-08-21" as const,
+      servings: 3,
+      weekStartDate: "2026-08-17" as const
+    };
+
+    await expect(updateMealPlanEntry(client as never, input)).resolves.toEqual({
+      id: "entry-1",
+      mealType: "lunch",
+      planId: "plan-1",
+      plannedFor: "2026-08-21",
+      recipe: {
+        archived: true,
+        id: "recipe-1",
+        servings: 4,
+        title: "Archived noodles"
+      },
+      servings: 3
+    });
+
+    expect(update).toHaveBeenCalledWith({
+      meal_type: "lunch",
+      planned_for: "2026-08-21",
+      servings: 3
+    });
+    expect(entryEq).toHaveBeenCalledWith("id", "entry-1");
+    expect(planEq).toHaveBeenCalledWith("meal_plan_id", "plan-1");
+  });
+
+  it("rejects edit values outside the selected week before reading", async () => {
+    const from = vi.fn();
+
+    await expect(
+      updateMealPlanEntry({ from } as never, {
+        entryId: "entry-1",
+        mealType: "lunch",
+        plannedFor: "2026-08-24",
+        servings: 3,
+        weekStartDate: "2026-08-17"
+      })
+    ).rejects.toThrow("selected week");
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("does not move an entry from a different plan week", async () => {
+    const { client, update } = createUpdateClient({
+      currentWeekStart: "2026-08-10"
+    });
+
+    await expect(
+      updateMealPlanEntry(client as never, {
+        entryId: "entry-1",
+        mealType: "lunch",
+        plannedFor: "2026-08-21",
+        servings: 3,
+        weekStartDate: "2026-08-17"
+      })
+    ).rejects.toThrow("selected week");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("maps an exact duplicate edit to the focused duplicate error", async () => {
+    const { client } = createUpdateClient({
+      updateError: { code: "23505", message: "duplicate" }
+    });
+
+    await expect(
+      updateMealPlanEntry(client as never, {
+        entryId: "entry-1",
+        mealType: "lunch",
+        plannedFor: "2026-08-21",
+        servings: 3,
+        weekStartDate: "2026-08-17"
+      })
     ).rejects.toBeInstanceOf(DuplicateMealPlanEntryError);
   });
 

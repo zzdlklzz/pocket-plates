@@ -8,13 +8,15 @@ import {
   getMealPlanWeek,
   listMealPlanRecipeOptions,
   removeMealPlanEntry,
-  restoreMealPlanEntry
+  restoreMealPlanEntry,
+  updateMealPlanEntry
 } from "./meal-planning.repository";
 import type {
   AddMealPlanEntryInput,
   IsoDate,
   RemoveMealPlanEntryInput,
-  RemovedMealPlanEntry
+  RemovedMealPlanEntry,
+  UpdateMealPlanEntryInput
 } from "./meal-planning.types";
 
 function normalizeRecipeSearch(search: string) {
@@ -87,6 +89,20 @@ export function useRestoreMealPlanEntry() {
   return useMutation({
     mutationFn: (input: RemovedMealPlanEntry) =>
       restoreMealPlanEntry(createSupabaseBrowserClient(), input),
+    onSuccess: async (_, input) => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.mealPlanning.week(input.weekStartDate)
+      });
+    }
+  });
+}
+
+export function useUpdateMealPlanEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateMealPlanEntryInput) =>
+      updateMealPlanEntry(createSupabaseBrowserClient(), input),
     onSuccess: async (_, input) => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.mealPlanning.week(input.weekStartDate)

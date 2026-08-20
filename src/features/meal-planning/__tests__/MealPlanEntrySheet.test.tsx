@@ -27,6 +27,15 @@ function sheetProps() {
     returnFocusRef: { current: null },
     search: "",
     setSearch: vi.fn(),
+    weekDates: [
+      "2026-08-17",
+      "2026-08-18",
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+      "2026-08-23"
+    ] as const,
     weekStartDate: "2026-08-17" as const
   };
 }
@@ -77,5 +86,104 @@ describe("MealPlanEntrySheet", () => {
 
     expect(props.onRetryRecipeOptions).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("dialog", { name: "Add meal" })).toBeInTheDocument();
+  });
+
+  it("edits an archived entry without showing it in the active recipe picker", async () => {
+    const props = sheetProps();
+    const entry = {
+      id: "entry-1",
+      mealType: "dinner" as const,
+      planId: "plan-1",
+      plannedFor: "2026-08-19" as const,
+      recipe: {
+        archived: true,
+        id: "recipe-1",
+        servings: 2,
+        title: "Ginger tofu bowls"
+      },
+      servings: 2
+    };
+    render(<MealPlanEntrySheet {...props} entry={entry} />);
+    const dialog = screen.getByRole("dialog", { name: "Edit meal" });
+
+    expect(dialog).toHaveClass("max-h-[calc(100dvh-1rem)]", "overflow-hidden");
+    expect(within(dialog).getByText("Archived recipe")).toBeInTheDocument();
+    expect(within(dialog).queryByPlaceholderText("Title or ingredient")).not.toBeInTheDocument();
+    fireEvent.change(within(dialog).getByRole("combobox", { name: "Day" }), {
+      target: { value: "2026-08-21" }
+    });
+    fireEvent.change(within(dialog).getByRole("combobox", { name: "Meal" }), {
+      target: { value: "snack" }
+    });
+    fireEvent.change(within(dialog).getByRole("spinbutton", { name: "Servings" }), {
+      target: { value: "3" }
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() =>
+      expect(props.onSubmit).toHaveBeenCalledWith({
+        mealType: "snack",
+        plannedFor: "2026-08-21",
+        recipeId: "recipe-1",
+        servings: 3,
+        weekStartDate: "2026-08-17"
+      })
+    );
+  });
+
+  it("shows exact duplicate feedback while keeping edit fields available", () => {
+    const props = sheetProps();
+    render(
+      <MealPlanEntrySheet
+        {...props}
+        entry={{
+          id: "entry-1",
+          mealType: "dinner",
+          planId: "plan-1",
+          plannedFor: "2026-08-19",
+          recipe: {
+            archived: false,
+            id: "recipe-1",
+            servings: 2,
+            title: "Ginger tofu bowls"
+          },
+          servings: 2
+        }}
+        error={new Error("This recipe is already planned for that meal.")}
+      />
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This recipe is already planned for that meal."
+    );
+    expect(screen.getByRole("combobox", { name: "Day" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+  });
+
+  it("prevents save and remove actions from overlapping", () => {
+    const props = sheetProps();
+    render(
+      <MealPlanEntrySheet
+        {...props}
+        entry={{
+          id: "entry-1",
+          mealType: "dinner",
+          planId: "plan-1",
+          plannedFor: "2026-08-19",
+          recipe: {
+            archived: false,
+            id: "recipe-1",
+            servings: 2,
+            title: "Ginger tofu bowls"
+          },
+          servings: 2
+        }}
+        isRemovePending
+        onRemove={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Removing meal..." })).toBeDisabled();
   });
 });

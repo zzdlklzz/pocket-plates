@@ -1,7 +1,15 @@
 "use client";
 
-import { CalendarPlus, Plus, Trash2 } from "lucide-react";
+import {
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Plus,
+  Trash2
+} from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { AppPageShell } from "@/components/ui/AppPageShell";
@@ -11,8 +19,11 @@ import { MealPlanEntrySheet } from "./MealPlanEntrySheet";
 import { MEAL_TYPE_LABELS } from "./meal-planning.constants";
 import {
   formatIsoDate,
+  getNextWeekStart,
+  getPreviousWeekStart,
   getWeekDates,
   getWeekStart,
+  normalizeWeekStart,
   parseIsoDate
 } from "./meal-planning.dates";
 import {
@@ -20,7 +31,8 @@ import {
   useMealPlanRecipeOptions,
   useMealPlanWeek,
   useRemoveMealPlanEntry,
-  useRestoreMealPlanEntry
+  useRestoreMealPlanEntry,
+  useUpdateMealPlanEntry
 } from "./meal-planning.queries";
 import type {
   AddMealPlanEntryInput,
@@ -29,9 +41,14 @@ import type {
 } from "./meal-planning.types";
 
 type LocalWeek = {
+  currentWeekStartDate: IsoDate;
+  navigationFocus: WeekNavigationFocus | null;
+  onNavigate: (weekStartDate: IsoDate, focus: WeekNavigationFocus) => void;
   today: IsoDate;
   weekStartDate: IsoDate;
 };
+
+type WeekNavigationFocus = "current" | "next" | "previous";
 
 type RemovedMeal = {
   input: AddMealPlanEntryInput;
@@ -102,22 +119,58 @@ function getPlannerErrorMessage(action: "load" | "remove" | "undo") {
   return messages[action];
 }
 
-export function MealPlanner() {
+export function MealPlanner({ requestedWeek }: { requestedWeek?: string }) {
+  const router = useRouter();
+  const [pendingNavigation, setPendingNavigation] = useState<{
+    focus: WeekNavigationFocus;
+    weekStartDate: IsoDate;
+  } | null>(null);
   const today = useSyncExternalStore<IsoDate | null>(
     subscribeToBrowser,
     () => formatIsoDate(new Date()),
     () => null
   );
+  const todayDate = today ? parseIsoDate(today) : null;
+  const currentWeekStartDate = todayDate ? getWeekStart(todayDate) : null;
+  const weekStartDate = todayDate
+    ? normalizeWeekStart(requestedWeek ?? currentWeekStartDate!, todayDate)
+    : null;
 
-  if (!today) {
+  useEffect(() => {
+    if (weekStartDate && requestedWeek !== weekStartDate) {
+      router.replace(`/meal-planner?week=${weekStartDate}`, { scroll: false });
+    }
+  }, [requestedWeek, router, weekStartDate]);
+
+  if (!today || !currentWeekStartDate || !weekStartDate) {
     return <MealPlannerInitialLoading />;
   }
 
   return (
-    <CurrentWeekPlanner
-      today={today}
-      weekStartDate={getWeekStart(parseIsoDate(today)!)}
-    />
+    <>
+      <p
+        aria-label={`Week range: ${formatWeekRange(weekStartDate)}`}
+        aria-live="polite"
+        className="sr-only"
+      >
+        Viewing week {formatWeekRange(weekStartDate)}
+      </p>
+      <CurrentWeekPlanner
+        currentWeekStartDate={currentWeekStartDate}
+        key={weekStartDate}
+        navigationFocus={
+          pendingNavigation?.weekStartDate === weekStartDate
+            ? pendingNavigation.focus
+            : null
+        }
+        onNavigate={(nextWeek, focus) => {
+          setPendingNavigation({ focus, weekStartDate: nextWeek });
+          router.push(`/meal-planner?week=${nextWeek}`, { scroll: false });
+        }}
+        today={today}
+        weekStartDate={weekStartDate}
+      />
+    </>
   );
 }
 
@@ -132,7 +185,13 @@ function MealPlannerInitialLoading() {
   );
 }
 
-function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
+function CurrentWeekPlanner({
+  currentWeekStartDate,
+  navigationFocus,
+  onNavigate,
+  today,
+  weekStartDate
+}: LocalWeek) {
   const weekDates = getWeekDates(weekStartDate);
   const weekQuery = useMealPlanWeek(weekStartDate);
   const [search, setSearch] = useState("");
@@ -140,17 +199,43 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
   const addMutation = useAddMealPlanEntry();
   const restoreMutation = useRestoreMealPlanEntry();
   const removeMutation = useRemoveMealPlanEntry();
+  const updateMutation = useUpdateMealPlanEntry();
   const [selectedDay, setSelectedDay] = useState<IsoDate | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<MealPlanEntryDto | null>(null);
   const [removedMeal, setRemovedMeal] = useState<RemovedMeal | null>(null);
-  const addTriggerRef = useRef<HTMLButtonElement>(null);
+  const sheetTriggerRef = useRef<HTMLButtonElement>(null);
+  const dayAddButtonRefs = useRef(new Map<IsoDate, HTMLButtonElement>());
+  const previousWeekRef = useRef<HTMLButtonElement>(null);
+  const currentWeekRef = useRef<HTMLButtonElement>(null);
+  const nextWeekRef = useRef<HTMLButtonElement>(null);
 
-  function closeEntrySheet() {
-    const addTrigger = addTriggerRef.current;
+  function closeEntrySheetWithFocus(focusTarget: HTMLButtonElement | undefined | null) {
     setSelectedDay(null);
+    setSelectedEntry(null);
     setSearch("");
     addMutation.reset();
-    queueMicrotask(() => addTrigger?.focus());
+    removeMutation.reset();
+    updateMutation.reset();
+    queueMicrotask(() => focusTarget?.focus());
   }
+
+  function closeEntrySheet() {
+    closeEntrySheetWithFocus(sheetTriggerRef.current);
+  }
+
+  useEffect(() => {
+    if (!navigationFocus) {
+      return;
+    }
+
+    const navigationRefs: Record<WeekNavigationFocus, typeof previousWeekRef> = {
+      current: currentWeekRef,
+      next: nextWeekRef,
+      previous: previousWeekRef
+    };
+
+    navigationRefs[navigationFocus].current?.focus();
+  }, [navigationFocus, weekStartDate]);
 
   useEffect(() => {
     if (!removedMeal || restoreMutation.isPending) {
@@ -165,15 +250,45 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
   }, [removedMeal, restoreMutation.isPending]);
 
   function openEntrySheet(day: IsoDate, trigger: HTMLButtonElement) {
-    addTriggerRef.current = trigger;
+    sheetTriggerRef.current = trigger;
     addMutation.reset();
+    updateMutation.reset();
     setSearch("");
+    setSelectedEntry(null);
     setSelectedDay(day);
+  }
+
+  function openEditSheet(entry: MealPlanEntryDto, trigger: HTMLButtonElement) {
+    sheetTriggerRef.current = trigger;
+    removeMutation.reset();
+    updateMutation.reset();
+    setSearch("");
+    setSelectedDay(entry.plannedFor);
+    setSelectedEntry(entry);
   }
 
   async function addEntry(input: AddMealPlanEntryInput) {
     await addMutation.mutateAsync(input);
     closeEntrySheet();
+  }
+
+  async function updateEntry(input: AddMealPlanEntryInput) {
+    if (!selectedEntry) {
+      return;
+    }
+
+    await updateMutation.mutateAsync({
+      entryId: selectedEntry.id,
+      mealType: input.mealType,
+      plannedFor: input.plannedFor,
+      servings: input.servings,
+      weekStartDate
+    });
+    closeEntrySheetWithFocus(
+      input.plannedFor === selectedEntry.plannedFor
+        ? sheetTriggerRef.current
+        : dayAddButtonRefs.current.get(input.plannedFor)
+    );
   }
 
   async function removeEntry(entry: MealPlanEntryDto) {
@@ -186,6 +301,13 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
         weekStartDate
       });
       setRemovedMeal({ input, recipeTitle: entry.recipe.title });
+      if (selectedEntry?.id === entry.id) {
+        closeEntrySheetWithFocus(dayAddButtonRefs.current.get(entry.plannedFor));
+      } else {
+        queueMicrotask(() =>
+          dayAddButtonRefs.current.get(entry.plannedFor)?.focus()
+        );
+      }
     } catch {
       // The mutation error is rendered below the week header.
     }
@@ -214,7 +336,40 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
         <header>
           <p className="text-sm font-semibold text-leaf-700">PocketPlates</p>
           <h1 className="mt-3 text-3xl font-bold text-slate-900">Meal planner</h1>
-          <p className="mt-1 text-sm text-slate-600">{formatWeekRange(weekStartDate)}</p>
+          <p className="mt-1 text-sm text-slate-600">
+            {formatWeekRange(weekStartDate)}
+          </p>
+          <div className="mt-4 grid grid-cols-[2.75rem_1fr_2.75rem] gap-2">
+            <button
+              aria-label="Previous week"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700"
+              onClick={() =>
+                onNavigate(getPreviousWeekStart(weekStartDate), "previous")
+              }
+              ref={previousWeekRef}
+              type="button"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              aria-current={weekStartDate === currentWeekStartDate ? "date" : undefined}
+              className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700"
+              onClick={() => onNavigate(currentWeekStartDate, "current")}
+              ref={currentWeekRef}
+              type="button"
+            >
+              This week
+            </button>
+            <button
+              aria-label="Next week"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700"
+              onClick={() => onNavigate(getNextWeekStart(weekStartDate), "next")}
+              ref={nextWeekRef}
+              type="button"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
         </header>
 
         <ol
@@ -243,7 +398,7 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
         </ol>
 
         {weekQuery.isPending ? (
-          <AgendaLoading />
+          <AgendaLoading weekRange={formatWeekRange(weekStartDate)} />
         ) : weekQuery.isError ? (
           <section className="mt-6" aria-label="Meal planner error">
             <InlineNotice role="alert" tone="error">
@@ -275,7 +430,7 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
               </section>
             ) : null}
 
-            {removeMutation.error ? (
+            {removeMutation.error && !selectedEntry ? (
               <InlineNotice className="mt-5" role="alert" tone="error">
                 {getPlannerErrorMessage("remove")}
               </InlineNotice>
@@ -295,6 +450,14 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
                   isToday={date === today}
                   key={date}
                   onAdd={openEntrySheet}
+                  onAddButtonChange={(button) => {
+                    if (button) {
+                      dayAddButtonRefs.current.set(date, button);
+                    } else {
+                      dayAddButtonRefs.current.delete(date);
+                    }
+                  }}
+                  onEdit={openEditSheet}
                   onRemove={removeEntry}
                   onUndo={undoRemoval}
                   removedMeal={
@@ -313,18 +476,24 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
 
       {selectedDay ? (
         <MealPlanEntrySheet
-          error={addMutation.error}
-          isPending={addMutation.isPending}
+          entry={selectedEntry ?? undefined}
+          error={selectedEntry ? updateMutation.error : addMutation.error}
+          isPending={selectedEntry ? updateMutation.isPending : addMutation.isPending}
+          isRemovePending={removeMutation.isPending}
           isRecipeOptionsLoading={recipeOptionsQuery.isPending}
+          key={selectedEntry?.id ?? selectedDay}
           onClose={closeEntrySheet}
+          onRemove={selectedEntry ? () => removeEntry(selectedEntry) : undefined}
           onRetryRecipeOptions={() => void recipeOptionsQuery.refetch()}
-          onSubmit={addEntry}
+          onSubmit={selectedEntry ? updateEntry : addEntry}
           plannedFor={selectedDay}
           recipeOptions={recipeOptionsQuery.data ?? []}
           recipeOptionsError={recipeOptionsQuery.error}
-          returnFocusRef={addTriggerRef}
+          removeError={selectedEntry ? removeMutation.error : null}
+          returnFocusRef={sheetTriggerRef}
           search={search}
           setSearch={setSearch}
+          weekDates={weekDates}
           weekStartDate={weekStartDate}
         />
       ) : null}
@@ -332,9 +501,14 @@ function CurrentWeekPlanner({ today, weekStartDate }: LocalWeek) {
   );
 }
 
-function AgendaLoading() {
+function AgendaLoading({ weekRange }: { weekRange: string }) {
   return (
-    <div className="mt-6 space-y-6" aria-label="Loading this week's meals" role="status">
+    <div
+      aria-label={`Loading meals for ${weekRange}`}
+      aria-live="polite"
+      className="mt-6 space-y-6"
+      role="status"
+    >
       {Array.from({ length: 3 }, (_, index) => (
         <section key={index}>
           <div className="h-5 w-28 animate-pulse rounded bg-slate-200" aria-hidden="true" />
@@ -352,6 +526,8 @@ type MealPlanDayProps = {
   isRemoving: boolean;
   isToday: boolean;
   onAdd: (day: IsoDate, trigger: HTMLButtonElement) => void;
+  onAddButtonChange: (button: HTMLButtonElement | null) => void;
+  onEdit: (entry: MealPlanEntryDto, trigger: HTMLButtonElement) => void;
   onRemove: (entry: MealPlanEntryDto) => Promise<void>;
   onUndo: () => Promise<void>;
   removedMeal: RemovedMeal | null;
@@ -365,6 +541,8 @@ function MealPlanDay({
   isRemoving,
   isToday,
   onAdd,
+  onAddButtonChange,
+  onEdit,
   onRemove,
   onUndo,
   removedMeal,
@@ -392,27 +570,32 @@ function MealPlanDay({
               className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
               key={entry.id}
             >
-              <div className="min-w-0 flex-1">
+              <button
+                aria-label={`Edit ${entry.recipe.title} on ${day.weekday}`}
+                className="min-w-0 flex-1 text-left"
+                onClick={(event) => onEdit(entry, event.currentTarget)}
+                type="button"
+              >
                 <p className="text-[0.65rem] font-bold uppercase tracking-wide text-leaf-700">
                   {MEAL_TYPE_LABELS[entry.mealType]}
                 </p>
-                {entry.recipe.archived ? (
-                  <p className="mt-1 truncate text-sm font-semibold text-slate-700">
-                    {entry.recipe.title}
-                  </p>
-                ) : (
-                  <Link
-                    className="mt-1 block truncate text-sm font-semibold text-slate-900"
-                    href={`/recipes/${entry.recipe.id}`}
-                  >
-                    {entry.recipe.title}
-                  </Link>
-                )}
+                <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+                  {entry.recipe.title}
+                </p>
                 <p className="mt-1 text-xs text-slate-500">
                   {entry.servings} serving{entry.servings === 1 ? "" : "s"}
                   {entry.recipe.archived ? " · Archived recipe" : ""}
                 </p>
-              </div>
+              </button>
+              {!entry.recipe.archived ? (
+                <Link
+                  aria-label={`View ${entry.recipe.title} recipe`}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600"
+                  href={`/recipes/${entry.recipe.id}`}
+                >
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              ) : null}
               <button
                 aria-label={`Remove ${entry.recipe.title} from ${day.weekday}`}
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700 disabled:text-slate-400"
@@ -458,6 +641,7 @@ function MealPlanDay({
         aria-label={`Add meal to ${day.weekday}, ${day.dateLong}`}
         className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-leaf-300 bg-leaf-50 px-4 py-2 text-sm font-semibold text-leaf-700"
         onClick={(event) => onAdd(date, event.currentTarget)}
+        ref={onAddButtonChange}
         type="button"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />

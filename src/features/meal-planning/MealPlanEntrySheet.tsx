@@ -20,23 +20,30 @@ import { parseIsoDate } from "./meal-planning.dates";
 import type {
   AddMealPlanEntryInput,
   IsoDate,
+  MealPlanEntryDto,
   MealPlanRecipeOptionDto,
+  MealPlanWeekDates,
   MealType
 } from "./meal-planning.types";
 
 type MealPlanEntrySheetProps = {
   error: unknown;
+  entry?: MealPlanEntryDto;
   isPending: boolean;
+  isRemovePending?: boolean;
   isRecipeOptionsLoading: boolean;
   onClose: () => void;
+  onRemove?: () => Promise<void>;
   onRetryRecipeOptions: () => void;
   onSubmit: (input: AddMealPlanEntryInput) => Promise<void>;
   plannedFor: IsoDate;
   recipeOptions: MealPlanRecipeOptionDto[];
   recipeOptionsError: unknown;
+  removeError?: unknown;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
   search: string;
   setSearch: (search: string) => void;
+  weekDates: MealPlanWeekDates;
   weekStartDate: IsoDate;
 };
 
@@ -48,7 +55,7 @@ function formatSheetDate(date: IsoDate) {
   }).format(parseIsoDate(date) ?? undefined);
 }
 
-function getAddErrorMessage(error: unknown) {
+function getSaveErrorMessage(error: unknown, isEditing: boolean) {
   if (
     error instanceof Error &&
     [
@@ -59,36 +66,46 @@ function getAddErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return "We could not add this meal. Please try again.";
+  return isEditing
+    ? "We could not save these changes. Please try again."
+    : "We could not add this meal. Please try again.";
 }
 
 export function MealPlanEntrySheet({
   error,
+  entry,
   isPending,
+  isRemovePending = false,
   isRecipeOptionsLoading,
   onClose,
+  onRemove,
   onRetryRecipeOptions,
   onSubmit,
   plannedFor,
   recipeOptions,
   recipeOptionsError,
+  removeError,
   returnFocusRef,
   search,
   setSearch,
+  weekDates,
   weekStartDate
 }: MealPlanEntrySheetProps) {
+  const isEditing = Boolean(entry);
+  const isBusy = isPending || isRemovePending;
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const isPendingRef = useRef(isPending);
+  const isPendingRef = useRef(isBusy);
   const onCloseRef = useRef(onClose);
-  const [recipeId, setRecipeId] = useState("");
-  const [mealType, setMealType] = useState<MealType>("flexible");
-  const [servings, setServings] = useState("1");
+  const [selectedDate, setSelectedDate] = useState(entry?.plannedFor ?? plannedFor);
+  const [recipeId, setRecipeId] = useState(entry?.recipe.id ?? "");
+  const [mealType, setMealType] = useState<MealType>(entry?.mealType ?? "flexible");
+  const [servings, setServings] = useState(String(entry?.servings ?? 1));
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
-    isPendingRef.current = isPending;
-  }, [isPending]);
+    isPendingRef.current = isBusy;
+  }, [isBusy]);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -171,7 +188,7 @@ export function MealPlanEntrySheet({
     try {
       await onSubmit({
         mealType,
-        plannedFor,
+        plannedFor: selectedDate,
         recipeId,
         servings: plannedServings,
         weekStartDate
@@ -182,21 +199,21 @@ export function MealPlanEntrySheet({
   }
 
   const dayName = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(
-    parseIsoDate(plannedFor) ?? undefined
+    parseIsoDate(selectedDate) ?? undefined
   );
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/30 sm:items-center sm:p-4"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isPending) {
+        if (event.target === event.currentTarget && !isBusy) {
           onClose();
         }
       }}
       role="presentation"
     >
       <section
-        aria-label="Add meal"
+        aria-label={isEditing ? "Edit meal" : "Add meal"}
         aria-modal="true"
         className="flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-2xl"
         ref={dialogRef}
@@ -204,11 +221,13 @@ export function MealPlanEntrySheet({
       >
         <div className="mx-auto h-1 w-10 rounded-full bg-slate-300 sm:hidden" aria-hidden="true" />
         <div className="mt-3 flex items-center justify-between gap-3 sm:mt-0">
-          <h2 className="text-lg font-bold text-slate-900">Add meal</h2>
+          <h2 className="text-lg font-bold text-slate-900">
+            {isEditing ? "Edit meal" : "Add meal"}
+          </h2>
           <button
-            aria-label="Close add meal"
+            aria-label={isEditing ? "Close edit meal" : "Close add meal"}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600"
-            disabled={isPending}
+            disabled={isBusy}
             onClick={onClose}
             ref={closeButtonRef}
             type="button"
@@ -218,51 +237,82 @@ export function MealPlanEntrySheet({
         </div>
 
         <form className="mt-4 min-h-0 overflow-y-auto" onSubmit={submit}>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Day
-            <input
-              className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-3 text-sm text-slate-700"
-              disabled
-              value={formatSheetDate(plannedFor)}
-            />
-          </label>
+          {isEditing ? (
+            <>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Day
+                <select
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
+                  disabled={isBusy}
+                  onChange={(event) => setSelectedDate(event.target.value as IsoDate)}
+                  value={selectedDate}
+                >
+                  {weekDates.map((date) => (
+                    <option key={date} value={date}>
+                      {formatSheetDate(date)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Recipe
+                <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 normal-case tracking-normal">
+                  <p className="text-sm font-semibold text-slate-800">{entry?.recipe.title}</p>
+                  {entry?.recipe.archived ? (
+                    <p className="mt-1 text-xs font-medium text-slate-500">Archived recipe</p>
+                  ) : null}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Day
+                <input
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-3 text-sm text-slate-700"
+                  disabled
+                  value={formatSheetDate(selectedDate)}
+                />
+              </label>
 
-          <label className="mt-5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Search recipes
-            <span className="mt-2 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
-              <Search className="h-4 w-4 text-slate-400" aria-hidden="true" />
-              <input
-                className="min-w-0 flex-1 py-3 text-sm text-slate-800 outline-none"
-                disabled={isPending}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Title or ingredient"
-                type="search"
-                value={search}
-              />
-            </span>
-          </label>
+              <label className="mt-5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Search recipes
+                <span className="mt-2 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+                  <Search className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                  <input
+                    className="min-w-0 flex-1 py-3 text-sm text-slate-800 outline-none"
+                    disabled={isBusy}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Title or ingredient"
+                    type="search"
+                    value={search}
+                  />
+                </span>
+              </label>
 
-          <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Recipe
-            <select
-              aria-label="Recipe"
-              className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
-              disabled={isPending || isRecipeOptionsLoading || Boolean(recipeOptionsError)}
-              onChange={(event) => selectRecipe(event.target.value)}
-              value={recipeId}
-            >
-              <option value="">
-                {isRecipeOptionsLoading ? "Loading recipes..." : "Choose a recipe"}
-              </option>
-              {recipeOptions.map((recipe) => (
-                <option key={recipe.id} value={recipe.id}>
-                  {recipe.title}
-                </option>
-              ))}
-            </select>
-          </label>
+              <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Recipe
+                <select
+                  aria-label="Recipe"
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
+                  disabled={isBusy || isRecipeOptionsLoading || Boolean(recipeOptionsError)}
+                  onChange={(event) => selectRecipe(event.target.value)}
+                  value={recipeId}
+                >
+                  <option value="">
+                    {isRecipeOptionsLoading ? "Loading recipes..." : "Choose a recipe"}
+                  </option>
+                  {recipeOptions.map((recipe) => (
+                    <option key={recipe.id} value={recipe.id}>
+                      {recipe.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
 
-          {recipeOptionsError ? (
+          {!isEditing && recipeOptionsError ? (
             <InlineNotice className="mt-3 flex items-center justify-between gap-3" role="alert" tone="error">
               <span>We could not load your recipes.</span>
               <button
@@ -274,7 +324,7 @@ export function MealPlanEntrySheet({
                 Try again
               </button>
             </InlineNotice>
-          ) : !isRecipeOptionsLoading && recipeOptions.length === 0 ? (
+          ) : !isEditing && !isRecipeOptionsLoading && recipeOptions.length === 0 ? (
             <InlineNotice className="mt-3" tone="info">
               {search ? (
                 "No active recipes match that search."
@@ -291,7 +341,7 @@ export function MealPlanEntrySheet({
               Meal
               <select
                 className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
-                disabled={isPending}
+                disabled={isBusy}
                 onChange={(event) => setMealType(event.target.value as MealType)}
                 value={mealType}
               >
@@ -307,7 +357,7 @@ export function MealPlanEntrySheet({
               Servings
               <input
                 className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
-                disabled={isPending}
+                disabled={isBusy}
                 inputMode="numeric"
                 max={MAX_PLANNED_SERVINGS}
                 min={1}
@@ -320,19 +370,40 @@ export function MealPlanEntrySheet({
 
           {validationError || error ? (
             <InlineNotice className="mt-4" role="alert" tone="error">
-              {validationError ?? getAddErrorMessage(error)}
+              {validationError ?? getSaveErrorMessage(error, isEditing)}
+            </InlineNotice>
+          ) : null}
+
+          {removeError ? (
+            <InlineNotice className="mt-4" role="alert" tone="error">
+              We could not remove this meal. Please try again.
             </InlineNotice>
           ) : null}
 
           <ActionButton
             className="mt-5"
+            disabled={isRemovePending}
             fullWidth
             pending={isPending}
-            pendingLabel="Adding meal..."
+            pendingLabel={isEditing ? "Saving changes..." : "Adding meal..."}
             type="submit"
           >
-            Add to {dayName}
+            {isEditing ? "Save changes" : `Add to ${dayName}`}
           </ActionButton>
+
+          {isEditing && onRemove ? (
+            <ActionButton
+              className="mt-3"
+              disabled={isPending}
+              fullWidth
+              onClick={() => void onRemove()}
+              pending={isRemovePending}
+              pendingLabel="Removing meal..."
+              variant="danger"
+            >
+              Remove meal
+            </ActionButton>
+          ) : null}
         </form>
       </section>
     </div>

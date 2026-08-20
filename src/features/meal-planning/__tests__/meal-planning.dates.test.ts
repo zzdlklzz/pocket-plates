@@ -23,8 +23,11 @@ describe("meal-planning dates", () => {
     const fallbackDate = new Date(2026, 7, 20, 12);
 
     expect(normalizeWeekStart("2026-08-23", fallbackDate)).toBe("2026-08-17");
+    expect(normalizeWeekStart(null, fallbackDate)).toBe("2026-08-17");
+    expect(normalizeWeekStart(undefined, fallbackDate)).toBe("2026-08-17");
     expect(normalizeWeekStart("not-a-date", fallbackDate)).toBe("2026-08-17");
     expect(normalizeWeekStart("0000-01-03", fallbackDate)).toBe("2026-08-17");
+    expect(normalizeWeekStart("2027-01-03", fallbackDate)).toBe("2026-12-28");
   });
 
   it("formats and parses ISO dates using local calendar parts", () => {

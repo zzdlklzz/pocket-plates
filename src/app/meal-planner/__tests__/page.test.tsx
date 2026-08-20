@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   createSupabaseServerClient: vi.fn(),
   getUser: vi.fn(),
+  mealPlanner: vi.fn(),
   redirect: vi.fn()
 }));
 
@@ -16,7 +17,10 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/features/meal-planning/MealPlanner", () => ({
-  MealPlanner: () => <div>Weekly meal planner</div>
+  MealPlanner: ({ requestedWeek }: { requestedWeek?: string }) => {
+    mocks.mealPlanner(requestedWeek);
+    return <div>Weekly meal planner</div>;
+  }
 }));
 
 import Loading from "../loading";
@@ -47,6 +51,26 @@ describe("MealPlannerPage", () => {
 
     expect(screen.getByText("Weekly meal planner")).toBeInTheDocument();
     expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("passes the requested week to the client planner", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+
+    render(await MealPlannerPage({
+      searchParams: Promise.resolve({ week: "2026-12-28" })
+    }));
+
+    expect(mocks.mealPlanner).toHaveBeenCalledWith("2026-12-28");
+  });
+
+  it("treats repeated week parameters as invalid", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+
+    render(await MealPlannerPage({
+      searchParams: Promise.resolve({ week: ["2026-12-28", "2027-01-04"] })
+    }));
+
+    expect(mocks.mealPlanner).toHaveBeenCalledWith(undefined);
   });
 
   it("provides an immediate route loading state", () => {

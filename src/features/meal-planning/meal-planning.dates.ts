@@ -59,8 +59,13 @@ export function getWeekStart(date: Date): IsoDate {
   return formatIsoDate(monday);
 }
 
-export function normalizeWeekStart(value: string, fallbackDate: Date): IsoDate {
-  return getWeekStart(parseIsoDate(value) ?? fallbackDate);
+export function normalizeWeekStart(
+  value: string | null | undefined,
+  fallbackDate: Date
+): IsoDate {
+  const requestedDate = value ? parseIsoDate(value) : null;
+
+  return getWeekStart(requestedDate ?? fallbackDate);
 }
 
 export function addCalendarDays(date: IsoDate, dayCount: number): IsoDate {

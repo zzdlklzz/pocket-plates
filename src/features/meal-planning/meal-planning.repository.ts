@@ -17,7 +17,8 @@ import type {
   MealPlanWeekDto,
   MealType,
   RemoveMealPlanEntryInput,
-  RemovedMealPlanEntry
+  RemovedMealPlanEntry,
+  UpdateMealPlanEntryInput
 } from "./meal-planning.types";
 
 type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -47,6 +48,11 @@ type MealPlanEntryRow = {
 
 type InsertedMealPlanEntryRow = Omit<MealPlanEntryRow, "recipes">;
 
+type EditableMealPlanEntryRow = {
+  meal_plan_id: string;
+  meal_plans: { week_start_date: string } | null;
+};
+
 type OwnedRecipeRow = {
   archived_at: string | null;
   id: string;
@@ -68,6 +74,10 @@ const MEAL_PLAN_WEEK_SELECT =
 const MEAL_PLAN_ENTRY_SELECT =
   "id,meal_plan_id,recipe_id,planned_for,meal_type,servings";
 
+const EDITABLE_MEAL_PLAN_ENTRY_SELECT =
+  "meal_plan_id,meal_plans(week_start_date)";
+const UPDATED_MEAL_PLAN_ENTRY_SELECT = `${MEAL_PLAN_ENTRY_SELECT},recipes(id,title,servings,archived_at)`;
+
 export class DuplicateMealPlanEntryError extends Error {
   constructor() {
     super("This recipe is already planned for that meal.");
@@ -83,7 +93,12 @@ function assertMonday(weekStartDate: IsoDate) {
   }
 }
 
-function validateEntryInput(input: AddMealPlanEntryInput) {
+function validateEntryValues(
+  input: Pick<
+    AddMealPlanEntryInput,
+    "mealType" | "plannedFor" | "servings" | "weekStartDate"
+  >
+) {
   assertMonday(input.weekStartDate);
 
   if (!isDateInWeek(input.plannedFor, input.weekStartDate)) {
@@ -338,7 +353,7 @@ export async function addMealPlanEntry(
   supabase: SupabaseBrowserClient,
   input: AddMealPlanEntryInput
 ): Promise<MealPlanEntryDto> {
-  validateEntryInput(input);
+  validateEntryValues(input);
 
   const ownerId = await getAuthenticatedOwnerId(supabase);
   const recipe = await getOwnedRecipe(
@@ -355,7 +370,7 @@ export async function restoreMealPlanEntry(
   supabase: SupabaseBrowserClient,
   input: RemovedMealPlanEntry
 ): Promise<MealPlanEntryDto> {
-  validateEntryInput(input);
+  validateEntryValues(input);
 
   const ownerId = await getAuthenticatedOwnerId(supabase);
   const recipe = await getOwnedRecipe(
@@ -366,6 +381,60 @@ export async function restoreMealPlanEntry(
   );
 
   return insertMealPlanEntry(supabase, input, ownerId, recipe);
+}
+
+export async function updateMealPlanEntry(
+  supabase: SupabaseBrowserClient,
+  input: UpdateMealPlanEntryInput
+): Promise<MealPlanEntryDto> {
+  validateEntryValues(input);
+
+  const { data: currentData, error: currentError } = await supabase
+    .from("meal_plan_entries")
+    .select(EDITABLE_MEAL_PLAN_ENTRY_SELECT)
+    .eq("id", input.entryId)
+    .maybeSingle();
+
+  if (currentError) {
+    throw currentError;
+  }
+
+  const currentEntry = currentData as unknown as EditableMealPlanEntryRow | null;
+  if (
+    !currentEntry ||
+    currentEntry.meal_plans?.week_start_date !== input.weekStartDate
+  ) {
+    throw new Error("Meal plan entry was not found in the selected week.");
+  }
+
+  const { data, error } = await supabase
+    .from("meal_plan_entries")
+    .update({
+      meal_type: input.mealType,
+      planned_for: input.plannedFor,
+      servings: input.servings
+    } as never)
+    .eq("id", input.entryId)
+    .eq("meal_plan_id", currentEntry.meal_plan_id)
+    .select(UPDATED_MEAL_PLAN_ENTRY_SELECT)
+    .maybeSingle();
+
+  if (error) {
+    if (isUniqueViolation(error)) {
+      throw new DuplicateMealPlanEntryError();
+    }
+
+    throw error;
+  }
+
+  const updatedEntry = data as unknown as MealPlanEntryRow | null;
+  const mappedEntry = updatedEntry ? mapEntry(updatedEntry) : null;
+
+  if (!mappedEntry) {
+    throw new Error("Meal plan entry was not found.");
+  }
+
+  return mappedEntry;
 }
 
 export async function removeMealPlanEntry(

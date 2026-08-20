@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => ({
   getMealPlanWeek: vi.fn(),
   listMealPlanRecipeOptions: vi.fn(),
   removeMealPlanEntry: vi.fn(),
-  restoreMealPlanEntry: vi.fn()
+  restoreMealPlanEntry: vi.fn(),
+  updateMealPlanEntry: vi.fn()
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -22,7 +23,8 @@ vi.mock("../meal-planning.repository", () => ({
   getMealPlanWeek: mocks.getMealPlanWeek,
   listMealPlanRecipeOptions: mocks.listMealPlanRecipeOptions,
   removeMealPlanEntry: mocks.removeMealPlanEntry,
-  restoreMealPlanEntry: mocks.restoreMealPlanEntry
+  restoreMealPlanEntry: mocks.restoreMealPlanEntry,
+  updateMealPlanEntry: mocks.updateMealPlanEntry
 }));
 
 import {
@@ -30,7 +32,8 @@ import {
   useMealPlanRecipeOptions,
   useMealPlanWeek,
   useRemoveMealPlanEntry,
-  useRestoreMealPlanEntry
+  useRestoreMealPlanEntry,
+  useUpdateMealPlanEntry
 } from "../meal-planning.queries";
 
 function createQueryClient() {
@@ -119,10 +122,11 @@ describe("meal planner queries", () => {
     expect(mocks.listMealPlanRecipeOptions).toHaveBeenCalledTimes(1);
   });
 
-  it("invalidates only the changed week after add, remove, and restore", async () => {
+  it("invalidates only the changed week after entry mutations", async () => {
     mocks.addMealPlanEntry.mockResolvedValue({ id: "entry-1" });
     mocks.removeMealPlanEntry.mockResolvedValue({ recipeId: "recipe-1" });
     mocks.restoreMealPlanEntry.mockResolvedValue({ id: "entry-2" });
+    mocks.updateMealPlanEntry.mockResolvedValue({ id: "entry-1" });
     const queryClient = createQueryClient();
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     const wrapper = createWrapper(queryClient);
@@ -134,6 +138,10 @@ describe("meal planner queries", () => {
     });
     const { result: restoreResult } = renderHook(
       () => useRestoreMealPlanEntry(),
+      { wrapper }
+    );
+    const { result: updateResult } = renderHook(
+      () => useUpdateMealPlanEntry(),
       { wrapper }
     );
     const addInput = {
@@ -151,6 +159,13 @@ describe("meal planner queries", () => {
         weekStartDate: "2026-08-17"
       });
       await restoreResult.current.mutateAsync(addInput);
+      await updateResult.current.mutateAsync({
+        entryId: "entry-1",
+        mealType: "lunch",
+        plannedFor: "2026-08-20",
+        servings: 3,
+        weekStartDate: "2026-08-17"
+      });
     });
 
     expect(mocks.addMealPlanEntry).toHaveBeenCalledWith(
@@ -161,7 +176,17 @@ describe("meal planner queries", () => {
       { client: "supabase" },
       addInput
     );
-    expect(invalidateQueries).toHaveBeenCalledTimes(3);
+    expect(mocks.updateMealPlanEntry).toHaveBeenCalledWith(
+      { client: "supabase" },
+      {
+        entryId: "entry-1",
+        mealType: "lunch",
+        plannedFor: "2026-08-20",
+        servings: 3,
+        weekStartDate: "2026-08-17"
+      }
+    );
+    expect(invalidateQueries).toHaveBeenCalledTimes(4);
     expect(invalidateQueries).toHaveBeenNthCalledWith(1, {
       queryKey: queryKeys.mealPlanning.week("2026-08-17")
     });
@@ -169,6 +194,9 @@ describe("meal planner queries", () => {
       queryKey: queryKeys.mealPlanning.week("2026-08-17")
     });
     expect(invalidateQueries).toHaveBeenNthCalledWith(3, {
+      queryKey: queryKeys.mealPlanning.week("2026-08-17")
+    });
+    expect(invalidateQueries).toHaveBeenNthCalledWith(4, {
       queryKey: queryKeys.mealPlanning.week("2026-08-17")
     });
   });

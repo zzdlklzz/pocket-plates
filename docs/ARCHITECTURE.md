@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, and the first two weekly meal-planning slices. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, and a current-week vertical meal agenda with add, direct remove, and Undo. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented tags and the remaining planner navigation/edit/copy slices are still pending.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, and the first three weekly meal-planning slices. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, and a URL-stable weekly meal agenda with add, edit, direct remove, and Undo. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented tags and the remaining planner copy/paste slice are still pending.
 
 ## Stack
 
@@ -83,7 +83,9 @@ Other future-ready entities:
 
 Authenticated browser clients have explicit CRUD grants on both planner tables, while their existing RLS policies remain the ownership boundary. The owner/week and exact-entry uniqueness constraints make lazy plan creation and duplicate prevention safe under repeated requests. Pure planner date helpers use local calendar parts rather than parsing date-only values as UTC timestamps; they normalize any viewed date to Monday, generate the seven ISO dates in a week, and validate week membership without timezone drift.
 
-The authenticated `/meal-planner` route currently shows the browser's local Monday-through-Sunday week as the approved vertical agenda. Reading an empty week remains read-only. The first valid add lazily upserts its owner/week plan, validates an active owned recipe and planned servings, and inserts one entry. Active picker options are loaded once without images and filtered locally by title or ingredient. Direct removal deletes only the planning reference; the latest removal exposes a six-second inline Undo. Undo shares the validated insert path but uses a dedicated ownership check that permits restoring an already planned archived recipe without offering it for new selection. All successful mutations invalidate only the affected week. Week navigation, entry editing, and copy/paste remain in later slices.
+The authenticated `/meal-planner` route shows the approved Monday-through-Sunday vertical agenda. Its normalized `week=YYYY-MM-DD` Monday value survives refresh and browser history; missing, invalid, or non-Monday values canonicalize from the browser's local calendar without parsing date-only strings as UTC. Previous, current, and next controls navigate by exact calendar weeks.
+
+Reading an empty week remains read-only. The first valid add lazily upserts its owner/week plan, validates an active owned recipe and planned servings, and inserts one entry. Active picker options are loaded once without images and filtered locally by title or ingredient. Selecting an entry reuses the compact sheet to change only its day within the viewed week, meal slot, or planned servings. The repository scopes updates to an owner-visible entry and its selected plan before changing those three fields, so an existing archived recipe can remain editable without becoming a new picker option. Direct removal deletes only the planning reference; the latest removal exposes a six-second inline Undo with an archived-safe ownership check. All successful mutations invalidate only the affected week. Deliberate in-memory day/week copy and paste remains in the next slice.
 
 Recipe create and edit flows write sources to `recipe_links`. The legacy `recipes.source_url` column remains readable as a fallback for recipes created before multi-source support, but new saves clear it and use the child rows. Source rows follow recipe ownership through existing Row Level Security policies.
 
@@ -235,7 +237,7 @@ Feature-specific components remain with their domain. `AuthHero.tsx` shares the 
 
 Use TanStack Query for server state from the start. Components should consume feature-level query hooks, such as `useRecipeList`, instead of making ad hoc API calls in `useEffect`. Keep `useEffect` for true browser-side effects such as focus handling, subscriptions, or direct browser APIs.
 
-Meal-planner queries follow the same boundary. Week data is keyed by normalized Monday, recipe options use one shared active-library cache, and entry mutations invalidate only the affected week. The component owns only transient UI state: selected add day, recipe search, and the latest bounded Undo snapshot.
+Meal-planner queries follow the same boundary. Week data is keyed by normalized Monday, recipe options use one shared active-library cache, and entry mutations invalidate only the affected week. The canonical URL owns the selected week; the component owns only transient UI state such as the open add/edit sheet, recipe search, and latest bounded Undo snapshot.
 
 ## Supabase Client Boundary
 
