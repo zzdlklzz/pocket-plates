@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import { X } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { InlineNotice } from "@/components/ui/InlineNotice";
+import { useDialogFocusManagement } from "@/components/ui/useDialogFocusManagement";
 
 type MealPlanPasteDialogProps = {
   addCount: number;
@@ -44,60 +45,13 @@ export function MealPlanPasteDialog({
 }: MealPlanPasteDialogProps) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const isPendingRef = useRef(isPending);
-  const onCloseRef = useRef(onClose);
-  const restoreFocusRef = useRef<() => void>(() => undefined);
-
-  useEffect(() => {
-    isPendingRef.current = isPending;
-  }, [isPending]);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    restoreFocusRef.current = () => returnFocusRef.current?.focus();
-  }, [returnFocusRef]);
-
-  useEffect(() => {
-    closeButtonRef.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isPendingRef.current) {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
-        )
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement?.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      restoreFocusRef.current();
-    };
-  }, [returnFocusRef]);
+  useDialogFocusManagement({
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    isBusy: isPending,
+    onClose,
+    returnFocusRef
+  });
 
   const title = `Paste copied ${copyKind}?`;
 

@@ -14,6 +14,7 @@ import {
   MIN_GROCERY_LIST_TARGET_SERVINGS
 } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
+import { validateGroceryListTitle } from "./grocery-list.validation";
 import {
   useCreateGeneratedGroceryList,
   useGroceryListRecipeOptions,
@@ -114,15 +115,9 @@ function GroceryListGeneratorForm({ defaultTitle }: { defaultTitle: string }) {
   }
 
   function validate() {
-    const nextTitle = title.trim();
-    if (!nextTitle) {
-      setValidationError("Add a list title.");
-      return null;
-    }
-    if (nextTitle.length > MAX_GROCERY_LIST_TITLE_LENGTH) {
-      setValidationError(
-        `Keep the title under ${MAX_GROCERY_LIST_TITLE_LENGTH} characters.`
-      );
+    const titleResult = validateGroceryListTitle(title);
+    if (titleResult.error || !titleResult.title) {
+      setValidationError(titleResult.error);
       return null;
     }
 
@@ -133,7 +128,7 @@ function GroceryListGeneratorForm({ defaultTitle }: { defaultTitle: string }) {
     }
 
     setValidationError(null);
-    return { recipes: selectedInputs, title: nextTitle };
+    return { recipes: selectedInputs, title: titleResult.title };
   }
 
   function reviewItems() {

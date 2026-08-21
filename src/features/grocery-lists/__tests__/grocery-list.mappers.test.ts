@@ -288,7 +288,6 @@ describe("grocery list mappers", () => {
           id: "item-2",
           is_manual: false,
           name: "Pepper",
-          normalized_name: "pepper",
           notes: null,
           quantity_overridden: false,
           sort_order: 2,
@@ -301,7 +300,6 @@ describe("grocery list mappers", () => {
           id: "item-1",
           is_manual: true,
           name: "Milk",
-          normalized_name: "milk",
           notes: null,
           quantity_overridden: false,
           sort_order: 0,
@@ -309,13 +307,11 @@ describe("grocery list mappers", () => {
         }
       ],
       id: "list-1",
-      meal_plan_id: "plan-1",
       meal_plans: { id: "plan-1" },
       source_recipe_count: 0,
       source_type: "meal_plan",
       source_week_start_date: "2026-08-17",
-      title: "Weekly shop",
-      updated_at: "2026-08-21T10:00:00Z"
+      title: "Weekly shop"
     };
 
     const detail = toGroceryListDetailDto(row);
@@ -351,13 +347,11 @@ describe("grocery list mappers", () => {
       toGroceryListDetailDto({
         grocery_list_items: [],
         id: "list-1",
-        meal_plan_id: null,
         meal_plans: null,
         source_recipe_count: 0,
         source_type: "meal_plan",
         source_week_start_date: "2026-08-17",
-        title: "Old weekly shop",
-        updated_at: "2026-08-21T10:00:00Z"
+        title: "Old weekly shop"
       }).mealPlanAvailable
     ).toBe(false);
   });

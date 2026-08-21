@@ -322,12 +322,6 @@ export function formatGroceryListQuantity({
   return formatCompactGroceryRequirements(requirementGroups);
 }
 
-export function countGroceryListSourceRecipes(
-  sources: readonly Pick<GeneratedGroceryListItemSource, "recipeId">[]
-) {
-  return new Set(sources.map(({ recipeId }) => recipeId)).size;
-}
-
 export function generateGroceryListItems(
   recipes: readonly GroceryListGenerationRecipeInput[]
 ): GeneratedGroceryListItem[] {

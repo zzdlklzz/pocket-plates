@@ -93,9 +93,9 @@ Authenticated browser clients also have owner-scoped CRUD access to grocery list
 
 `list_grocery_lists()` returns owner-scoped list metadata, the frozen selected-recipe count, and checked/total counts without downloading item bodies. `search_grocery_list_recipe_options(...)` applies literal title-or-ingredient matching before its bounded result limit, so search is complete rather than restricted to an arbitrary alphabetical prefix. `create_grocery_list_with_items(...)` atomically creates a bounded recipe or meal-plan snapshot after validating source ownership, every current ingredient exactly once, canonical unit buckets, six-decimal scaling arithmetic, and current snapshot fields; selected-recipe requests are capped at ten distinct recipes and record their count server-side. `refresh_grocery_list_from_meal_plan(...)` accepts only an available linked owned plan, locks that grocery-list row for the transaction, and then replaces its generated source requirements. The row lock serializes concurrent refresh attempts for one list. Refresh preserves manual rows plus matched checked states and quantity overrides, adds new generated rows unchecked, and removes obsolete generated rows. All grocery functions are security-invoker boundaries with explicit authenticated execution grants; no background sync, refresh history, version table, or separate requirement-group table exists.
 
-The pure grocery generation layer has no database or React dependency. It scales each authoritative ingredient to the requested servings with six-decimal precision, groups products only by trimmed/collapsed/lowercased names, totals compatible unit buckets, and retains incompatible units inside one checklist item. Null amounts form one `extra` requirement group; an all-null product omits a quantity label. Compact display shows at most two groups plus `+ n more`, while every original recipe line and preparation note remains in the source snapshot. The selected-recipe picker and atomic database boundary both enforce the 10-recipe limit, while target servings remain 1–100 per selected recipe. The shared engine deliberately accepts larger meal-plan weeks and summed serving totals.
+The pure grocery generation layer has no database or React dependency. It scales each authoritative ingredient to the requested servings with six-decimal precision, groups products only by trimmed/collapsed/lowercased names, totals compatible unit buckets, and retains incompatible units inside one checklist item. Null amounts form one `extra` requirement group; an all-null product omits a quantity label. Compact display shows at most two groups plus `+ n more`, while every original recipe line and preparation note remains in the source snapshot. One shared requirement-details renderer and its formatting module preserve the same source breakdown in both generated previews and persisted checklist rows. The selected-recipe picker and atomic database boundary both enforce the 10-recipe limit, while target servings remain 1–100 per selected recipe. The shared engine deliberately accepts larger meal-plan weeks and summed serving totals.
 
-The authenticated `/grocery-lists`, `/grocery-lists/new`, and `/grocery-lists/[id]` routes serve every list source through one shared detail experience. The library reads compact owner-scoped progress summaries newest-activity first and links to blank creation or a one-page selected-recipe generator. That generator searches the complete active owned recipe set by title or ingredient, adds each recipe once, lets the user choose target servings, and forces a fresh ingredient review before creation. Creation refetches authoritative recipes, recomputes the snapshot, and makes one atomic write; stale or archived selections fail without a partial list. Generated rows preserve expandable recipe requirements while an optional practical shopping amount changes only the compact display and can be reset. The detail screen partitions unchecked and checked rows, keeps Completed collapsed initially, and uses distinct checkbox and edit controls. Its ordinary list-actions popover shows **Reset checklist** only when at least one item is completed; one owner-scoped bulk update moves every completed item back to **To buy** without changing products, quantities, notes, source snapshots, or list type. Manual items accept an optional amount, unit, and note; add and edit share one focus-trapped sheet, while rename and deliberate delete use focused dialogs. Mutations stay behind feature repository and TanStack Query hooks and invalidate only affected grocery caches. Manual and selected-recipe lists never render a week-refresh control.
+The authenticated `/grocery-lists`, `/grocery-lists/new`, and `/grocery-lists/[id]` routes serve every list source through one shared detail experience. The library reads compact owner-scoped progress summaries newest-activity first and links to blank creation or a one-page selected-recipe generator. That generator searches the complete active owned recipe set by title or ingredient, adds each recipe once, lets the user choose target servings, and forces a fresh ingredient review before creation. Creation refetches authoritative recipes, recomputes the snapshot, and makes one atomic write; stale or archived selections fail without a partial list. Generated rows preserve expandable recipe requirements while an optional practical shopping amount changes only the compact display and can be reset. The detail screen partitions unchecked and checked rows, keeps Completed collapsed initially, and uses distinct checkbox and edit controls. Its ordinary list-actions popover shows **Reset checklist** only when at least one item is completed; one owner-scoped bulk update moves every completed item back to **To buy** without changing products, quantities, notes, source snapshots, or list type. Manual items accept an optional amount, unit, and note; add and edit share one focus-trapped sheet, while rename and deliberate delete use focused dialogs. Blank creation, rename, and both generators share one title-validation rule while keeping their existing visible error messages. Mutations stay behind feature repositories and TanStack Query hooks and invalidate only affected grocery caches. Manual and selected-recipe lists never render a week-refresh control.
 
 A loaded non-empty planner week exposes one **Grocery list** link to `/grocery-lists/new?source=meal-plan&week=<Monday>`. The generator refetches the owned week, reuses the planner prep-summary grouping to sum repeated entries, includes archived planned recipes, shows saved and planned servings with the exact scale label, and previews the same name-first grocery groups used by selected recipes. Creation refetches that authoritative week again and writes one atomic snapshot without mutating or invalidating the planner. Only an available week-linked list shows **Refresh from week** beside **Add item** on the existing detail page. Refresh resolves the source through the list ID, refetches the linked week, and calls the existing atomic replacement boundary; no caller-selected replacement week, confirmation, preview, diff, history, or background synchronization exists. A successful refresh preserves manual rows and matching check/override state, adds current requirements, and removes obsolete generated products. A detached week remains an editable snapshot with its saved compact week label and no refresh control.
 
@@ -162,6 +162,7 @@ src/
       BackLink.tsx
       InlineNotice.tsx
       SelectableChip.tsx
+      useDialogFocusManagement.ts
   features/
     auth/
       auth.actions.ts
@@ -206,6 +207,7 @@ src/
       MealPlanDay.tsx
       MealPlanEntrySheet.tsx
       MealPlanPasteDialog.tsx
+      MealPlanPrepDialog.tsx
       MealPlanner.tsx
       meal-planning.copy.ts
       meal-planning.constants.ts
@@ -228,12 +230,17 @@ src/
       GroceryListItemRow.tsx
       GroceryListItemSheet.tsx
       GroceryListLibrary.tsx
+      GroceryListRequirementDetails.tsx
+      RenameGroceryListDialog.tsx
       GroceryListSourceDisclosure.tsx
       MealPlanGroceryListGenerator.tsx
+      grocery-list-generation.repository.ts
       grocery-list.generation.ts
       grocery-list.mappers.ts
       grocery-list.queries.ts
+      grocery-list.repository-client.ts
       grocery-list.repository.ts
+      grocery-list.requirement-formatting.ts
       grocery-list.types.ts
       grocery-list.validation.ts
   lib/
@@ -279,6 +286,7 @@ Small, application-wide presentation components live under `src/components/ui`. 
 - `SelectableChip.tsx` owns selected-state accessibility and the tinted or plain chip treatments used by recipe forms and filters.
 - `InlineNotice.tsx` owns error, informational, and neutral notice treatments with the established padding densities.
 - `BackLink.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
+- `useDialogFocusManagement.ts` owns the shared Escape handling, Tab focus trap, initial focus, and safe focus restoration used by grocery-list and meal-planner dialogs. Feature components continue to own their visible layout, copy, and pending-state rules.
 
 Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Grocery Lists, Meal Planner, and Archived Recipes live in that sheet without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
 
@@ -288,7 +296,7 @@ Use TanStack Query for server state from the start. Components should consume fe
 
 Meal-planner queries follow the same boundary. Week data is keyed by normalized Monday, recipe options use one shared active-library cache, and entry mutations invalidate only the affected week. The canonical URL owns the selected week; the outer planner owns the one temporary copy buffer, while the keyed week view owns transient sheet, preview, feedback, search, and Undo state.
 
-Grocery-list queries use separate library-summary and detail keys. Blank creation invalidates the library; rename and item mutations invalidate the affected detail plus the library summary; deletion removes the detail cache and refreshes the library. Checkbox changes optimistically update both caches with rollback on failure so an item moves between To buy and Completed immediately without invalidating planner or recipe data.
+Grocery-list queries use separate library-summary and detail keys. Blank creation invalidates the library; rename and item mutations invalidate the affected detail plus the library summary; deletion removes the detail cache and refreshes the library. Checkbox changes optimistically update both caches with rollback on failure so an item moves between To buy and Completed immediately without invalidating planner or recipe data. Repository ownership is split by stable responsibility: `grocery-list.repository.ts` owns library/detail reads and checklist CRUD, while `grocery-list-generation.repository.ts` owns recipe and meal-plan source reads, previews, generated creation, and week refresh. Both reuse the same small authenticated-client boundary without exposing database rows to components.
 
 ## Supabase Client Boundary
 

@@ -21,7 +21,7 @@ import type {
   SelectedGroceryListRecipeInput
 } from "./grocery-list.types";
 
-export const groceryListTitleSchema = z
+const groceryListTitleSchema = z
   .string()
   .trim()
   .min(1, "Add a list name.")
@@ -69,7 +69,7 @@ const selectedGroceryListRecipeSchema = z.object({
     )
 });
 
-export const selectedGroceryListRecipesSchema = z
+const selectedGroceryListRecipesSchema = z
   .array(selectedGroceryListRecipeSchema)
   .min(1, "Choose at least one recipe.")
   .max(
@@ -101,7 +101,7 @@ export const selectedGroceryListRecipesSchema = z
     });
   });
 
-export const createGeneratedGroceryListSchema = z.object({
+const createGeneratedGroceryListSchema = z.object({
   recipes: selectedGroceryListRecipesSchema,
   title: groceryListTitleSchema
 });
@@ -111,7 +111,7 @@ const mealPlanWeekStartSchema = z.string().refine((value) => {
   return date !== null && getWeekStart(date) === value;
 }, "Choose a valid meal-plan week.");
 
-export const createMealPlanGroceryListSchema = z.object({
+const createMealPlanGroceryListSchema = z.object({
   title: groceryListTitleSchema,
   weekStartDate: mealPlanWeekStartSchema
 });
@@ -178,6 +178,24 @@ export const groceryListItemSchema = z.object({
 
 export function parseGroceryListTitle(title: string) {
   return groceryListTitleSchema.parse(title);
+}
+
+export function validateGroceryListTitle(title: string) {
+  const result = groceryListTitleSchema.safeParse(title);
+  if (result.success) {
+    return { error: null, title: result.data };
+  }
+
+  const issue = result.error.issues[0];
+  return {
+    error:
+      issue?.code === "too_small"
+        ? "Add a list title."
+        : issue?.code === "too_big"
+          ? `Keep the title under ${MAX_GROCERY_LIST_TITLE_LENGTH} characters.`
+          : "Check the list title.",
+    title: null
+  };
 }
 
 export function parseGroceryListItemValues(values: GroceryListItemValues) {

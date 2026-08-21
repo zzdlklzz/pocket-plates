@@ -1,9 +1,10 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { useEffect, useRef, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { InlineNotice } from "@/components/ui/InlineNotice";
+import { useDialogFocusManagement } from "@/components/ui/useDialogFocusManagement";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
 
 type DeleteGroceryListDialogProps = {
@@ -25,52 +26,13 @@ export function DeleteGroceryListDialog({
 }: DeleteGroceryListDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  const isPendingRef = useRef(isPending);
-  const onCancelRef = useRef(onCancel);
-
-  useEffect(() => {
-    isPendingRef.current = isPending;
-  }, [isPending]);
-
-  useEffect(() => {
-    onCancelRef.current = onCancel;
-  }, [onCancel]);
-
-  useEffect(() => {
-    const returnFocus = returnFocusRef.current;
-    cancelButtonRef.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isPendingRef.current) {
-        onCancelRef.current();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const buttons = Array.from(
-        dialogRef.current.querySelectorAll<HTMLButtonElement>("button:not([disabled])")
-      );
-      const firstButton = buttons[0];
-      const lastButton = buttons.at(-1);
-
-      if (event.shiftKey && document.activeElement === firstButton) {
-        event.preventDefault();
-        lastButton?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastButton) {
-        event.preventDefault();
-        firstButton?.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      returnFocus?.focus();
-    };
-  }, [returnFocusRef]);
+  useDialogFocusManagement({
+    containerRef: dialogRef,
+    initialFocusRef: cancelButtonRef,
+    isBusy: isPending,
+    onClose: onCancel,
+    returnFocusRef
+  });
 
   return (
     <div

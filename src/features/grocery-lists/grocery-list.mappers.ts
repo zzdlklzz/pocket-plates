@@ -108,7 +108,6 @@ export type GroceryListItemRow = {
   id: string;
   is_manual: boolean;
   name: string;
-  normalized_name: string;
   notes: string | null;
   quantity_overridden: boolean;
   sort_order: number;
@@ -118,13 +117,11 @@ export type GroceryListItemRow = {
 export type GroceryListDetailRow = {
   grocery_list_items: GroceryListItemRow[] | null;
   id: string;
-  meal_plan_id: string | null;
   meal_plans: { id: string } | null;
   source_recipe_count: number;
   source_type: GroceryListSourceType;
   source_week_start_date: string | null;
   title: string;
-  updated_at: string;
 };
 
 function compareOrderedRows(
@@ -352,11 +349,9 @@ export function toGroceryListItemDto(row: GroceryListItemRow): GroceryListItemDt
     id: row.id,
     isManual: row.is_manual,
     name: row.name,
-    normalizedName: row.normalized_name,
     notes: row.notes,
     quantityOverridden: row.quantity_overridden,
     requirementGroups: buildGroceryRequirementGroups(sources),
-    sortOrder: row.sort_order,
     sources,
     unit: row.unit
   };
@@ -373,11 +368,9 @@ export function toGroceryListDetailDto(
       .map(toGroceryListItemDto),
     mealPlanAvailable:
       row.source_type === "meal_plan" && row.meal_plans !== null,
-    mealPlanId: row.meal_plan_id,
     sourceRecipeCount: row.source_recipe_count,
     sourceType: row.source_type,
     sourceWeekStartDate: row.source_week_start_date as IsoDate | null,
-    title: row.title,
-    updatedAt: row.updated_at
+    title: row.title
   };
 }

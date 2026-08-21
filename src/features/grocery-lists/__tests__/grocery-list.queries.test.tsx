@@ -32,20 +32,23 @@ vi.mock("@/lib/supabase/client", () => ({
 vi.mock("../grocery-list.repository", () => ({
   addGroceryListItem: mocks.addGroceryListItem,
   createBlankGroceryList: mocks.createBlankGroceryList,
-  createGeneratedGroceryList: mocks.createGeneratedGroceryList,
-  createMealPlanGroceryList: mocks.createMealPlanGroceryList,
   deleteGroceryList: mocks.deleteGroceryList,
   getGroceryListDetail: mocks.getGroceryListDetail,
-  getMealPlanGrocerySource: mocks.getMealPlanGrocerySource,
-  listGroceryListRecipeOptions: mocks.listGroceryListRecipeOptions,
   listGroceryLists: mocks.listGroceryLists,
-  previewSelectedRecipeGroceryList: mocks.previewSelectedRecipeGroceryList,
-  refreshGroceryListFromWeek: mocks.refreshGroceryListFromWeek,
   removeGroceryListItem: mocks.removeGroceryListItem,
   renameGroceryList: mocks.renameGroceryList,
   resetGroceryListChecklist: mocks.resetGroceryListChecklist,
   setGroceryListItemChecked: mocks.setGroceryListItemChecked,
   updateGroceryListItem: mocks.updateGroceryListItem
+}));
+
+vi.mock("../grocery-list-generation.repository", () => ({
+  createGeneratedGroceryList: mocks.createGeneratedGroceryList,
+  createMealPlanGroceryList: mocks.createMealPlanGroceryList,
+  getMealPlanGrocerySource: mocks.getMealPlanGrocerySource,
+  listGroceryListRecipeOptions: mocks.listGroceryListRecipeOptions,
+  previewSelectedRecipeGroceryList: mocks.previewSelectedRecipeGroceryList,
+  refreshGroceryListFromWeek: mocks.refreshGroceryListFromWeek
 }));
 
 import {
@@ -106,22 +109,18 @@ function checkedCacheFixtures(checked = false) {
           id: "item-1",
           isManual: true,
           name: "Pepper",
-          normalizedName: "pepper",
           notes: null,
           quantityOverridden: false,
           requirementGroups: [],
-          sortOrder: 0,
           sources: [],
           unit: null
         }
       ],
       mealPlanAvailable: false,
-      mealPlanId: null,
       sourceRecipeCount: 0,
       sourceType: "manual" as const,
       sourceWeekStartDate: null,
-      title: "Groceries",
-      updatedAt: "2026-08-21T10:00:00Z"
+      title: "Groceries"
     },
     summaries: [
       {
@@ -150,9 +149,7 @@ function concurrentCheckedCacheFixtures() {
         {
           ...fixtures.detail.items[0]!,
           id: "item-2",
-          name: "Rice",
-          normalizedName: "rice",
-          sortOrder: 1
+          name: "Rice"
         }
       ]
     },

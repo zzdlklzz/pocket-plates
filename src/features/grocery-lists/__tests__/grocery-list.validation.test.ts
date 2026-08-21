@@ -9,7 +9,8 @@ import {
   parseCreateMealPlanGroceryListInput,
   parseCreateGeneratedGroceryListInput,
   parseGroceryListItemValues,
-  parseGroceryListTitle
+  parseGroceryListTitle,
+  validateGroceryListTitle
 } from "../grocery-list.validation";
 
 const recipeId = (index: number) =>
@@ -42,6 +43,17 @@ describe("grocery list validation", () => {
         unit: ""
       })
     ).toEqual({ amount: null, name: "Pepper", notes: null, unit: null });
+  });
+
+  it("keeps form-friendly title messages on the shared title rule", () => {
+    expect(validateGroceryListTitle("   ")).toEqual({
+      error: "Add a list title.",
+      title: null
+    });
+    expect(validateGroceryListTitle("  Saturday shop  ")).toEqual({
+      error: null,
+      title: "Saturday shop"
+    });
   });
 
   it("rejects invalid quantities and bounded fields", () => {
@@ -92,7 +104,6 @@ describe("grocery list validation", () => {
       id: "item-1",
       is_manual: true,
       name: saved.name,
-      normalized_name: "rice",
       notes: saved.notes,
       quantity_overridden: false,
       sort_order: 0,

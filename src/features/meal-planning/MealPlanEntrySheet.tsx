@@ -3,7 +3,6 @@
 import { Search, X } from "lucide-react";
 import Link from "next/link";
 import {
-  useEffect,
   useId,
   useRef,
   useState,
@@ -12,6 +11,7 @@ import {
 } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { InlineNotice } from "@/components/ui/InlineNotice";
+import { useDialogFocusManagement } from "@/components/ui/useDialogFocusManagement";
 import {
   MAX_PLANNED_SERVINGS,
   MEAL_TYPE_LABELS,
@@ -99,61 +99,19 @@ export function MealPlanEntrySheet({
   const recipeSelectRef = useRef<HTMLSelectElement>(null);
   const plannedServingsHelpId = useId();
   const plannedServingsInputId = useId();
-  const isPendingRef = useRef(isBusy);
-  const onCloseRef = useRef(onClose);
   const [selectedDate, setSelectedDate] = useState(entry?.plannedFor ?? plannedFor);
   const [recipeId, setRecipeId] = useState(entry?.recipe.id ?? "");
   const [mealType, setMealType] = useState<MealType>(entry?.mealType ?? "flexible");
   const [servings, setServings] = useState(String(entry?.servings ?? 1));
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  useEffect(() => {
-    isPendingRef.current = isBusy;
-  }, [isBusy]);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    const returnFocus = returnFocusRef.current;
-    closeButtonRef.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isPendingRef.current) {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement?.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      returnFocus?.focus();
-    };
-  }, [returnFocusRef]);
+  useDialogFocusManagement({
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    isBusy,
+    onClose,
+    returnFocusRef
+  });
 
   function selectRecipe(nextRecipeId: string) {
     const recipe = recipeOptions.find(({ id }) => id === nextRecipeId);

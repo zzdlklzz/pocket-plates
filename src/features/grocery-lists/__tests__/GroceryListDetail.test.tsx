@@ -62,11 +62,9 @@ function detail(): GroceryListDetailDto {
         id: "item-rice",
         isManual: true,
         name: "Rice",
-        normalizedName: "rice",
         notes: "Jasmine",
         quantityOverridden: false,
         requirementGroups: [],
-        sortOrder: 0,
         sources: [],
         unit: "cups"
       },
@@ -76,7 +74,6 @@ function detail(): GroceryListDetailDto {
         id: "item-pepper",
         isManual: false,
         name: "Pepper",
-        normalizedName: "pepper",
         notes: null,
         quantityOverridden: false,
         requirementGroups: [
@@ -97,7 +94,6 @@ function detail(): GroceryListDetailDto {
             sourceCount: 1
           }
         ],
-        sortOrder: 1,
         sources: [
           {
             canonicalUnit: "tbsp",
@@ -126,22 +122,18 @@ function detail(): GroceryListDetailDto {
         id: "item-eggs",
         isManual: true,
         name: "Eggs",
-        normalizedName: "eggs",
         notes: null,
         quantityOverridden: false,
         requirementGroups: [],
-        sortOrder: 2,
         sources: [],
         unit: "pcs"
       }
     ],
     mealPlanAvailable: false,
-    mealPlanId: null,
     sourceRecipeCount: 0,
     sourceType: "manual",
     sourceWeekStartDate: null,
-    title: "Weekend shop",
-    updatedAt: "2026-08-21T00:00:00Z"
+    title: "Weekend shop"
   };
 }
 
@@ -200,7 +192,6 @@ describe("GroceryListDetail", () => {
   it("refreshes an available meal-plan list from the existing detail page", async () => {
     const mealPlanDetail = detail();
     mealPlanDetail.mealPlanAvailable = true;
-    mealPlanDetail.mealPlanId = "plan-1";
     mealPlanDetail.sourceType = "meal_plan";
     mealPlanDetail.sourceWeekStartDate = "2026-08-17";
     mocks.detailResult = {
@@ -228,7 +219,6 @@ describe("GroceryListDetail", () => {
   it("shows refresh pending and failure states without hiding list editing", async () => {
     const mealPlanDetail = detail();
     mealPlanDetail.mealPlanAvailable = true;
-    mealPlanDetail.mealPlanId = "plan-1";
     mealPlanDetail.sourceType = "meal_plan";
     mealPlanDetail.sourceWeekStartDate = "2026-08-17";
     mocks.detailResult = {

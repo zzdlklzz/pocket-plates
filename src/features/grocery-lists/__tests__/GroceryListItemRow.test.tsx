@@ -34,7 +34,6 @@ function item(sources: GroceryListItemSourceDto[]): GroceryListItemDto {
     id: "item-pepper",
     isManual: false,
     name: "Pepper",
-    normalizedName: "pepper",
     notes: null,
     quantityOverridden: false,
     requirementGroups: [
@@ -47,7 +46,6 @@ function item(sources: GroceryListItemSourceDto[]): GroceryListItemDto {
         sourceCount: sources.length
       }
     ],
-    sortOrder: 0,
     sources,
     unit: null
   };

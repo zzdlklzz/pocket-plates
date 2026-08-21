@@ -37,6 +37,10 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `docs/assets/navigation-mockups.svg`: approved Home–Add–More navigation reference plus an unconfirmed future five-slot concept
 - `docs/assets/meal-planner-mockups.svg`: approved weekly-list meal-planner layout and interaction-state reference
 - `docs/assets/grocery-list-mockups.svg`: approved grocery-list library, grouped checklist, and simple week-refresh button reference
+- `src/features/grocery-lists/`: grocery-list screens, shared requirement rendering and validation, query hooks, mapping, generation rules, and focused repositories
+- `src/features/grocery-lists/grocery-list.repository.ts`: grocery-list library/detail reads and checklist CRUD
+- `src/features/grocery-lists/grocery-list-generation.repository.ts`: selected-recipe and meal-plan source reads, previews, generated creation, and week refresh
+- `src/components/ui/useDialogFocusManagement.ts`: shared keyboard focus behavior for grocery-list and meal-planner dialogs
 - `infra/aws/`: Terraform project for the low-cost AWS EC2 learning deployment
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`: initial Supabase schema and RLS migration draft
 - `supabase/migrations/20260819194346_add_private_library_search.sql`: owner-scoped title/ingredient search function and trigram indexes

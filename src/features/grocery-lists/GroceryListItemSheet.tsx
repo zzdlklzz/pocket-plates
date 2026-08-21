@@ -2,7 +2,6 @@
 
 import { Trash2, X } from "lucide-react";
 import {
-  useEffect,
   useRef,
   useState,
   type FormEvent,
@@ -10,6 +9,7 @@ import {
 } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { InlineNotice } from "@/components/ui/InlineNotice";
+import { useDialogFocusManagement } from "@/components/ui/useDialogFocusManagement";
 import {
   MAX_GROCERY_LIST_ITEM_NAME_LENGTH,
   MAX_GROCERY_LIST_ITEM_NOTE_LENGTH,
@@ -59,8 +59,6 @@ export function GroceryListItemSheet({
   const isBusy = isPending || isRemovePending;
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const isBusyRef = useRef(isBusy);
-  const onCloseRef = useRef(onClose);
   const [name, setName] = useState(item?.name ?? "");
   const [amount, setAmount] = useState(item?.amount?.toString() ?? "");
   const [unit, setUnit] = useState(item?.unit ?? "");
@@ -70,57 +68,14 @@ export function GroceryListItemSheet({
   );
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  useEffect(() => {
-    isBusyRef.current = isBusy;
-  }, [isBusy]);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    const returnFocus = returnFocusRef.current;
-    const fallbackFocus = fallbackFocusRef?.current;
-    closeButtonRef.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isBusyRef.current) {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement?.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      if (returnFocus?.isConnected) {
-        returnFocus.focus();
-      } else {
-        fallbackFocus?.focus();
-      }
-    };
-  }, [fallbackFocusRef, returnFocusRef]);
+  useDialogFocusManagement({
+    containerRef: dialogRef,
+    fallbackFocusRef,
+    initialFocusRef: closeButtonRef,
+    isBusy,
+    onClose,
+    returnFocusRef
+  });
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

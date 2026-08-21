@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  countGroceryListSourceRecipes,
   formatCompactGroceryRequirements,
   formatGroceryListQuantity,
   formatGroceryQuantity,
@@ -8,6 +7,7 @@ import {
   normalizeGroceryListItemName,
   roundGroceryQuantity
 } from "../grocery-list.generation";
+import { formatGrocerySourceSummary } from "../grocery-list.requirement-formatting";
 import type {
   GroceryListGenerationIngredientInput,
   GroceryListGenerationRecipeInput
@@ -261,7 +261,9 @@ describe("grocery-list requirement grouping", () => {
     expect(formatCompactGroceryRequirements(item.requirementGroups)).toBe(
       "55 tsp total"
     );
-    expect(countGroceryListSourceRecipes(item.sources)).toBe(10);
+    expect(formatGrocerySourceSummary(item.sources)).toBe(
+      "Used in 10 recipes"
+    );
   });
 
   it("keeps ten mixed-unit and null requirements in one compact product", () => {

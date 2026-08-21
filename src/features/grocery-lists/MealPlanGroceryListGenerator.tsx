@@ -11,6 +11,7 @@ import { InlineNotice } from "@/components/ui/InlineNotice";
 import type { IsoDate } from "@/features/meal-planning/meal-planning.types";
 import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
+import { validateGroceryListTitle } from "./grocery-list.validation";
 import { formatGroceryListWeekRange } from "./grocery-list.week-formatting";
 import {
   useCreateMealPlanGroceryList,
@@ -46,15 +47,9 @@ export function MealPlanGroceryListGenerator({
   }
 
   async function createGroceryList() {
-    const nextTitle = title.trim();
-    if (!nextTitle) {
-      setValidationError("Add a list title.");
-      return;
-    }
-    if (nextTitle.length > MAX_GROCERY_LIST_TITLE_LENGTH) {
-      setValidationError(
-        `Keep the title under ${MAX_GROCERY_LIST_TITLE_LENGTH} characters.`
-      );
+    const titleResult = validateGroceryListTitle(title);
+    if (titleResult.error || !titleResult.title) {
+      setValidationError(titleResult.error);
       return;
     }
     if (
@@ -69,7 +64,7 @@ export function MealPlanGroceryListGenerator({
     setValidationError(null);
     try {
       const id = await createList.mutateAsync({
-        title: nextTitle,
+        title: titleResult.title,
         weekStartDate
       });
       router.push(`/grocery-lists/${id}`);

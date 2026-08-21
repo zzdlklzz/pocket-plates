@@ -2,8 +2,9 @@
 
 import { X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { useDialogFocusManagement } from "@/components/ui/useDialogFocusManagement";
 import { parseIsoDate } from "./meal-planning.dates";
 import {
   formatMealPlanPrepScale,
@@ -42,51 +43,12 @@ export function MealPlanPrepDialog({
 }: MealPlanPrepDialogProps) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const onCloseRef = useRef(onClose);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    const returnFocus = returnFocusRef.current;
-    closeButtonRef.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
-        )
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement?.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      returnFocus?.focus();
-    };
-  }, [returnFocusRef]);
+  useDialogFocusManagement({
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose,
+    returnFocusRef
+  });
 
   return (
     <div

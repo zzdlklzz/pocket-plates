@@ -13,9 +13,7 @@ import { useRouter } from "next/navigation";
 import {
   useEffect,
   useRef,
-  useState,
-  type FormEvent,
-  type RefObject
+  useState
 } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { AppPageShell } from "@/components/ui/AppPageShell";
@@ -23,7 +21,6 @@ import { BackLink } from "@/components/ui/BackLink";
 import { InlineNotice } from "@/components/ui/InlineNotice";
 import { RecipeNavigation } from "@/features/recipes/RecipeNavigation";
 import { DeleteGroceryListDialog } from "./DeleteGroceryListDialog";
-import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
 import { formatSelectedRecipeSource } from "./grocery-list.source-formatting";
 import { formatGroceryListWeekRange } from "./grocery-list.week-formatting";
@@ -45,6 +42,7 @@ import {
   type GroceryListItemFormValues
 } from "./GroceryListItemSheet";
 import { GroceryListItemRow } from "./GroceryListItemRow";
+import { RenameGroceryListDialog } from "./RenameGroceryListDialog";
 
 function getSourceLabel({
   mealPlanAvailable,
@@ -546,150 +544,5 @@ export function GroceryListDetail({ id }: { id: string }) {
         />
       ) : null}
     </>
-  );
-}
-
-type RenameGroceryListDialogProps = {
-  error: unknown;
-  initialTitle: string;
-  isPending: boolean;
-  onCancel: () => void;
-  onConfirm: (title: string) => Promise<void>;
-  returnFocusRef: RefObject<HTMLButtonElement | null>;
-};
-
-function RenameGroceryListDialog({
-  error,
-  initialTitle,
-  isPending,
-  onCancel,
-  onConfirm,
-  returnFocusRef
-}: RenameGroceryListDialogProps) {
-  const dialogRef = useRef<HTMLElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isPendingRef = useRef(isPending);
-  const onCancelRef = useRef(onCancel);
-  const [title, setTitle] = useState(initialTitle);
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  useEffect(() => {
-    onCancelRef.current = onCancel;
-  }, [onCancel]);
-
-  useEffect(() => {
-    isPendingRef.current = isPending;
-  }, [isPending]);
-
-  useEffect(() => {
-    const returnFocus = returnFocusRef.current;
-    inputRef.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isPendingRef.current) {
-        onCancelRef.current();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement?.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      returnFocus?.focus();
-    };
-  }, [returnFocusRef]);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextTitle = title.trim();
-
-    if (!nextTitle) {
-      setValidationError("Add a list title.");
-      return;
-    }
-    if (nextTitle.length > MAX_GROCERY_LIST_TITLE_LENGTH) {
-      setValidationError(
-        `Keep the title under ${MAX_GROCERY_LIST_TITLE_LENGTH} characters.`
-      );
-      return;
-    }
-
-    setValidationError(null);
-    try {
-      await onConfirm(nextTitle);
-    } catch {
-      // The mutation error is rendered above the actions.
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-5 py-8"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isPending) {
-          onCancel();
-        }
-      }}
-      role="presentation"
-    >
-      <section
-        aria-label="Rename grocery list"
-        aria-modal="true"
-        className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
-        ref={dialogRef}
-        role="dialog"
-      >
-        <h2 className="text-lg font-bold text-slate-900">Rename list</h2>
-        <form className="mt-4" onSubmit={submit}>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            List title
-            <input
-              className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-3 text-base text-slate-800"
-              disabled={isPending}
-              maxLength={MAX_GROCERY_LIST_TITLE_LENGTH}
-              onChange={(event) => {
-                setTitle(event.target.value);
-                setValidationError(null);
-              }}
-              ref={inputRef}
-              value={title}
-            />
-          </label>
-          {validationError || error ? (
-            <InlineNotice className="mt-4" role="alert" tone="error">
-              {validationError ?? getGroceryListErrorMessage(error, "update")}
-            </InlineNotice>
-          ) : null}
-          <div className="mt-5 flex justify-end gap-3">
-            <ActionButton disabled={isPending} onClick={onCancel} variant="secondary">
-              Cancel
-            </ActionButton>
-            <ActionButton pending={isPending} pendingLabel="Saving..." type="submit">
-              Save
-            </ActionButton>
-          </div>
-        </form>
-      </section>
-    </div>
   );
 }

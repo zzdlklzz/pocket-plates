@@ -11,7 +11,6 @@ function generatedItem(quantityOverridden = false): GroceryListItemDto {
     id: "item-pepper",
     isManual: false,
     name: "Pepper",
-    normalizedName: "pepper",
     notes: "For the pantry",
     quantityOverridden,
     requirementGroups: [
@@ -24,7 +23,6 @@ function generatedItem(quantityOverridden = false): GroceryListItemDto {
         sourceCount: 1
       }
     ],
-    sortOrder: 0,
     sources: [
       {
         canonicalUnit: "tbsp",

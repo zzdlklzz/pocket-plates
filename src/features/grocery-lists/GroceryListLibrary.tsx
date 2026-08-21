@@ -15,6 +15,7 @@ import {
 } from "./grocery-list.queries";
 import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
+import { validateGroceryListTitle } from "./grocery-list.validation";
 import { GroceryListCard } from "./GroceryListCard";
 import { GroceryListGenerator } from "./GroceryListGenerator";
 import { MealPlanGroceryListGenerator } from "./MealPlanGroceryListGenerator";
@@ -142,22 +143,15 @@ function NewBlankGroceryList() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextTitle = title.trim();
-
-    if (!nextTitle) {
-      setValidationError("Add a list title.");
-      return;
-    }
-    if (nextTitle.length > MAX_GROCERY_LIST_TITLE_LENGTH) {
-      setValidationError(
-        `Keep the title under ${MAX_GROCERY_LIST_TITLE_LENGTH} characters.`
-      );
+    const result = validateGroceryListTitle(title);
+    if (result.error || !result.title) {
+      setValidationError(result.error);
       return;
     }
 
     setValidationError(null);
     try {
-      const id = await createList.mutateAsync({ title: nextTitle });
+      const id = await createList.mutateAsync({ title: result.title });
       router.push(`/grocery-lists/${id}`);
     } catch {
       // The mutation error is rendered below the title field.

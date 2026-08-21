@@ -48,11 +48,9 @@ export type GroceryListItemDto = {
   id: string;
   isManual: boolean;
   name: string;
-  normalizedName: string;
   notes: string | null;
   quantityOverridden: boolean;
   requirementGroups: GroceryListRequirementGroupDto[];
-  sortOrder: number;
   sources: GroceryListItemSourceDto[];
   unit: string | null;
 };
@@ -61,12 +59,10 @@ export type GroceryListDetailDto = {
   id: string;
   items: GroceryListItemDto[];
   mealPlanAvailable: boolean;
-  mealPlanId: string | null;
   sourceRecipeCount: number;
   sourceType: GroceryListSourceType;
   sourceWeekStartDate: IsoDate | null;
   title: string;
-  updatedAt: string;
 };
 
 export type GroceryListItemValues = {
