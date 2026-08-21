@@ -166,6 +166,10 @@ export type SetGroceryListItemCheckedInput = {
   itemId: string;
 };
 
+export type ResetGroceryListChecklistInput = {
+  groceryListId: string;
+};
+
 export type RemoveGroceryListItemInput = {
   groceryListId: string;
   itemId: string;

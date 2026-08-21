@@ -21,6 +21,7 @@ import {
   removeGroceryListItem,
   refreshGroceryListFromWeek,
   renameGroceryList,
+  resetGroceryListChecklist,
   setGroceryListItemChecked,
   updateGroceryListItem
 } from "../grocery-list.repository";
@@ -855,5 +856,25 @@ describe("grocery list repository mutations", () => {
       "grocery_list_id",
       "list-1"
     );
+  });
+
+  it("resets only checked items belonging to the requested grocery list", async () => {
+    const result = { data: null, error: null };
+    const chain = {
+      eq: vi.fn(() => chain),
+      then: (resolve: (value: typeof result) => unknown) =>
+        Promise.resolve(result).then(resolve)
+    };
+    const update = vi.fn(() => chain);
+    const from = vi.fn(() => ({ update }));
+
+    await resetGroceryListChecklist({ from } as never, {
+      groceryListId: "list-1"
+    });
+
+    expect(from).toHaveBeenCalledWith("grocery_list_items");
+    expect(update).toHaveBeenCalledWith({ checked: false });
+    expect(chain.eq).toHaveBeenNthCalledWith(1, "grocery_list_id", "list-1");
+    expect(chain.eq).toHaveBeenNthCalledWith(2, "checked", true);
   });
 });

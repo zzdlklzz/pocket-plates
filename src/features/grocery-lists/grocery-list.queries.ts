@@ -18,6 +18,7 @@ import {
   refreshGroceryListFromWeek,
   removeGroceryListItem,
   renameGroceryList,
+  resetGroceryListChecklist,
   setGroceryListItemChecked,
   updateGroceryListItem
 } from "./grocery-list.repository";
@@ -31,6 +32,7 @@ import type {
   GroceryListSummaryDto,
   RemoveGroceryListItemInput,
   RenameGroceryListInput,
+  ResetGroceryListChecklistInput,
   RefreshGroceryListFromWeekInput,
   SelectedGroceryListRecipeInput,
   SetGroceryListItemCheckedInput,
@@ -166,6 +168,16 @@ export function useRenameGroceryList() {
   return useMutation({
     mutationFn: (input: RenameGroceryListInput) =>
       renameGroceryList(createSupabaseBrowserClient(), input),
+    onSuccess: async (_, input) => invalidateGroceryList(input.groceryListId)
+  });
+}
+
+export function useResetGroceryListChecklist() {
+  const invalidateGroceryList = useInvalidateGroceryList();
+
+  return useMutation({
+    mutationFn: (input: ResetGroceryListChecklistInput) =>
+      resetGroceryListChecklist(createSupabaseBrowserClient(), input),
     onSuccess: async (_, input) => invalidateGroceryList(input.groceryListId)
   });
 }

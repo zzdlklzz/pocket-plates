@@ -6,6 +6,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  RotateCcw,
   Trash2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -32,6 +33,7 @@ import {
   useGroceryListDetail,
   useRemoveGroceryListItem,
   useRenameGroceryList,
+  useResetGroceryListChecklist,
   useRefreshGroceryListFromWeek,
   useSetGroceryListItemChecked,
   useUpdateGroceryListItem
@@ -76,6 +78,7 @@ export function GroceryListDetail({ id }: { id: string }) {
   const checkItem = useSetGroceryListItemChecked();
   const removeItem = useRemoveGroceryListItem();
   const renameList = useRenameGroceryList();
+  const resetChecklist = useResetGroceryListChecklist();
   const deleteList = useDeleteGroceryList();
   const refreshFromWeek = useRefreshGroceryListFromWeek();
   const [selectedItem, setSelectedItem] = useState<GroceryListItemDto | "new" | null>(null);
@@ -229,6 +232,24 @@ export function GroceryListDetail({ id }: { id: string }) {
     setFeedback("List renamed.");
   }
 
+  async function resetChecklistItems() {
+    resetChecklist.reset();
+    setFeedback("Resetting checklist…");
+    setIsActionsOpen(false);
+    actionsTriggerRef.current?.focus();
+
+    try {
+      await resetChecklist.mutateAsync({ groceryListId: id });
+      setIsCompletedOpen(false);
+      setFeedback(
+        `Checklist reset. ${completed.length} item${completed.length === 1 ? "" : "s"} moved to To buy.`
+      );
+    } catch {
+      setFeedback(null);
+      // The mutation error is rendered inline and the existing list is unchanged.
+    }
+  }
+
   async function removeList() {
     try {
       await deleteList.mutateAsync({ groceryListId: id });
@@ -274,9 +295,15 @@ export function GroceryListDetail({ id }: { id: string }) {
             <div className="relative">
               <button
                 aria-expanded={isActionsOpen}
+                aria-busy={resetChecklist.isPending || undefined}
+                aria-disabled={resetChecklist.isPending || undefined}
                 aria-label="List actions"
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600"
-                onClick={() => setIsActionsOpen((current) => !current)}
+                onClick={() => {
+                  if (!resetChecklist.isPending) {
+                    setIsActionsOpen((current) => !current);
+                  }
+                }}
                 ref={actionsTriggerRef}
                 type="button"
               >
@@ -300,6 +327,19 @@ export function GroceryListDetail({ id }: { id: string }) {
                     <Pencil className="h-4 w-4" aria-hidden="true" />
                     Rename list
                   </button>
+                  {completed.length > 0 ? (
+                    <button
+                      className="flex min-h-11 w-full items-center gap-2 border-t border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-700 disabled:text-slate-400"
+                      disabled={
+                        resetChecklist.isPending || pendingCheckItemIds.size > 0
+                      }
+                      onClick={() => void resetChecklistItems()}
+                      type="button"
+                    >
+                      <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                      Reset checklist
+                    </button>
+                  ) : null}
                   <button
                     className="flex min-h-11 w-full items-center gap-2 border-t border-slate-200 px-4 py-3 text-left text-sm font-semibold text-red-700"
                     onClick={() => {
@@ -330,6 +370,7 @@ export function GroceryListDetail({ id }: { id: string }) {
             >
               {list.sourceType === "meal_plan" && list.mealPlanAvailable ? (
                 <ActionButton
+                  disabled={resetChecklist.isPending}
                   fullWidth
                   onClick={() => void refreshListFromWeek()}
                   pending={refreshFromWeek.isPending}
@@ -378,6 +419,11 @@ export function GroceryListDetail({ id }: { id: string }) {
             {getGroceryListErrorMessage(checkError ?? checkItem.error, "saveItem")}
           </InlineNotice>
         ) : null}
+        {resetChecklist.isError ? (
+          <InlineNotice className="mt-5" role="alert" tone="error">
+            {getGroceryListErrorMessage(resetChecklist.error, "update")}
+          </InlineNotice>
+        ) : null}
 
         {list.items.length === 0 ? (
           <section className="mt-8 rounded-2xl border border-leaf-100 bg-leaf-50 p-5 text-center">
@@ -405,7 +451,9 @@ export function GroceryListDetail({ id }: { id: string }) {
                 <ul className="mt-3 border-y border-slate-200">
                   {toBuy.map((item) => (
                     <GroceryListItemRow
-                      isChecking={pendingCheckItemIds.has(item.id)}
+                      isChecking={
+                        resetChecklist.isPending || pendingCheckItemIds.has(item.id)
+                      }
                       item={item}
                       key={item.id}
                       onCheck={(checked) => void setChecked(item, checked)}
@@ -440,7 +488,9 @@ export function GroceryListDetail({ id }: { id: string }) {
                   <ul className="border-b border-slate-200">
                     {completed.map((item) => (
                       <GroceryListItemRow
-                        isChecking={pendingCheckItemIds.has(item.id)}
+                        isChecking={
+                          resetChecklist.isPending || pendingCheckItemIds.has(item.id)
+                        }
                         item={item}
                         key={item.id}
                         onCheck={(checked) => void setChecked(item, checked)}

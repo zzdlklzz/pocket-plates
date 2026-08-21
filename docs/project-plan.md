@@ -217,6 +217,7 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Slice 4: generate lists from selected recipes with a grouped review.
   - [x] Slice 5: generate and explicitly refresh a list from one meal-plan week on the existing detail page.
   - [x] Slice 6: complete signed-in mobile/desktop acceptance and the final documentation sweep.
+  - [x] Slice 7: allow any completed checklist to be reset for reuse without changing its items or source snapshot.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
 - Favorites.

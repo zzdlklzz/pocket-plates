@@ -1,6 +1,6 @@
 # PocketPlates
 
-PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, a low-friction weekly meal planner, private standalone grocery checklists, and grocery lists generated from saved recipes or a planned week. Week-generated lists can be explicitly refreshed in place after the plan changes.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, a low-friction weekly meal planner, private standalone grocery checklists, and grocery lists generated from saved recipes or a planned week. Grocery checklists can be reset for reuse, and week-generated lists can be explicitly refreshed in place after the plan changes.
 
 ## Recommended Stack
 
@@ -63,7 +63,7 @@ This command starts the local Supabase stack when necessary, applies any pending
 
 Open `http://localhost:3000` and create a local account. Local users and recipe data remain separate from production. To rebuild the local database from every migration, use `npx supabase db reset --local`; this deletes local data only.
 
-Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflows, including the complete meal-planner journey, standalone grocery-list editing, selected-recipe generation, and meal-plan snapshot refresh with preserved manual/check/override state. Grocery acceptance also checks keyboard focus return and the linked-list layout at 200% text scale. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
+Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflows, including the complete meal-planner journey, standalone grocery-list editing and checklist reset, selected-recipe generation, and meal-plan snapshot refresh with preserved manual/check/override state. Grocery acceptance also checks keyboard focus return and the linked-list layout at 200% text scale. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
 
 ## AWS Terraform Lab
 
@@ -79,7 +79,7 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Add/edit recipe screen
 - Filter sheet
 - Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with bounded title-or-ingredient recipe results, in-week day selection and one-serving defaults, in-app day/week copy and paste, and a grouped preparation summary linked to active recipes
-- Grocery-list library, blank-list creation, private manual checklist editing, selected-recipe generation with serving adjustments, and whole-week generation with explicit in-place refresh
+- Grocery-list library, blank-list creation, private checklist editing and reuse through reset, selected-recipe generation with serving adjustments, and whole-week generation with explicit in-place refresh
 
 ## Future Features
 

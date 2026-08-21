@@ -152,10 +152,8 @@ test("manages a standalone grocery list across reloads", async ({
   await page.reload();
   await expect(page.getByText("1 of 1 items checked", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: `Edit ${editedItem}` })).toHaveCount(0);
-  await page.getByRole("button", { name: "Completed (1)" }).click();
-  await page
-    .getByRole("checkbox", { name: `Mark ${editedItem} as not bought` })
-    .click();
+  await page.getByRole("button", { name: "List actions" }).click();
+  await page.getByRole("button", { name: "Reset checklist" }).click();
   await expect(page.getByText("0 of 1 items checked", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: `Edit ${editedItem}` })).toBeVisible();
 

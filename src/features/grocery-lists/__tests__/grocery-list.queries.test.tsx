@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   refreshGroceryListFromWeek: vi.fn(),
   removeGroceryListItem: vi.fn(),
   renameGroceryList: vi.fn(),
+  resetGroceryListChecklist: vi.fn(),
   setGroceryListItemChecked: vi.fn(),
   updateGroceryListItem: vi.fn()
 }));
@@ -42,6 +43,7 @@ vi.mock("../grocery-list.repository", () => ({
   refreshGroceryListFromWeek: mocks.refreshGroceryListFromWeek,
   removeGroceryListItem: mocks.removeGroceryListItem,
   renameGroceryList: mocks.renameGroceryList,
+  resetGroceryListChecklist: mocks.resetGroceryListChecklist,
   setGroceryListItemChecked: mocks.setGroceryListItemChecked,
   updateGroceryListItem: mocks.updateGroceryListItem
 }));
@@ -58,6 +60,7 @@ import {
   useMealPlanGrocerySource,
   useRemoveGroceryListItem,
   useRenameGroceryList,
+  useResetGroceryListChecklist,
   useRefreshGroceryListFromWeek,
   useSetGroceryListItemChecked,
   useSelectedRecipeGroceryPreview,
@@ -447,6 +450,35 @@ describe("grocery list queries", () => {
     });
 
     expect(mocks.refreshGroceryListFromWeek).toHaveBeenCalledWith(
+      { client: "supabase" },
+      input
+    );
+    expect(invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(invalidateQueries).toHaveBeenNthCalledWith(1, {
+      queryKey: queryKeys.groceryLists.list
+    });
+    expect(invalidateQueries).toHaveBeenNthCalledWith(2, {
+      queryKey: queryKeys.groceryLists.detail("list-3")
+    });
+    expect(invalidateQueries).not.toHaveBeenCalledWith({
+      queryKey: queryKeys.mealPlanning.all
+    });
+  });
+
+  it("resets a checklist and invalidates only its grocery caches", async () => {
+    mocks.resetGroceryListChecklist.mockResolvedValue(undefined);
+    const queryClient = createQueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useResetGroceryListChecklist(), {
+      wrapper: createWrapper(queryClient)
+    });
+    const input = { groceryListId: "list-3" };
+
+    await act(async () => {
+      await result.current.mutateAsync(input);
+    });
+
+    expect(mocks.resetGroceryListChecklist).toHaveBeenCalledWith(
       { client: "supabase" },
       input
     );

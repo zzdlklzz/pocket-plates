@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   remove: {} as Record<string, unknown>,
   refresh: {} as Record<string, unknown>,
   rename: {} as Record<string, unknown>,
+  resetChecklist: {} as Record<string, unknown>,
   routerPush: vi.fn(),
   update: {} as Record<string, unknown>
 }));
@@ -23,6 +24,7 @@ vi.mock("../grocery-list.queries", () => ({
   useGroceryListDetail: () => mocks.detailResult,
   useRemoveGroceryListItem: () => mocks.remove,
   useRenameGroceryList: () => mocks.rename,
+  useResetGroceryListChecklist: () => mocks.resetChecklist,
   useRefreshGroceryListFromWeek: () => mocks.refresh,
   useSetGroceryListItemChecked: () => mocks.check,
   useUpdateGroceryListItem: () => mocks.update
@@ -152,6 +154,7 @@ describe("GroceryListDetail", () => {
     mocks.remove = mutation();
     mocks.refresh = mutation();
     mocks.rename = mutation();
+    mocks.resetChecklist = mutation();
     mocks.update = mutation();
     mocks.detailResult = {
       data: detail(),
@@ -400,6 +403,64 @@ describe("GroceryListDetail", () => {
       });
     });
     expect(screen.getByRole("status")).toHaveTextContent("Rice moved to Completed.");
+  });
+
+  it("resets completed items from the list actions without a confirmation flow", async () => {
+    render(<GroceryListDetail id="list-1" />);
+
+    const actionsTrigger = screen.getByRole("button", { name: "List actions" });
+    actionsTrigger.focus();
+    fireEvent.click(actionsTrigger);
+    fireEvent.click(screen.getByRole("button", { name: "Reset checklist" }));
+
+    await waitFor(() => {
+      expect(mocks.resetChecklist.mutateAsync).toHaveBeenCalledWith({
+        groceryListId: "list-1"
+      });
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Checklist reset. 1 item moved to To buy."
+    );
+    expect(actionsTrigger).toHaveFocus();
+  });
+
+  it("hides checklist reset when nothing is completed", () => {
+    const uncheckedDetail = detail();
+    uncheckedDetail.items = uncheckedDetail.items.map((item) => ({
+      ...item,
+      checked: false
+    }));
+    mocks.detailResult = {
+      data: uncheckedDetail,
+      isError: false,
+      isPending: false
+    };
+    render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "List actions" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Reset checklist" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the list usable and shows a safe checklist reset error", async () => {
+    mocks.resetChecklist = {
+      ...mutation(),
+      error: new TypeError("Failed to fetch"),
+      isError: true,
+      mutateAsync: vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+    };
+    render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "List actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset checklist" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Check your connection and try again."
+    );
+    expect(screen.getByRole("button", { name: "Add item" })).toBeEnabled();
   });
 
   it("shows a failed checkbox save even when the mutation observer resets", async () => {

@@ -31,6 +31,7 @@ import type {
   DeleteGroceryListInput,
   RemoveGroceryListItemInput,
   RenameGroceryListInput,
+  ResetGroceryListChecklistInput,
   RefreshGroceryListFromWeekInput,
   SelectedGroceryListRecipeInput,
   SetGroceryListItemCheckedInput,
@@ -603,6 +604,21 @@ export async function setGroceryListItemChecked(
   }
 
   requireMutationRow(data);
+}
+
+export async function resetGroceryListChecklist(
+  supabase: SupabaseBrowserClient,
+  input: ResetGroceryListChecklistInput
+) {
+  const { error } = await supabase
+    .from("grocery_list_items")
+    .update({ checked: false } as never)
+    .eq("grocery_list_id", input.groceryListId)
+    .eq("checked", true);
+
+  if (error) {
+    throw error;
+  }
 }
 
 export async function removeGroceryListItem(
