@@ -16,6 +16,7 @@ import { RecipeNavigation } from "@/features/recipes/RecipeNavigation";
 import { formatMealPlanDay, MealPlanDay } from "./MealPlanDay";
 import { MealPlanEntrySheet } from "./MealPlanEntrySheet";
 import { MealPlanPasteDialog } from "./MealPlanPasteDialog";
+import { MealPlanPrepDialog } from "./MealPlanPrepDialog";
 import {
   createDayCopyBuffer,
   createWeekCopyBuffer,
@@ -42,6 +43,7 @@ import {
   useRestoreMealPlanEntry,
   useUpdateMealPlanEntry
 } from "./meal-planning.queries";
+import { buildMealPlanPrepSummary } from "./meal-planning.prep";
 import type {
   AddMealPlanEntryInput,
   IsoDate,
@@ -210,8 +212,10 @@ function CurrentWeekPlanner({
   const [removedMeal, setRemovedMeal] = useState<RemovedMeal | null>(null);
   const [pasteRequest, setPasteRequest] = useState<PasteRequest | null>(null);
   const [pasteFeedback, setPasteFeedback] = useState<string | null>(null);
+  const [isPrepSummaryOpen, setIsPrepSummaryOpen] = useState(false);
   const sheetTriggerRef = useRef<HTMLButtonElement>(null);
   const pasteTriggerRef = useRef<HTMLButtonElement>(null);
+  const prepSummaryTriggerRef = useRef<HTMLButtonElement>(null);
   const dayAddButtonRefs = useRef(new Map<IsoDate, HTMLButtonElement>());
   const previousWeekRef = useRef<HTMLButtonElement>(null);
   const currentWeekRef = useRef<HTMLButtonElement>(null);
@@ -430,6 +434,7 @@ function CurrentWeekPlanner({
   const hasCopyableWeekEntries = Boolean(
     weekQuery.data?.entries.some((entry) => !entry.recipe.archived)
   );
+  const prepSummary = buildMealPlanPrepSummary(weekQuery.data?.entries ?? []);
 
   return (
     <>
@@ -528,7 +533,7 @@ function CurrentWeekPlanner({
         ) : (
           <>
             {weekQuery.data.entries.length > 0 ? (
-              <div className="mt-5 flex flex-wrap gap-2" aria-label="Week copy actions">
+              <div className="mt-5 flex flex-wrap gap-2" aria-label="Week actions">
                 <button
                   className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 disabled:text-slate-400"
                   disabled={!hasCopyableWeekEntries}
@@ -537,6 +542,15 @@ function CurrentWeekPlanner({
                 >
                   <Copy className="h-4 w-4" aria-hidden="true" />
                   Copy week
+                </button>
+                <button
+                  className="inline-flex min-h-11 items-center rounded-lg border border-leaf-200 bg-leaf-50 px-3 text-sm font-semibold text-leaf-800"
+                  onClick={() => setIsPrepSummaryOpen(true)}
+                  ref={prepSummaryTriggerRef}
+                  type="button"
+                >
+                  Prep summary · {prepSummary.rows.length} recipe
+                  {prepSummary.rows.length === 1 ? "" : "s"}
                 </button>
                 {copiedMealPlan?.buffer.kind === "week" ? (
                   <button
@@ -671,6 +685,14 @@ function CurrentWeekPlanner({
           onRetryPreview={retryPastePreview}
           previewError={previewPasteMutation.error}
           returnFocusRef={pasteTriggerRef}
+        />
+      ) : null}
+
+      {isPrepSummaryOpen ? (
+        <MealPlanPrepDialog
+          onClose={() => setIsPrepSummaryOpen(false)}
+          returnFocusRef={prepSummaryTriggerRef}
+          summary={prepSummary}
         />
       ) : null}
     </>

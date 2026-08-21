@@ -1,6 +1,6 @@
 # PocketPlates
 
-PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, and a low-friction weekly meal planner with URL-stable navigation, editing, direct remove/Undo, and deliberate day/week copy and paste.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, and a low-friction weekly meal planner with URL-stable navigation, editing, direct remove/Undo, deliberate day/week copy and paste, and a read-only preparation summary.
 
 ## Recommended Stack
 
@@ -74,7 +74,7 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Recipe detail screen
 - Add/edit recipe screen
 - Filter sheet
-- Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with in-week day selection and one-serving defaults, and in-app day/week copy and paste
+- Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with in-week day selection and one-serving defaults, in-app day/week copy and paste, and a grouped preparation summary
 
 ## Future Features
 

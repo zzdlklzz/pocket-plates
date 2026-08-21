@@ -4,7 +4,7 @@
 
 Build PocketPlates, a multi-user, private-first, mobile-first Progressive Web App for students and beginner cooks who want practical recipes that are cheap, approachable, and realistic in small kitchens. The app should open from a URL, install cleanly to the iPhone Home Screen, and feel app-like without requiring App Store distribution.
 
-The first release grew in small verified slices from saving, viewing, and finding recipes into controlled discovery and weekly meal planning. Future phases can extend naturally into student-oriented tags, grocery lists, serving scaling, community recipe discovery, and nutrition/macros.
+The first release grew in small verified slices from saving, viewing, and finding recipes into controlled discovery and weekly meal planning. Future phases can extend naturally into student-oriented tags, grocery lists, ingredient scaling, community recipe discovery, and nutrition/macros.
 
 ## Working Name
 
@@ -203,10 +203,10 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Slice 3: add week navigation and entry editing.
   - [x] Slice 4: add deliberate day/week copy and paste.
   - [x] Slice 5: complete the signed-in localhost acceptance journey and documentation sweep.
-- [ ] Meal planner day, servings, and prep refinements.
+- [x] Meal planner day, servings, and prep refinements.
   - [x] Slice 6: allow the Add meal sheet to select any day in the displayed week.
   - [x] Slice 7: default new planned meals to one serving and show saved recipe yield as context.
-  - [ ] Slice 8: add a read-only weekly preparation summary grouped by recipe.
+  - [x] Slice 8: add a read-only weekly preparation summary grouped by recipe.
 - Grocery list generated from selected recipes.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
@@ -243,7 +243,7 @@ Primary screens:
 - Recipe Detail: image, title, meal types, servings, effort labels, equipment/setup, source links, ingredients, steps, edit action.
 - Add/Edit Recipe: title, servings, meal types, optional effort and equipment/setup metadata, device cover image, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types and cost ratings, single-select difficulty, match-all effort and equipment/setup values, clear filters, and done action. The sheet is viewport-bounded, scrollable, focus-contained, and usable with enlarged mobile text. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
-- Meal Planner: canonical Monday-based week URLs, previous/current/next navigation, seven vertical day sections, persistent per-day add actions, a compact add/edit sheet with in-week day selection, direct entry removal with bounded Undo, and one temporary in-app buffer for deliberate additive day/week copy and paste.
+- Meal Planner: canonical Monday-based week URLs, previous/current/next navigation, seven vertical day sections, persistent per-day add actions, a compact add/edit sheet with in-week day selection, direct entry removal with bounded Undo, one temporary in-app buffer for deliberate additive day/week copy and paste, and a read-only weekly prep summary grouped by recipe.
 
 Visual reference:
 

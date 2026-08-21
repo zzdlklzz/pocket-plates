@@ -220,6 +220,30 @@ describe("MealPlanner", () => {
     expect(screen.getByRole("button", { name: "Remove Berry overnight oats from Monday" })).toBeInTheDocument();
   });
 
+  it("opens the current weekly prep summary and closes it on week changes", async () => {
+    const week = currentWeek();
+    const nextWeekStart = getNextWeekStart(week.weekStartDate);
+    const view = render(<MealPlanner requestedWeek={week.weekStartDate} />);
+    const trigger = await screen.findByRole("button", {
+      name: "Prep summary · 2 recipes"
+    });
+
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole("dialog", { name: "Weekly prep summary" });
+    expect(within(dialog).getByText("2 recipes · 6 planned servings")).toBeInTheDocument();
+    expect(within(dialog).getByText("Berry overnight oats")).toBeInTheDocument();
+    expect(within(dialog).getAllByText("Scale 1×")).toHaveLength(2);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+
+    fireEvent.click(trigger);
+    loadedWeek({ entries: [], planId: null, weekStartDate: nextWeekStart });
+    view.rerender(<MealPlanner requestedWeek={nextWeekStart} />);
+    expect(
+      screen.queryByRole("dialog", { name: "Weekly prep summary" })
+    ).not.toBeInTheDocument();
+  });
+
   it("normalizes URL weeks and navigates across year boundaries", async () => {
     render(<MealPlanner requestedWeek="2026-12-31" />);
 
@@ -782,6 +806,9 @@ describe("MealPlanner", () => {
       name: "View Berry overnight oats recipe"
     })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy week" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Prep summary · 1 recipe" })
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", {
       name: "Copy meals from Monday"
     })).not.toBeInTheDocument();
@@ -834,6 +861,7 @@ describe("MealPlanner", () => {
     expect(await screen.findByRole("heading", { name: "Plan your week" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add your first meal" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Add meal to / })).toHaveLength(7);
+    expect(screen.queryByRole("button", { name: /^Prep summary/ })).not.toBeInTheDocument();
   });
 
   it("retries recipe options from the open add sheet", async () => {
