@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 import { NewGroceryList } from "@/features/grocery-lists/GroceryListLibrary";
+import {
+  getWeekStart,
+  parseIsoDate
+} from "@/features/meal-planning/meal-planning.dates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +24,26 @@ export default async function NewGroceryListPage({
     redirect("/");
   }
 
-  const requestedSource = (await searchParams)?.source;
+  const resolvedSearchParams = await searchParams;
+  const requestedSource = resolvedSearchParams?.source;
+  const requestedWeek = resolvedSearchParams?.week;
+
+  if (
+    requestedSource === "meal-plan" &&
+    typeof requestedWeek === "string"
+  ) {
+    const parsedWeek = parseIsoDate(requestedWeek);
+    if (parsedWeek) {
+      const weekStartDate = getWeekStart(parsedWeek);
+      return (
+        <NewGroceryList
+          source="meal-plan"
+          weekStartDate={weekStartDate}
+        />
+      );
+    }
+  }
+
   const source = requestedSource === "recipes" ? "recipes" : "blank";
 
   return <NewGroceryList source={source} />;

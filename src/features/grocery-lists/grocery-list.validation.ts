@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { parseIngredientAmount } from "@/features/ingredients/ingredient-amount";
+import {
+  getWeekStart,
+  parseIsoDate
+} from "@/features/meal-planning/meal-planning.dates";
+import type { IsoDate } from "@/features/meal-planning/meal-planning.types";
 import { isRepresentableGroceryQuantity } from "./grocery-list.generation";
 import {
   MAX_GROCERY_LIST_ITEM_NAME_LENGTH,
@@ -11,6 +16,7 @@ import {
 } from "./grocery-list.constants";
 import type { GroceryListItemValues } from "./grocery-list.types";
 import type {
+  CreateMealPlanGroceryListInput,
   CreateGeneratedGroceryListInput,
   SelectedGroceryListRecipeInput
 } from "./grocery-list.types";
@@ -100,6 +106,16 @@ export const createGeneratedGroceryListSchema = z.object({
   title: groceryListTitleSchema
 });
 
+const mealPlanWeekStartSchema = z.string().refine((value) => {
+  const date = parseIsoDate(value);
+  return date !== null && getWeekStart(date) === value;
+}, "Choose a valid meal-plan week.");
+
+export const createMealPlanGroceryListSchema = z.object({
+  title: groceryListTitleSchema,
+  weekStartDate: mealPlanWeekStartSchema
+});
+
 export function parseSelectedGroceryListRecipes(
   recipes: SelectedGroceryListRecipeInput[]
 ) {
@@ -121,6 +137,17 @@ export function parseCreateGeneratedGroceryListInput(
         (left, right) => left.selectedRecipeOrder - right.selectedRecipeOrder
       )
   };
+}
+
+export function parseMealPlanGroceryWeekStart(weekStartDate: string) {
+  return mealPlanWeekStartSchema.parse(weekStartDate);
+}
+
+export function parseCreateMealPlanGroceryListInput(
+  input: CreateMealPlanGroceryListInput
+): CreateMealPlanGroceryListInput {
+  const parsed = createMealPlanGroceryListSchema.parse(input);
+  return { ...parsed, weekStartDate: parsed.weekStartDate as IsoDate };
 }
 
 export const groceryListItemSchema = z.object({

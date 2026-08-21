@@ -98,6 +98,31 @@ export type CreateGeneratedGroceryListInput = {
   title: string;
 };
 
+export type MealPlanGroceryRecipeDto = {
+  archived: boolean;
+  plannedServings: number;
+  recipeId: string;
+  recipeTitle: string;
+  savedServings: number;
+  scaleLabel: string;
+};
+
+export type MealPlanGrocerySourceDto = {
+  generatedItems: GeneratedGroceryListItem[];
+  mealPlanId: string;
+  recipes: MealPlanGroceryRecipeDto[];
+  weekStartDate: IsoDate;
+};
+
+export type CreateMealPlanGroceryListInput = {
+  title: string;
+  weekStartDate: IsoDate;
+};
+
+export type RefreshGroceryListFromWeekInput = {
+  groceryListId: string;
+};
+
 export type GeneratedGroceryListRpcSource = {
   canonical_unit: string | null;
   contributed_amount: number | null;

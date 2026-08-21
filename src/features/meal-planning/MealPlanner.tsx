@@ -5,8 +5,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardPaste,
-  Copy
+  Copy,
+  ShoppingCart
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -534,6 +536,13 @@ function CurrentWeekPlanner({
           <>
             {weekQuery.data.entries.length > 0 ? (
               <div className="mt-5 flex flex-wrap gap-2" aria-label="Week actions">
+                <Link
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-leaf-300 bg-leaf-50 px-3 text-sm font-semibold text-leaf-800"
+                  href={`/grocery-lists/new?source=meal-plan&week=${weekStartDate}`}
+                >
+                  <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+                  Grocery list
+                </Link>
                 <button
                   className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 disabled:text-slate-400"
                   disabled={!hasCopyableWeekEntries}

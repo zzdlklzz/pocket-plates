@@ -4,7 +4,7 @@
 
 Build PocketPlates, a multi-user, private-first, mobile-first Progressive Web App for students and beginner cooks who want practical recipes that are cheap, approachable, and realistic in small kitchens. The app should open from a URL, install cleanly to the iPhone Home Screen, and feel app-like without requiring App Store distribution.
 
-The first release grew in small verified slices from saving, viewing, and finding recipes into controlled discovery, weekly meal planning, and standalone grocery checklists. Future phases can extend naturally into generated grocery workflows, student-oriented tags, ingredient scaling, community recipe discovery, and nutrition/macros.
+The first release grew in small verified slices from saving, viewing, and finding recipes into controlled discovery, weekly meal planning, and grocery lists created manually, from recipes, or from a planned week. Future phases can extend naturally into student-oriented tags, community recipe discovery, pantry tracking, and nutrition/macros.
 
 ## Working Name
 
@@ -215,7 +215,7 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Slice 2: add the reusable ingredient grouping engine and shared amount parsing.
   - [x] Slice 3: add standalone list library/detail routes and manual checklist editing.
   - [x] Slice 4: generate lists from selected recipes with a grouped review.
-  - [ ] Slice 5: generate and explicitly refresh a list from one meal-plan week on the existing detail page.
+  - [x] Slice 5: generate and explicitly refresh a list from one meal-plan week on the existing detail page.
   - [ ] Slice 6: complete signed-in mobile/desktop acceptance and the final documentation sweep.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
@@ -476,7 +476,6 @@ Keep Google OAuth separate from Gmail SMTP: OAuth login uses a Google Cloud OAut
 
 ## Future Enhancements
 
-- Grocery list generated from selected recipes.
 - Cost estimate per serving, derived from optional total SGD cost and serving count.
 - Pantry tracking.
 - Dorm/exchange filters.

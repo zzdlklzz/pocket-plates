@@ -27,11 +27,20 @@ export class GroceryListRecipeUnavailableError extends Error {
 }
 
 export class GroceryListItemLimitError extends Error {
+  constructor(
+    message = "This selection creates more than 300 grocery items. Remove a recipe or choose recipes with fewer ingredients."
+  ) {
+    super(message);
+    this.name = "GroceryListItemLimitError";
+  }
+}
+
+export class GroceryListMealPlanUnavailableError extends Error {
   constructor() {
     super(
-      "This selection creates more than 300 grocery items. Remove a recipe or choose recipes with fewer ingredients."
+      "This meal plan week is unavailable or empty. Return to the planner and try again."
     );
-    this.name = "GroceryListItemLimitError";
+    this.name = "GroceryListMealPlanUnavailableError";
   }
 }
 
@@ -87,7 +96,8 @@ export function getGroceryListErrorMessage(
     error instanceof DuplicateGroceryListItemError ||
     error instanceof GroceryListAuthenticationError ||
     error instanceof GroceryListRecipeUnavailableError ||
-    error instanceof GroceryListItemLimitError
+    error instanceof GroceryListItemLimitError ||
+    error instanceof GroceryListMealPlanUnavailableError
   ) {
     return error.message;
   }

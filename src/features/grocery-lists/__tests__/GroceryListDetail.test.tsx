@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   deleteList: {} as Record<string, unknown>,
   detailResult: {} as Record<string, unknown>,
   remove: {} as Record<string, unknown>,
+  refresh: {} as Record<string, unknown>,
   rename: {} as Record<string, unknown>,
   routerPush: vi.fn(),
   update: {} as Record<string, unknown>
@@ -22,6 +23,7 @@ vi.mock("../grocery-list.queries", () => ({
   useGroceryListDetail: () => mocks.detailResult,
   useRemoveGroceryListItem: () => mocks.remove,
   useRenameGroceryList: () => mocks.rename,
+  useRefreshGroceryListFromWeek: () => mocks.refresh,
   useSetGroceryListItemChecked: () => mocks.check,
   useUpdateGroceryListItem: () => mocks.update
 }));
@@ -148,6 +150,7 @@ describe("GroceryListDetail", () => {
     mocks.check = mutation();
     mocks.deleteList = mutation();
     mocks.remove = mutation();
+    mocks.refresh = mutation();
     mocks.rename = mutation();
     mocks.update = mutation();
     mocks.detailResult = {
@@ -189,6 +192,89 @@ describe("GroceryListDetail", () => {
 
     expect(within(screen.getByRole("banner")).getByText("1 recipe")).toBeInTheDocument();
     expect(screen.queryByText("Recipe snapshot")).not.toBeInTheDocument();
+  });
+
+  it("refreshes an available meal-plan list from the existing detail page", async () => {
+    const mealPlanDetail = detail();
+    mealPlanDetail.mealPlanAvailable = true;
+    mealPlanDetail.mealPlanId = "plan-1";
+    mealPlanDetail.sourceType = "meal_plan";
+    mealPlanDetail.sourceWeekStartDate = "2026-08-17";
+    mocks.detailResult = {
+      data: mealPlanDetail,
+      isError: false,
+      isPending: false
+    };
+
+    render(<GroceryListDetail id="list-1" />);
+
+    expect(screen.getByText(/Meal plan ·/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Refresh from week" }));
+
+    await waitFor(() => {
+      expect(mocks.refresh.mutateAsync).toHaveBeenCalledWith({
+        groceryListId: "list-1"
+      });
+    });
+    expect(screen.getByText(/Grocery list refreshed from/)).toHaveTextContent(
+      /Grocery list refreshed from/
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows refresh pending and failure states without hiding list editing", async () => {
+    const mealPlanDetail = detail();
+    mealPlanDetail.mealPlanAvailable = true;
+    mealPlanDetail.mealPlanId = "plan-1";
+    mealPlanDetail.sourceType = "meal_plan";
+    mealPlanDetail.sourceWeekStartDate = "2026-08-17";
+    mocks.detailResult = {
+      data: mealPlanDetail,
+      isError: false,
+      isPending: false
+    };
+    mocks.refresh = {
+      ...mutation(),
+      isPending: true
+    };
+
+    const view = render(<GroceryListDetail id="list-1" />);
+
+    expect(screen.getByRole("button", { name: "Refreshing…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add item" })).toBeEnabled();
+
+    mocks.refresh = {
+      ...mutation(),
+      error: new TypeError("Failed to fetch"),
+      isError: true,
+      mutateAsync: vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+    };
+    view.rerender(<GroceryListDetail id="list-1" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Check your connection and try again."
+    );
+    expect(screen.getByRole("button", { name: "Add item" })).toBeEnabled();
+  });
+
+  it("keeps an unavailable week list editable without a refresh action", () => {
+    const mealPlanDetail = detail();
+    mealPlanDetail.sourceType = "meal_plan";
+    mealPlanDetail.sourceWeekStartDate = "2026-08-17";
+    mocks.detailResult = {
+      data: mealPlanDetail,
+      isError: false,
+      isPending: false
+    };
+
+    render(<GroceryListDetail id="list-1" />);
+
+    expect(screen.getByText(/Week unavailable ·/)).toBeInTheDocument();
+    expect(screen.getByText(/saved list stays editable/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Refresh from week/ })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add item" })).toBeEnabled();
   });
 
   it("falls back safely when an older selected-recipe payload has no count", () => {

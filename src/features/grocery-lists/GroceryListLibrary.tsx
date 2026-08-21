@@ -17,7 +17,9 @@ import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
 import { GroceryListCard } from "./GroceryListCard";
 import { GroceryListGenerator } from "./GroceryListGenerator";
+import { MealPlanGroceryListGenerator } from "./MealPlanGroceryListGenerator";
 import { GroceryListLibrarySkeleton } from "./grocery-list-skeletons";
+import type { IsoDate } from "@/features/meal-planning/meal-planning.types";
 
 const LINK_BUTTON_CLASSES =
   "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold";
@@ -115,9 +117,18 @@ export function GroceryListLibrary() {
   );
 }
 
-export function NewGroceryList({ source }: { source: "blank" | "recipes" }) {
+export function NewGroceryList({
+  source,
+  weekStartDate
+}: {
+  source: "blank" | "meal-plan" | "recipes";
+  weekStartDate?: IsoDate;
+}) {
   if (source === "recipes") {
     return <GroceryListGenerator />;
+  }
+  if (source === "meal-plan" && weekStartDate) {
+    return <MealPlanGroceryListGenerator weekStartDate={weekStartDate} />;
   }
 
   return <NewBlankGroceryList />;

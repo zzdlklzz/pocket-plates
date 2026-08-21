@@ -6,6 +6,7 @@ import {
 import { toGroceryListItemDto } from "../grocery-list.mappers";
 import {
   groceryListItemSchema,
+  parseCreateMealPlanGroceryListInput,
   parseCreateGeneratedGroceryListInput,
   parseGroceryListItemValues,
   parseGroceryListTitle
@@ -161,5 +162,20 @@ describe("grocery list validation", () => {
         { recipeId: "not-a-uuid", selectedRecipeOrder: 0, targetServings: 1 }
       ])
     ).toThrow("A selected recipe is unavailable");
+  });
+
+  it("accepts only a normalized Monday for meal-plan generation", () => {
+    expect(
+      parseCreateMealPlanGroceryListInput({
+        title: "  Weekly shop  ",
+        weekStartDate: "2026-08-17"
+      })
+    ).toEqual({ title: "Weekly shop", weekStartDate: "2026-08-17" });
+    expect(() =>
+      parseCreateMealPlanGroceryListInput({
+        title: "Weekly shop",
+        weekStartDate: "2026-08-18"
+      })
+    ).toThrow("Choose a valid meal-plan week");
   });
 });

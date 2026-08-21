@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DuplicateGroceryListItemError,
   GroceryListItemLimitError,
+  GroceryListMealPlanUnavailableError,
   GroceryListNotFoundError,
   GroceryListRecipeUnavailableError,
   getGroceryListErrorMessage
@@ -27,6 +28,14 @@ describe("grocery list errors", () => {
       getGroceryListErrorMessage(new GroceryListItemLimitError(), "create")
     ).toBe(
       "This selection creates more than 300 grocery items. Remove a recipe or choose recipes with fewer ingredients."
+    );
+    expect(
+      getGroceryListErrorMessage(
+        new GroceryListMealPlanUnavailableError(),
+        "create"
+      )
+    ).toBe(
+      "This meal plan week is unavailable or empty. Return to the planner and try again."
     );
   });
 

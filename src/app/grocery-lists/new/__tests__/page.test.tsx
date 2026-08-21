@@ -13,8 +13,9 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: mocks.createSupabaseServerClient
 }));
 vi.mock("@/features/grocery-lists/GroceryListLibrary", () => ({
-  NewGroceryList: ({ source }: { source: string }) => {
-    mocks.newGroceryList(source);
+  NewGroceryList: (props: { source: string; weekStartDate?: string }) => {
+    mocks.newGroceryList(props);
+    const { source } = props;
     return <div>New grocery list: {source}</div>;
   }
 }));
@@ -47,6 +48,40 @@ describe("NewGroceryListPage", () => {
     }));
 
     expect(screen.getByText("New grocery list: recipes")).toBeInTheDocument();
+    expect(mocks.newGroceryList).toHaveBeenCalledWith({ source: "recipes" });
+  });
+
+  it("selects and normalizes a valid meal-plan week", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+
+    render(await NewGroceryListPage({
+      searchParams: Promise.resolve({
+        source: "meal-plan",
+        week: "2026-08-20"
+      })
+    }));
+
+    expect(screen.getByText("New grocery list: meal-plan")).toBeInTheDocument();
+    expect(mocks.newGroceryList).toHaveBeenCalledWith({
+      source: "meal-plan",
+      weekStartDate: "2026-08-17"
+    });
+  });
+
+  it.each([
+    { source: "meal-plan", week: undefined },
+    { source: "meal-plan", week: "not-a-date" },
+    { source: "meal-plan", week: ["2026-08-17", "2026-08-24"] },
+    { source: ["meal-plan", "meal-plan"], week: "2026-08-17" }
+  ])("falls back safely for invalid meal-plan parameters", async (params) => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+
+    render(await NewGroceryListPage({
+      searchParams: Promise.resolve(params)
+    }));
+
+    expect(screen.getByText("New grocery list: blank")).toBeInTheDocument();
+    expect(mocks.newGroceryList).toHaveBeenCalledWith({ source: "blank" });
   });
 
   it.each([

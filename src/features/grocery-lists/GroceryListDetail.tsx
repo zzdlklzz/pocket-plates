@@ -1,6 +1,13 @@
 "use client";
 
-import { ChevronDown, Ellipsis, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Ellipsis,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useEffect,
@@ -18,12 +25,14 @@ import { DeleteGroceryListDialog } from "./DeleteGroceryListDialog";
 import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
 import { formatSelectedRecipeSource } from "./grocery-list.source-formatting";
+import { formatGroceryListWeekRange } from "./grocery-list.week-formatting";
 import {
   useAddGroceryListItem,
   useDeleteGroceryList,
   useGroceryListDetail,
   useRemoveGroceryListItem,
   useRenameGroceryList,
+  useRefreshGroceryListFromWeek,
   useSetGroceryListItemChecked,
   useUpdateGroceryListItem
 } from "./grocery-list.queries";
@@ -34,31 +43,6 @@ import {
   type GroceryListItemFormValues
 } from "./GroceryListItemSheet";
 import { GroceryListItemRow } from "./GroceryListItemRow";
-
-function parseLocalDate(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatWeekRange(weekStartDate: string | null) {
-  if (!weekStartDate) {
-    return null;
-  }
-
-  const start = parseLocalDate(weekStartDate);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  const startLabel = new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short"
-  }).format(start);
-  const endLabel = new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short"
-  }).format(end);
-
-  return `${startLabel}–${endLabel}`;
-}
 
 function getSourceLabel({
   mealPlanAvailable,
@@ -78,7 +62,7 @@ function getSourceLabel({
     return formatSelectedRecipeSource(sourceRecipeCount);
   }
 
-  const weekRange = formatWeekRange(sourceWeekStartDate);
+  const weekRange = formatGroceryListWeekRange(sourceWeekStartDate);
   return mealPlanAvailable
     ? `Meal plan${weekRange ? ` · ${weekRange}` : ""}`
     : `Week unavailable${weekRange ? ` · ${weekRange}` : ""}`;
@@ -93,12 +77,14 @@ export function GroceryListDetail({ id }: { id: string }) {
   const removeItem = useRemoveGroceryListItem();
   const renameList = useRenameGroceryList();
   const deleteList = useDeleteGroceryList();
+  const refreshFromWeek = useRefreshGroceryListFromWeek();
   const [selectedItem, setSelectedItem] = useState<GroceryListItemDto | "new" | null>(null);
   const [isCompletedOpen, setIsCompletedOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [refreshFeedback, setRefreshFeedback] = useState<string | null>(null);
   const [checkError, setCheckError] = useState<unknown>(null);
   const [pendingCheckItemIds, setPendingCheckItemIds] = useState<Set<string>>(
     () => new Set()
@@ -252,6 +238,22 @@ export function GroceryListDetail({ id }: { id: string }) {
     }
   }
 
+  async function refreshListFromWeek() {
+    refreshFromWeek.reset();
+    setRefreshFeedback(null);
+    try {
+      await refreshFromWeek.mutateAsync({ groceryListId: id });
+      const weekRange = formatGroceryListWeekRange(list.sourceWeekStartDate);
+      setRefreshFeedback(
+        weekRange
+          ? `Grocery list refreshed from ${weekRange}.`
+          : "Grocery list refreshed from its meal-plan week."
+      );
+    } catch {
+      // The failed refresh is shown inline and the existing list remains editable.
+    }
+  }
+
   const progressLabel = `${completed.length} of ${list.items.length} items checked`;
 
   return (
@@ -315,22 +317,62 @@ export function GroceryListDetail({ id }: { id: string }) {
             </div>
           </div>
 
-          {list.items.length > 0 ? (
-            <ActionButton
-              className="mt-5"
-              fullWidth
-              onClick={(event) => openNewItem(event.currentTarget)}
-              variant="secondary"
+          {list.items.length > 0 ||
+          (list.sourceType === "meal_plan" && list.mealPlanAvailable) ? (
+            <div
+              className={`mt-5 grid gap-2 ${
+                list.items.length > 0 &&
+                list.sourceType === "meal_plan" &&
+                list.mealPlanAvailable
+                  ? "grid-cols-2"
+                  : "grid-cols-1"
+              }`}
             >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              Add item
-            </ActionButton>
+              {list.sourceType === "meal_plan" && list.mealPlanAvailable ? (
+                <ActionButton
+                  fullWidth
+                  onClick={() => void refreshListFromWeek()}
+                  pending={refreshFromWeek.isPending}
+                  pendingLabel="Refreshing…"
+                  variant="secondary"
+                >
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  Refresh from week
+                </ActionButton>
+              ) : null}
+              {list.items.length > 0 ? (
+                <ActionButton
+                  fullWidth
+                  onClick={(event) => openNewItem(event.currentTarget)}
+                  variant="secondary"
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Add item
+                </ActionButton>
+              ) : null}
+            </div>
           ) : null}
         </header>
 
         <p aria-live="polite" className="sr-only" role="status">
           {feedback}
         </p>
+        {refreshFeedback ? (
+          <InlineNotice aria-live="polite" className="mt-5" tone="info">
+            {refreshFeedback}
+          </InlineNotice>
+        ) : null}
+        {list.sourceType === "meal_plan" && !list.mealPlanAvailable ? (
+          <InlineNotice className="mt-5" tone="neutral">
+            The original week is no longer available. This saved list stays editable,
+            but it cannot be refreshed.
+          </InlineNotice>
+        ) : null}
+        {refreshFromWeek.isError ? (
+          <InlineNotice className="mt-5" role="alert" tone="error">
+            {getGroceryListErrorMessage(refreshFromWeek.error, "update")}
+          </InlineNotice>
+        ) : null}
         {checkError || checkItem.isError ? (
           <InlineNotice className="mt-5" role="alert" tone="error">
             {getGroceryListErrorMessage(checkError ?? checkItem.error, "saveItem")}

@@ -3,6 +3,7 @@ import {
   DuplicateGroceryListItemError,
   GroceryListAuthenticationError,
   GroceryListItemLimitError,
+  GroceryListMealPlanUnavailableError,
   GroceryListNotFoundError,
   GroceryListRecipeUnavailableError
 } from "../grocery-list.errors";
@@ -10,12 +11,15 @@ import {
   addGroceryListItem,
   createBlankGroceryList,
   createGeneratedGroceryList,
+  createMealPlanGroceryList,
   deleteGroceryList,
   getGroceryListDetail,
+  getMealPlanGrocerySource,
   getSelectedRecipeGenerationSources,
   listGroceryListRecipeOptions,
   listGroceryLists,
   removeGroceryListItem,
+  refreshGroceryListFromWeek,
   renameGroceryList,
   setGroceryListItemChecked,
   updateGroceryListItem
@@ -85,6 +89,36 @@ function createMutationClient(
   const from = vi.fn(() => ({ [method]: mutate }));
 
   return { client: { from } as never, chain, from, mutate };
+}
+
+function mealPlanSourceRow(entries: unknown[] = [
+  {
+    id: "entry-1",
+    meal_type: "dinner",
+    planned_for: "2026-08-17",
+    recipe_id: RECIPE_ONE_ID,
+    recipes: {
+      ...generationRecipeRow(),
+      archived_at: "2026-08-20T10:00:00Z"
+    },
+    servings: 8
+  }
+]) {
+  return {
+    id: "42000000-0000-0000-0000-000000000001",
+    meal_plan_entries: entries,
+    week_start_date: "2026-08-17"
+  };
+}
+
+function createBoundedRead(data: unknown) {
+  const chain = {
+    eq: vi.fn(() => chain),
+    maybeSingle: vi.fn().mockResolvedValue({ data, error: null })
+  };
+  const select = vi.fn(() => chain);
+  const from = vi.fn(() => ({ select }));
+  return { chain, from, select };
 }
 
 describe("grocery list repository reads", () => {
@@ -468,6 +502,160 @@ describe("selected recipe grocery creation", () => {
       )
     ).rejects.toBeInstanceOf(GroceryListItemLimitError);
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("meal-plan grocery generation and refresh", () => {
+  it("loads one authoritative owned Monday week including archived sources", async () => {
+    const read = createBoundedRead(mealPlanSourceRow());
+
+    await expect(
+      getMealPlanGrocerySource(
+        { auth: authenticatedAuth(), from: read.from } as never,
+        "2026-08-17"
+      )
+    ).resolves.toMatchObject({
+      mealPlanId: "42000000-0000-0000-0000-000000000001",
+      recipes: [
+        {
+          archived: true,
+          plannedServings: 8,
+          recipeId: RECIPE_ONE_ID,
+          scaleLabel: "2×"
+        }
+      ],
+      weekStartDate: "2026-08-17"
+    });
+
+    expect(read.from).toHaveBeenCalledWith("meal_plans");
+    expect(read.chain.eq).toHaveBeenNthCalledWith(1, "owner_id", OWNER_ID);
+    expect(read.chain.eq).toHaveBeenNthCalledWith(
+      2,
+      "week_start_date",
+      "2026-08-17"
+    );
+  });
+
+  it("uses one generic unavailable result for missing and empty weeks", async () => {
+    const missing = createBoundedRead(null);
+    const empty = createBoundedRead(mealPlanSourceRow([]));
+
+    await expect(
+      getMealPlanGrocerySource(
+        { auth: authenticatedAuth(), from: missing.from } as never,
+        "2026-08-17"
+      )
+    ).rejects.toBeInstanceOf(GroceryListMealPlanUnavailableError);
+    await expect(
+      getMealPlanGrocerySource(
+        { auth: authenticatedAuth(), from: empty.from } as never,
+        "2026-08-17"
+      )
+    ).rejects.toBeInstanceOf(GroceryListMealPlanUnavailableError);
+  });
+
+  it("refetches the authoritative week immediately before atomic creation", async () => {
+    const read = createBoundedRead(mealPlanSourceRow());
+    const rpc = vi.fn().mockResolvedValue({
+      data: "62000000-0000-0000-0000-000000000001",
+      error: null
+    });
+
+    await expect(
+      createMealPlanGroceryList(
+        { auth: authenticatedAuth(), from: read.from, rpc } as never,
+        { title: "  Weekly shop  ", weekStartDate: "2026-08-17" }
+      )
+    ).resolves.toBe("62000000-0000-0000-0000-000000000001");
+
+    expect(read.chain.maybeSingle.mock.invocationCallOrder[0]).toBeLessThan(
+      rpc.mock.invocationCallOrder[0]!
+    );
+    expect(rpc).toHaveBeenCalledWith("create_grocery_list_with_items", {
+      p_items: expect.arrayContaining([
+        expect.objectContaining({ name: "Rice", sort_order: 0 })
+      ]),
+      p_meal_plan_id: "42000000-0000-0000-0000-000000000001",
+      p_source_type: "meal_plan",
+      p_source_week_start_date: "2026-08-17",
+      p_title: "Weekly shop"
+    });
+  });
+
+  it("resolves refresh only through the linked owned list and permits an empty week", async () => {
+    const plan = mealPlanSourceRow([]);
+    const read = createBoundedRead({
+      id: "62000000-0000-0000-0000-000000000001",
+      meal_plan_id: plan.id,
+      meal_plans: plan,
+      source_type: "meal_plan"
+    });
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+
+    await refreshGroceryListFromWeek(
+      { auth: authenticatedAuth(), from: read.from, rpc } as never,
+      { groceryListId: "62000000-0000-0000-0000-000000000001" }
+    );
+
+    expect(read.from).toHaveBeenCalledWith("grocery_lists");
+    expect(read.chain.eq).toHaveBeenNthCalledWith(
+      1,
+      "id",
+      "62000000-0000-0000-0000-000000000001"
+    );
+    expect(read.chain.eq).toHaveBeenNthCalledWith(2, "owner_id", OWNER_ID);
+    expect(read.chain.eq).toHaveBeenNthCalledWith(
+      3,
+      "source_type",
+      "meal_plan"
+    );
+    expect(read.chain.maybeSingle.mock.invocationCallOrder[0]).toBeLessThan(
+      rpc.mock.invocationCallOrder[0]!
+    );
+    expect(rpc).toHaveBeenCalledWith(
+      "refresh_grocery_list_from_meal_plan",
+      {
+        p_generated_items: [],
+        p_grocery_list_id: "62000000-0000-0000-0000-000000000001"
+      }
+    );
+  });
+
+  it("never calls refresh for a manual, detached, deleted, or inaccessible link", async () => {
+    const read = createBoundedRead(null);
+    const rpc = vi.fn();
+
+    await expect(
+      refreshGroceryListFromWeek(
+        { auth: authenticatedAuth(), from: read.from, rpc } as never,
+        { groceryListId: "62000000-0000-0000-0000-000000000001" }
+      )
+    ).rejects.toBeInstanceOf(GroceryListMealPlanUnavailableError);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("maps a changed or deleted source during the atomic RPC generically", async () => {
+    const plan = mealPlanSourceRow();
+    const read = createBoundedRead({
+      id: "62000000-0000-0000-0000-000000000001",
+      meal_plan_id: plan.id,
+      meal_plans: plan,
+      source_type: "meal_plan"
+    });
+    const rpc = vi.fn().mockResolvedValue({
+      data: null,
+      error: {
+        code: "42501",
+        message: "Meal-plan grocery list is not available."
+      }
+    });
+
+    await expect(
+      refreshGroceryListFromWeek(
+        { auth: authenticatedAuth(), from: read.from, rpc } as never,
+        { groceryListId: "62000000-0000-0000-0000-000000000001" }
+      )
+    ).rejects.toBeInstanceOf(GroceryListMealPlanUnavailableError);
   });
 });
 

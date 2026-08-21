@@ -8,7 +8,9 @@ export const queryKeys = {
       ["grocery-lists", "recipe-options", search] as const,
     recipePreviews: ["grocery-lists", "recipe-preview"] as const,
     recipePreview: (recipes: readonly unknown[]) =>
-      ["grocery-lists", "recipe-preview", recipes] as const
+      ["grocery-lists", "recipe-preview", recipes] as const,
+    mealPlanSource: (weekStartDate: string) =>
+      ["grocery-lists", "meal-plan-source", weekStartDate] as const
   },
   mealPlanning: {
     all: ["meal-planning"] as const,

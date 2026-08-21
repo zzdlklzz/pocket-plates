@@ -2,31 +2,16 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { GroceryListSummaryDto } from "./grocery-list.types";
 import { formatSelectedRecipeSource } from "./grocery-list.source-formatting";
-
-function parseLocalDate(value: string) {
-  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
+import { formatGroceryListWeekRange } from "./grocery-list.week-formatting";
 
 function formatWeekLabel(weekStartDate: string | null, mealPlanAvailable: boolean) {
-  if (!weekStartDate) {
+  const weekRange = formatGroceryListWeekRange(weekStartDate);
+  if (!weekRange) {
     return "Week unavailable";
   }
 
-  const start = parseLocalDate(weekStartDate);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  const startLabel = new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short"
-  }).format(start);
-  const endLabel = new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short"
-  }).format(end);
-
   const source = mealPlanAvailable ? "Meal plan" : "Week unavailable";
-  return `${source} · ${startLabel}–${endLabel}`;
+  return `${source} · ${weekRange}`;
 }
 
 function formatSourceLabel(list: GroceryListSummaryDto) {

@@ -218,6 +218,22 @@ describe("MealPlanner", () => {
     expect(screen.getByText("Breakfast")).toBeInTheDocument();
     expect(screen.getByText("2 servings")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove Berry overnight oats from Monday" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Grocery list" })).toHaveAttribute(
+      "href",
+      `/grocery-lists/new?source=meal-plan&week=${currentWeek().weekStartDate}`
+    );
+  });
+
+  it("does not offer a grocery list for an empty week", async () => {
+    const week = currentWeek();
+    loadedWeek({ entries: [], planId: null, weekStartDate: week.weekStartDate });
+
+    render(<MealPlanner requestedWeek={week.weekStartDate} />);
+
+    expect(await screen.findByRole("heading", { name: "Plan your week" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Grocery list" })
+    ).not.toBeInTheDocument();
   });
 
   it("opens the current weekly prep summary and closes it on week changes", async () => {

@@ -1,10 +1,27 @@
-import type { IsoDate } from "@/features/meal-planning/meal-planning.types";
-import { buildGroceryRequirementGroups } from "./grocery-list.generation";
+import type {
+  IsoDate,
+  MealPlanEntryDto,
+  MealType
+} from "@/features/meal-planning/meal-planning.types";
+import {
+  buildMealPlanPrepSummary,
+  formatMealPlanPrepScale
+} from "@/features/meal-planning/meal-planning.prep";
+import {
+  getWeekStart,
+  isDateInWeek,
+  parseIsoDate
+} from "@/features/meal-planning/meal-planning.dates";
+import {
+  buildGroceryRequirementGroups,
+  generateGroceryListItems
+} from "./grocery-list.generation";
 import type {
   GroceryListDetailDto,
   GroceryListItemDto,
   GroceryListItemSourceDto,
   GroceryListGenerationRecipeInput,
+  MealPlanGrocerySourceDto,
   GroceryListRecipeOptionDto,
   GroceryListSourceType,
   GroceryListSummaryDto,
@@ -34,6 +51,25 @@ export type GroceryListGenerationRecipeRow = {
     | null;
   servings: number;
   title: string;
+};
+
+export type MealPlanGroceryRecipeRow = GroceryListGenerationRecipeRow & {
+  archived_at: string | null;
+};
+
+export type MealPlanGroceryEntryRow = {
+  id: string;
+  meal_type: MealType;
+  planned_for: string;
+  recipe_id: string;
+  recipes: MealPlanGroceryRecipeRow | null;
+  servings: number;
+};
+
+export type MealPlanGrocerySourceRow = {
+  id: string;
+  meal_plan_entries: MealPlanGroceryEntryRow[] | null;
+  week_start_date: string;
 };
 
 export type GroceryListSummaryRow = {
@@ -130,6 +166,114 @@ export function toGroceryListGenerationRecipeInput(
     savedServings: row.servings,
     selectedRecipeOrder: selection.selectedRecipeOrder,
     targetServings: selection.targetServings
+  };
+}
+
+function toMealPlanEntryDto(
+  planId: string,
+  weekStartDate: IsoDate,
+  row: MealPlanGroceryEntryRow
+): MealPlanEntryDto | null {
+  const recipe = row.recipes;
+  const plannedFor = parseIsoDate(row.planned_for);
+
+  if (!recipe || !plannedFor || !isDateInWeek(row.planned_for, weekStartDate)) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    mealType: row.meal_type,
+    planId,
+    plannedFor: row.planned_for as IsoDate,
+    recipe: {
+      archived: recipe.archived_at !== null,
+      id: recipe.id,
+      servings: recipe.servings,
+      title: recipe.title
+    },
+    servings: row.servings
+  };
+}
+
+export function toMealPlanGrocerySourceDto(
+  row: MealPlanGrocerySourceRow,
+  allowEmpty = false
+): MealPlanGrocerySourceDto | null {
+  const parsedWeekStart = parseIsoDate(row.week_start_date);
+  if (!parsedWeekStart || getWeekStart(parsedWeekStart) !== row.week_start_date) {
+    return null;
+  }
+
+  const entryRows = row.meal_plan_entries ?? [];
+  const entries = entryRows.flatMap((entry) => {
+    const mapped = toMealPlanEntryDto(
+      row.id,
+      row.week_start_date as IsoDate,
+      entry
+    );
+    return mapped ? [mapped] : [];
+  });
+
+  if (
+    entries.length !== entryRows.length ||
+    (!allowEmpty && entries.length === 0)
+  ) {
+    return null;
+  }
+
+  if (entries.length === 0) {
+    return {
+      generatedItems: [],
+      mealPlanId: row.id,
+      recipes: [],
+      weekStartDate: row.week_start_date as IsoDate
+    };
+  }
+
+  const prepSummary = buildMealPlanPrepSummary(entries);
+  const recipeRowsById = new Map<string, MealPlanGroceryRecipeRow>();
+
+  for (const entry of entryRows) {
+    if (entry.recipes) {
+      recipeRowsById.set(entry.recipe_id, entry.recipes);
+    }
+  }
+
+  const generationRecipes = prepSummary.rows.flatMap((prepRow, index) => {
+    const recipeRow = recipeRowsById.get(prepRow.recipeId);
+    if (!recipeRow?.recipe_ingredients?.length) {
+      return [];
+    }
+
+    return [
+      toGroceryListGenerationRecipeInput(recipeRow, {
+        recipeId: prepRow.recipeId,
+        selectedRecipeOrder: index,
+        targetServings: prepRow.totalPlannedServings
+      })
+    ];
+  });
+
+  if (generationRecipes.length !== prepSummary.rows.length) {
+    return null;
+  }
+
+  return {
+    generatedItems: generateGroceryListItems(generationRecipes),
+    mealPlanId: row.id,
+    recipes: prepSummary.rows.map((prepRow) => ({
+      archived: prepRow.archived,
+      plannedServings: prepRow.totalPlannedServings,
+      recipeId: prepRow.recipeId,
+      recipeTitle: prepRow.title,
+      savedServings: prepRow.savedRecipeYield,
+      scaleLabel: formatMealPlanPrepScale(
+        prepRow.totalPlannedServings,
+        prepRow.savedRecipeYield
+      )
+    })),
+    weekStartDate: row.week_start_date as IsoDate
   };
 }
 

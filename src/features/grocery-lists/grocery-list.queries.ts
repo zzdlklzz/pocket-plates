@@ -3,15 +3,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/query-keys";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { IsoDate } from "@/features/meal-planning/meal-planning.types";
 import {
   addGroceryListItem,
   createBlankGroceryList,
   createGeneratedGroceryList,
+  createMealPlanGroceryList,
   deleteGroceryList,
   getGroceryListDetail,
+  getMealPlanGrocerySource,
   listGroceryListRecipeOptions,
   listGroceryLists,
   previewSelectedRecipeGroceryList,
+  refreshGroceryListFromWeek,
   removeGroceryListItem,
   renameGroceryList,
   setGroceryListItemChecked,
@@ -21,11 +25,13 @@ import type {
   AddGroceryListItemInput,
   CreateBlankGroceryListInput,
   CreateGeneratedGroceryListInput,
+  CreateMealPlanGroceryListInput,
   DeleteGroceryListInput,
   GroceryListDetailDto,
   GroceryListSummaryDto,
   RemoveGroceryListItemInput,
   RenameGroceryListInput,
+  RefreshGroceryListFromWeekInput,
   SelectedGroceryListRecipeInput,
   SetGroceryListItemCheckedInput,
   UpdateGroceryListItemInput
@@ -84,6 +90,17 @@ export function useSelectedRecipeGroceryPreview(
   });
 }
 
+export function useMealPlanGrocerySource(weekStartDate: IsoDate | null) {
+  return useQuery({
+    enabled: weekStartDate !== null,
+    queryKey: queryKeys.groceryLists.mealPlanSource(weekStartDate ?? ""),
+    queryFn: () =>
+      getMealPlanGrocerySource(createSupabaseBrowserClient(), weekStartDate!),
+    refetchOnMount: "always",
+    staleTime: 0
+  });
+}
+
 export function useGroceryListDetail(id: string) {
   return useQuery({
     queryKey: queryKeys.groceryLists.detail(id),
@@ -116,6 +133,30 @@ export function useCreateGeneratedGroceryList() {
         queryKey: queryKeys.groceryLists.list
       });
     }
+  });
+}
+
+export function useCreateMealPlanGroceryList() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateMealPlanGroceryListInput) =>
+      createMealPlanGroceryList(createSupabaseBrowserClient(), input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.groceryLists.list
+      });
+    }
+  });
+}
+
+export function useRefreshGroceryListFromWeek() {
+  const invalidateGroceryList = useInvalidateGroceryList();
+
+  return useMutation({
+    mutationFn: (input: RefreshGroceryListFromWeekInput) =>
+      refreshGroceryListFromWeek(createSupabaseBrowserClient(), input),
+    onSuccess: async (_, input) => invalidateGroceryList(input.groceryListId)
   });
 }
 

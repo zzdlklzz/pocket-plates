@@ -12,6 +12,13 @@ type RecipeIngredient = {
   unit?: string;
 };
 
+function addIsoDays(isoDate: string, days: number) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+
+  return date.toISOString().slice(0, 10);
+}
+
 async function createAccount(page: Page, email: string) {
   await page.goto("/");
   await page.getByRole("button", { name: "Create account", exact: true }).click();
@@ -63,6 +70,30 @@ async function createRecipe(
     .fill("Combine, cook, and serve.");
   await page.getByRole("button", { name: "Save recipe" }).click();
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
+}
+
+async function addMealToWeek(
+  page: Page,
+  weekStartDate: string,
+  recipeTitle: string,
+  dayOffset: number,
+  servings: string
+) {
+  await page.getByRole("button", { name: /^Add meal to / }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Add meal" });
+  await dialog
+    .getByRole("combobox", { name: "Day" })
+    .selectOption(addIsoDays(weekStartDate, dayOffset));
+  await dialog.getByRole("searchbox", { name: "Search recipes" }).fill(recipeTitle);
+  await dialog
+    .getByRole("region", { name: "Recipe search results" })
+    .getByRole("button", { name: `Select ${recipeTitle}` })
+    .click();
+  await dialog
+    .getByRole("spinbutton", { name: "Planned servings" })
+    .fill(servings);
+  await dialog.getByRole("button", { name: /^Add to / }).click();
+  await expect(dialog).not.toBeVisible();
 }
 
 test("manages a standalone grocery list across reloads", async ({
@@ -308,4 +339,153 @@ test("generates one durable list from grouped recipe ingredients", async ({
   await expect(page.getByRole("button", { name: /Refresh from week/ })).toHaveCount(0);
   await page.getByText("Recipe requirements", { exact: true }).click();
   await expect(page.getByText(`${firstRecipeTitle} · ground`)).toBeVisible();
+});
+
+test("refreshes a meal-plan grocery snapshot while preserving shopping state", async ({
+  page
+}, testInfo) => {
+  testInfo.setTimeout(60_000);
+  const uniqueSuffix = `${testInfo.project.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const email = `grocery-week-${uniqueSuffix}@example.test`;
+  const repeatedRecipeTitle = `Pepper bowls ${uniqueSuffix}`;
+  const removedRecipeTitle = `Pepper rice ${uniqueSuffix}`;
+  const addedRecipeTitle = `Carrot salad ${uniqueSuffix}`;
+  const manualItem = `Milk ${uniqueSuffix}`;
+  const groceryListTitle = `Week shop ${uniqueSuffix}`;
+
+  await createAccount(page, email);
+  await createRecipe(page, repeatedRecipeTitle, "4", [
+    { amount: "1", name: "Pepper", note: "ground", unit: "tbsp" }
+  ]);
+  await page.getByRole("link", { name: "Library" }).click();
+  await createRecipe(page, removedRecipeTitle, "2", [
+    { amount: "1", name: "PEPPER", note: "cracked", unit: "tsp" },
+    { amount: "1", name: "Rice", unit: "cup" }
+  ]);
+  await page.getByRole("link", { name: "Library" }).click();
+  await createRecipe(page, addedRecipeTitle, "3", [
+    { amount: "2", name: "Carrots", unit: "pcs" }
+  ]);
+
+  await page.getByRole("link", { name: "Library" }).click();
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "More" })
+    .getByRole("link", { name: "Meal planner" })
+    .click();
+  await page.getByRole("button", { name: "This week" }).click();
+  const weekStartDate = new URL(page.url()).searchParams.get("week");
+  expect(weekStartDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+  await addMealToWeek(page, weekStartDate!, repeatedRecipeTitle, 0, "2");
+  await addMealToWeek(page, weekStartDate!, repeatedRecipeTitle, 1, "6");
+  await addMealToWeek(page, weekStartDate!, removedRecipeTitle, 2, "2");
+
+  await page.getByRole("link", { name: "Grocery list" }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/grocery-lists/new\\?source=meal-plan&week=${weekStartDate}$`)
+  );
+  await expect(
+    page.getByRole("heading", { name: "Grocery list for this week" })
+  ).toBeVisible();
+  const weekSummary = page.getByText(/^Meal plan · /).first();
+  const weekRange = (await weekSummary.textContent())!.replace("Meal plan · ", "");
+  await expect(page.getByRole("textbox", { name: "List title" })).toHaveValue(
+    `Groceries · ${weekRange}`
+  );
+
+  const plannedRecipes = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { name: "Planned recipes" }) });
+  await expect(
+    plannedRecipes.getByRole("listitem").filter({ hasText: repeatedRecipeTitle })
+  ).toContainText("Saved yield: 4 · Planned: 8 · Scale 2×");
+  await expect(
+    plannedRecipes.getByRole("listitem").filter({ hasText: removedRecipeTitle })
+  ).toContainText("Saved yield: 2 · Planned: 2 · Scale 1×");
+
+  await page.getByRole("textbox", { name: "List title" }).fill(groceryListTitle);
+  await page.getByRole("button", { name: "Review items" }).click();
+  const previewHeading = page.getByRole("heading", { name: "Shopping items" });
+  await expect(previewHeading).toBeVisible();
+  const preview = previewHeading.locator("../..");
+  await expect(preview.locator(":scope > ul > li")).toHaveCount(2);
+  await expect(preview.getByText("2 tbsp + 1 tsp", { exact: true })).toBeVisible();
+  await expect(preview.getByText("Used in 2 recipes", { exact: true })).toBeVisible();
+  const ricePreviewRow = preview.getByText("Rice", { exact: true }).locator("..");
+  await expect(
+    ricePreviewRow.locator(":scope > p").filter({ hasText: /^1 cup$/ })
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Create grocery list" }).click();
+  await expect(page.getByRole("heading", { name: groceryListTitle })).toBeVisible();
+  const groceryListUrl = page.url();
+  await expect(page.getByText(`Meal plan · ${weekRange}`, { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh from week" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit Pepper" }).click();
+  const pepperEditor = page.getByRole("dialog", { name: "Edit Pepper" });
+  await pepperEditor
+    .getByRole("button", { name: "Set a practical shopping amount" })
+    .click();
+  await pepperEditor.getByRole("textbox", { name: "Amount" }).fill("1");
+  await pepperEditor.getByRole("textbox", { name: "Unit" }).fill("jar");
+  await pepperEditor.getByRole("button", { name: "Save changes" }).click();
+  await page.getByRole("checkbox", { name: "Mark Pepper as bought" }).click();
+  await page.getByRole("button", { name: "Add item" }).click();
+  const addItemDialog = page.getByRole("dialog", { name: "Add item" });
+  await addItemDialog.getByRole("textbox", { name: "Item" }).fill(manualItem);
+  await addItemDialog.getByRole("button", { name: "Add item", exact: true }).click();
+  await expect(page.getByRole("button", { name: `Edit ${manualItem}` })).toBeVisible();
+
+  await page.goto(`/meal-planner?week=${weekStartDate}`);
+  const repeatedMeals = page.getByRole("button", {
+    name: new RegExp(`^Edit ${repeatedRecipeTitle} on `)
+  });
+  await repeatedMeals.first().click();
+  let mealEditor = page.getByRole("dialog", { name: "Edit meal" });
+  await mealEditor
+    .getByRole("spinbutton", { name: "Planned servings" })
+    .fill("4");
+  await mealEditor.getByRole("button", { name: "Save changes" }).click();
+
+  await page
+    .getByRole("button", { name: new RegExp(`^Edit ${removedRecipeTitle} on `) })
+    .click();
+  mealEditor = page.getByRole("dialog", { name: "Edit meal" });
+  await mealEditor.getByRole("button", { name: "Remove meal" }).click();
+  await expect(mealEditor).not.toBeVisible();
+  await addMealToWeek(page, weekStartDate!, addedRecipeTitle, 3, "3");
+
+  await page.goto(groceryListUrl);
+  await expect(page.getByRole("button", { name: "Edit Rice" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit Carrots" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Completed (1)" }).click();
+  await expect(page.getByText("Used in 2 recipes", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Refresh from week" }).click();
+  await expect(page.getByText(/Grocery list refreshed from/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit Rice" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: `Edit ${manualItem}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit Carrots" })).toBeVisible();
+  await expect(
+    page.getByRole("checkbox", { name: "Mark Carrots as bought" })
+  ).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Edit Pepper" })).toBeVisible();
+  await expect(
+    page.getByRole("checkbox", { name: "Mark Pepper as not bought" })
+  ).toBeChecked();
+  await expect(page.getByText("1 jar", { exact: true })).toBeVisible();
+
+  const pepperRow = page
+    .getByRole("button", { name: "Edit Pepper" })
+    .locator("xpath=ancestor::li");
+  await pepperRow.getByText("Recipe requirements", { exact: true }).click();
+  await expect(
+    pepperRow.locator("details ul").first().getByText("2½ tbsp", { exact: true })
+  ).toBeVisible();
+  await expect(
+    pepperRow.getByText(`From ${repeatedRecipeTitle}`, { exact: true })
+  ).toBeVisible();
+  await expect(page.getByText("1 of 3 items checked", { exact: true })).toBeVisible();
 });

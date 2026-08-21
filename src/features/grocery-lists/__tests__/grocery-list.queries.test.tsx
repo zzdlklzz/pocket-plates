@@ -3,17 +3,21 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/query/query-keys";
+import type { IsoDate } from "@/features/meal-planning/meal-planning.types";
 
 const mocks = vi.hoisted(() => ({
   addGroceryListItem: vi.fn(),
   createBlankGroceryList: vi.fn(),
   createGeneratedGroceryList: vi.fn(),
+  createMealPlanGroceryList: vi.fn(),
   createSupabaseBrowserClient: vi.fn(),
   deleteGroceryList: vi.fn(),
   getGroceryListDetail: vi.fn(),
+  getMealPlanGrocerySource: vi.fn(),
   listGroceryListRecipeOptions: vi.fn(),
   listGroceryLists: vi.fn(),
   previewSelectedRecipeGroceryList: vi.fn(),
+  refreshGroceryListFromWeek: vi.fn(),
   removeGroceryListItem: vi.fn(),
   renameGroceryList: vi.fn(),
   setGroceryListItemChecked: vi.fn(),
@@ -28,11 +32,14 @@ vi.mock("../grocery-list.repository", () => ({
   addGroceryListItem: mocks.addGroceryListItem,
   createBlankGroceryList: mocks.createBlankGroceryList,
   createGeneratedGroceryList: mocks.createGeneratedGroceryList,
+  createMealPlanGroceryList: mocks.createMealPlanGroceryList,
   deleteGroceryList: mocks.deleteGroceryList,
   getGroceryListDetail: mocks.getGroceryListDetail,
+  getMealPlanGrocerySource: mocks.getMealPlanGrocerySource,
   listGroceryListRecipeOptions: mocks.listGroceryListRecipeOptions,
   listGroceryLists: mocks.listGroceryLists,
   previewSelectedRecipeGroceryList: mocks.previewSelectedRecipeGroceryList,
+  refreshGroceryListFromWeek: mocks.refreshGroceryListFromWeek,
   removeGroceryListItem: mocks.removeGroceryListItem,
   renameGroceryList: mocks.renameGroceryList,
   setGroceryListItemChecked: mocks.setGroceryListItemChecked,
@@ -43,12 +50,15 @@ import {
   useAddGroceryListItem,
   useCreateBlankGroceryList,
   useCreateGeneratedGroceryList,
+  useCreateMealPlanGroceryList,
   useDeleteGroceryList,
   useGroceryListDetail,
   useGroceryListRecipeOptions,
   useGroceryLists,
+  useMealPlanGrocerySource,
   useRemoveGroceryListItem,
   useRenameGroceryList,
+  useRefreshGroceryListFromWeek,
   useSetGroceryListItemChecked,
   useSelectedRecipeGroceryPreview,
   useUpdateGroceryListItem
@@ -356,6 +366,96 @@ describe("grocery list queries", () => {
     });
     expect(invalidateQueries).not.toHaveBeenCalledWith({
       queryKey: queryKeys.recipes.all
+    });
+    expect(invalidateQueries).not.toHaveBeenCalledWith({
+      queryKey: queryKeys.mealPlanning.all
+    });
+  });
+
+  it("loads a fresh meal-plan preview under the exact week key", async () => {
+    const source = {
+      generatedItems: [{ name: "Rice" }],
+      mealPlanId: "plan-1",
+      recipes: [],
+      weekStartDate: "2026-08-17"
+    };
+    mocks.getMealPlanGrocerySource.mockResolvedValue(source);
+    const queryClient = createQueryClient();
+    const { result, rerender } = renderHook(
+      ({ week }) => useMealPlanGrocerySource(week),
+      {
+        initialProps: { week: null as IsoDate | null },
+        wrapper: createWrapper(queryClient)
+      }
+    );
+
+    expect(result.current.fetchStatus).toBe("idle");
+    rerender({ week: "2026-08-17" });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mocks.getMealPlanGrocerySource).toHaveBeenCalledWith(
+      { client: "supabase" },
+      "2026-08-17"
+    );
+    expect(
+      queryClient.getQueryData(
+        queryKeys.groceryLists.mealPlanSource("2026-08-17")
+      )
+    ).toBe(source);
+  });
+
+  it("creates from a week without invalidating meal-planner data", async () => {
+    mocks.createMealPlanGroceryList.mockResolvedValue("list-3");
+    const queryClient = createQueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useCreateMealPlanGroceryList(), {
+      wrapper: createWrapper(queryClient)
+    });
+    const input = {
+      title: "Weekly shop",
+      weekStartDate: "2026-08-17" as const
+    };
+
+    await act(async () => {
+      await expect(result.current.mutateAsync(input)).resolves.toBe("list-3");
+    });
+
+    expect(mocks.createMealPlanGroceryList).toHaveBeenCalledWith(
+      { client: "supabase" },
+      input
+    );
+    expect(invalidateQueries).toHaveBeenCalledTimes(1);
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.groceryLists.list
+    });
+    expect(invalidateQueries).not.toHaveBeenCalledWith({
+      queryKey: queryKeys.mealPlanning.all
+    });
+  });
+
+  it("refreshes only the grocery summary and exact detail cache", async () => {
+    mocks.refreshGroceryListFromWeek.mockResolvedValue(undefined);
+    const queryClient = createQueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useRefreshGroceryListFromWeek(), {
+      wrapper: createWrapper(queryClient)
+    });
+    const input = { groceryListId: "list-3" };
+
+    await act(async () => {
+      await result.current.mutateAsync(input);
+    });
+
+    expect(mocks.refreshGroceryListFromWeek).toHaveBeenCalledWith(
+      { client: "supabase" },
+      input
+    );
+    expect(invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(invalidateQueries).toHaveBeenNthCalledWith(1, {
+      queryKey: queryKeys.groceryLists.list
+    });
+    expect(invalidateQueries).toHaveBeenNthCalledWith(2, {
+      queryKey: queryKeys.groceryLists.detail("list-3")
     });
     expect(invalidateQueries).not.toHaveBeenCalledWith({
       queryKey: queryKeys.mealPlanning.all

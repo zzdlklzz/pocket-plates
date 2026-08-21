@@ -5,6 +5,7 @@ import {
   toGroceryListGenerationRecipeInput,
   toGroceryListRecipeOptionDto,
   toGroceryListSummaryDto,
+  toMealPlanGrocerySourceDto,
   type GroceryListDetailRow
 } from "../grocery-list.mappers";
 
@@ -81,6 +82,84 @@ describe("grocery list mappers", () => {
       savedServings: 4,
       selectedRecipeOrder: 2,
       targetServings: 8
+    });
+  });
+
+  it("reuses planner grouping for repeated archived recipe entries above 100 servings", () => {
+    const recipe = {
+      archived_at: "2026-08-20T10:00:00Z",
+      id: "recipe-1",
+      recipe_ingredients: [
+        {
+          amount: 2,
+          id: "ingredient-1",
+          name: "Rice",
+          notes: null,
+          sort_order: 0,
+          unit: "cups"
+        }
+      ],
+      servings: 4,
+      title: "Archived curry"
+    };
+
+    const source = toMealPlanGrocerySourceDto({
+      id: "plan-1",
+      meal_plan_entries: [
+        {
+          id: "entry-2",
+          meal_type: "dinner",
+          planned_for: "2026-08-19",
+          recipe_id: recipe.id,
+          recipes: recipe,
+          servings: 50
+        },
+        {
+          id: "entry-1",
+          meal_type: "lunch",
+          planned_for: "2026-08-17",
+          recipe_id: recipe.id,
+          recipes: recipe,
+          servings: 70
+        }
+      ],
+      week_start_date: "2026-08-17"
+    });
+
+    expect(source?.recipes).toEqual([
+      {
+        archived: true,
+        plannedServings: 120,
+        recipeId: "recipe-1",
+        recipeTitle: "Archived curry",
+        savedServings: 4,
+        scaleLabel: "30×"
+      }
+    ]);
+    expect(source?.generatedItems[0]).toMatchObject({
+      name: "Rice",
+      sources: [
+        {
+          contributedAmount: 60,
+          targetServings: 120
+        }
+      ]
+    });
+  });
+
+  it("rejects an empty initial week but supports an empty refresh source", () => {
+    const row = {
+      id: "plan-1",
+      meal_plan_entries: [],
+      week_start_date: "2026-08-17"
+    };
+
+    expect(toMealPlanGrocerySourceDto(row)).toBeNull();
+    expect(toMealPlanGrocerySourceDto(row, true)).toEqual({
+      generatedItems: [],
+      mealPlanId: "plan-1",
+      recipes: [],
+      weekStartDate: "2026-08-17"
     });
   });
 
