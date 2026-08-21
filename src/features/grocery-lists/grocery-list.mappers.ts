@@ -4,15 +4,44 @@ import type {
   GroceryListDetailDto,
   GroceryListItemDto,
   GroceryListItemSourceDto,
+  GroceryListGenerationRecipeInput,
+  GroceryListRecipeOptionDto,
   GroceryListSourceType,
-  GroceryListSummaryDto
+  GroceryListSummaryDto,
+  GeneratedGroceryListItem,
+  GeneratedGroceryListRpcItem,
+  SelectedGroceryListRecipeInput
 } from "./grocery-list.types";
+
+export type GroceryListRecipeOptionRow = {
+  id: string;
+  ingredient_names: string[];
+  saved_servings: number;
+  title: string;
+};
+
+export type GroceryListGenerationRecipeRow = {
+  id: string;
+  recipe_ingredients:
+    | {
+        amount: number | null;
+        id: string;
+        name: string;
+        notes: string | null;
+        sort_order: number;
+        unit: string | null;
+      }[]
+    | null;
+  servings: number;
+  title: string;
+};
 
 export type GroceryListSummaryRow = {
   checked_item_count: number;
   id: string;
   item_count: number;
   meal_plan_available: boolean;
+  source_recipe_count: number;
   source_type: GroceryListSourceType;
   source_week_start_date: string | null;
   title: string;
@@ -55,6 +84,7 @@ export type GroceryListDetailRow = {
   id: string;
   meal_plan_id: string | null;
   meal_plans: { id: string } | null;
+  source_recipe_count: number;
   source_type: GroceryListSourceType;
   source_week_start_date: string | null;
   title: string;
@@ -68,6 +98,65 @@ function compareOrderedRows(
   return left.sort_order - right.sort_order || left.id.localeCompare(right.id);
 }
 
+export function toGroceryListRecipeOptionDto(
+  row: GroceryListRecipeOptionRow
+): GroceryListRecipeOptionDto {
+  return {
+    id: row.id,
+    ingredientNames: row.ingredient_names,
+    savedServings: row.saved_servings,
+    title: row.title
+  };
+}
+
+export function toGroceryListGenerationRecipeInput(
+  row: GroceryListGenerationRecipeRow,
+  selection: SelectedGroceryListRecipeInput
+): GroceryListGenerationRecipeInput {
+  return {
+    ingredients: (row.recipe_ingredients ?? [])
+      .slice()
+      .sort(compareOrderedRows)
+      .map(({ amount, id, name, notes, sort_order, unit }) => ({
+        amount,
+        id,
+        name,
+        notes,
+        sortOrder: sort_order,
+        unit
+      })),
+    recipeId: row.id,
+    recipeTitle: row.title,
+    savedServings: row.servings,
+    selectedRecipeOrder: selection.selectedRecipeOrder,
+    targetServings: selection.targetServings
+  };
+}
+
+export function toGeneratedGroceryListRpcItems(
+  items: readonly GeneratedGroceryListItem[]
+): GeneratedGroceryListRpcItem[] {
+  return items.map((item) => ({
+    name: item.name,
+    sort_order: item.sortOrder,
+    sources: item.sources.map((source) => ({
+      canonical_unit: source.canonicalUnit,
+      contributed_amount: source.contributedAmount,
+      ingredient_amount: source.original.amount,
+      ingredient_name: source.original.name,
+      ingredient_notes: source.original.notes,
+      ingredient_unit: source.original.unit,
+      recipe_id: source.recipeId,
+      recipe_ingredient_id: source.recipeIngredientId,
+      recipe_title: source.recipeTitle,
+      saved_servings: source.savedServings,
+      scale_factor: source.scaleFactor,
+      sort_order: source.sortOrder,
+      target_servings: source.targetServings
+    }))
+  }));
+}
+
 export function toGroceryListSummaryDto(
   row: GroceryListSummaryRow
 ): GroceryListSummaryDto {
@@ -76,6 +165,7 @@ export function toGroceryListSummaryDto(
     id: row.id,
     itemCount: row.item_count,
     mealPlanAvailable: row.meal_plan_available,
+    sourceRecipeCount: row.source_recipe_count,
     sourceType: row.source_type,
     sourceWeekStartDate: row.source_week_start_date as IsoDate | null,
     title: row.title,
@@ -140,6 +230,7 @@ export function toGroceryListDetailDto(
     mealPlanAvailable:
       row.source_type === "meal_plan" && row.meal_plans !== null,
     mealPlanId: row.meal_plan_id,
+    sourceRecipeCount: row.source_recipe_count,
     sourceType: row.source_type,
     sourceWeekStartDate: row.source_week_start_date as IsoDate | null,
     title: row.title,

@@ -14,6 +14,9 @@ vi.mock("../grocery-list.queries", () => ({
   useCreateBlankGroceryList: () => mocks.createMutation,
   useGroceryLists: () => mocks.listsResult
 }));
+vi.mock("../GroceryListGenerator", () => ({
+  GroceryListGenerator: () => <div>Recipe grocery-list generator</div>
+}));
 
 import { GroceryListLibrary, NewGroceryList } from "../GroceryListLibrary";
 
@@ -57,6 +60,7 @@ describe("GroceryListLibrary", () => {
           id: "list-1",
           itemCount: 5,
           mealPlanAvailable: false,
+          sourceRecipeCount: 0,
           sourceType: "manual",
           sourceWeekStartDate: null,
           title: "Weekend shop",
@@ -87,6 +91,7 @@ describe("GroceryListLibrary", () => {
           id: "list-1",
           itemCount: 2,
           mealPlanAvailable: false,
+          sourceRecipeCount: 0,
           sourceType: "meal_plan",
           sourceWeekStartDate: "2026-08-17",
           title: "Old week",
@@ -102,6 +107,43 @@ describe("GroceryListLibrary", () => {
 
     expect(screen.getByText(/Week unavailable ·/)).toBeInTheDocument();
     expect(screen.queryByText(/Meal plan ·/)).not.toBeInTheDocument();
+  });
+
+  it("shows the frozen recipe count for selected-recipe lists", () => {
+    mocks.listsResult = {
+      data: [
+        {
+          checkedItemCount: 0,
+          id: "list-one",
+          itemCount: 2,
+          mealPlanAvailable: false,
+          sourceRecipeCount: 1,
+          sourceType: "recipes",
+          sourceWeekStartDate: null,
+          title: "Solo dinner",
+          updatedAt: new Date().toISOString()
+        },
+        {
+          checkedItemCount: 0,
+          id: "list-three",
+          itemCount: 5,
+          mealPlanAvailable: false,
+          sourceRecipeCount: 3,
+          sourceType: "recipes",
+          sourceWeekStartDate: null,
+          title: "Dinner with friends",
+          updatedAt: new Date().toISOString()
+        }
+      ],
+      isError: false,
+      isPending: false,
+      refetch: vi.fn()
+    };
+
+    render(<GroceryListLibrary />);
+
+    expect(screen.getByText("1 recipe")).toBeInTheDocument();
+    expect(screen.getByText("3 recipes")).toBeInTheDocument();
   });
 
   it("offers a retry after a list error", () => {
@@ -134,15 +176,10 @@ describe("NewGroceryList", () => {
     };
   });
 
-  it("shows a concise intermediate recipe-generation state", () => {
+  it("opens the recipe generator for the recipes source", () => {
     render(<NewGroceryList source="recipes" />);
 
-    expect(screen.getByRole("heading", { name: "Generate from recipes" })).toBeInTheDocument();
-    expect(screen.getByText(/Recipe selection is coming/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Create a blank list instead" })).toHaveAttribute(
-      "href",
-      "/grocery-lists/new"
-    );
+    expect(screen.getByText("Recipe grocery-list generator")).toBeInTheDocument();
   });
 
   it("creates a trimmed blank list and opens it", async () => {

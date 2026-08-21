@@ -187,6 +187,7 @@ export type Database = {
           id: string
           meal_plan_id: string | null
           owner_id: string
+          source_recipe_count: number
           source_type: Database["public"]["Enums"]["grocery_list_source_type"]
           source_week_start_date: string | null
           title: string
@@ -197,6 +198,7 @@ export type Database = {
           id?: string
           meal_plan_id?: string | null
           owner_id: string
+          source_recipe_count?: number
           source_type?: Database["public"]["Enums"]["grocery_list_source_type"]
           source_week_start_date?: string | null
           title: string
@@ -207,6 +209,7 @@ export type Database = {
           id?: string
           meal_plan_id?: string | null
           owner_id?: string
+          source_recipe_count?: number
           source_type?: Database["public"]["Enums"]["grocery_list_source_type"]
           source_week_start_date?: string | null
           title?: string
@@ -758,6 +761,7 @@ export type Database = {
           id: string
           item_count: number
           meal_plan_available: boolean
+          source_recipe_count: number
           source_type: Database["public"]["Enums"]["grocery_list_source_type"]
           source_week_start_date: string | null
           title: string
@@ -787,6 +791,15 @@ export type Database = {
       normalize_grocery_item_name: {
         Args: { p_value: string }
         Returns: string
+      }
+      search_grocery_list_recipe_options: {
+        Args: { p_search?: string | null }
+        Returns: {
+          id: string
+          ingredient_names: string[]
+          saved_servings: number
+          title: string
+        }[]
       }
       refresh_grocery_list_from_meal_plan: {
         Args: { p_generated_items: Json; p_grocery_list_id: string }

@@ -19,6 +19,22 @@ export class GroceryListAuthenticationError extends Error {
   }
 }
 
+export class GroceryListRecipeUnavailableError extends Error {
+  constructor() {
+    super("One selected recipe is no longer available. Review your selections and try again.");
+    this.name = "GroceryListRecipeUnavailableError";
+  }
+}
+
+export class GroceryListItemLimitError extends Error {
+  constructor() {
+    super(
+      "This selection creates more than 300 grocery items. Remove a recipe or choose recipes with fewer ingredients."
+    );
+    this.name = "GroceryListItemLimitError";
+  }
+}
+
 export type GroceryListErrorAction =
   | "create"
   | "delete"
@@ -69,7 +85,9 @@ export function getGroceryListErrorMessage(
   if (
     error instanceof GroceryListNotFoundError ||
     error instanceof DuplicateGroceryListItemError ||
-    error instanceof GroceryListAuthenticationError
+    error instanceof GroceryListAuthenticationError ||
+    error instanceof GroceryListRecipeUnavailableError ||
+    error instanceof GroceryListItemLimitError
   ) {
     return error.message;
   }

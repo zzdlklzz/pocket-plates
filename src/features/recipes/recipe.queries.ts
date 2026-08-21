@@ -34,6 +34,20 @@ async function mapRecipeCardsWithImages(
   return rows.map((row, index) => toRecipeCardDto(row, imageUrls[index]));
 }
 
+async function invalidateRecipeAndGrocerySources(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all }),
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.groceryLists.recipeOptions
+    }),
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.groceryLists.recipePreviews
+    })
+  ]);
+}
+
 export function useRecipeList(filters: RecipeListFilters) {
   const normalizedFilters = normalizeRecipeListFilters(filters);
 
@@ -84,7 +98,7 @@ export function useCreateRecipe() {
       return createRecipe(supabase, values, imageChange);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
+      await invalidateRecipeAndGrocerySources(queryClient);
     }
   });
 }
@@ -99,7 +113,7 @@ export function useUpdateRecipe(id: string) {
     },
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all }),
+        invalidateRecipeAndGrocerySources(queryClient),
         queryClient.invalidateQueries({ queryKey: queryKeys.recipes.detail(id) })
       ]);
     }
@@ -116,7 +130,7 @@ export function useArchiveRecipe() {
     },
     onSuccess: async (_, id) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all }),
+        invalidateRecipeAndGrocerySources(queryClient),
         queryClient.invalidateQueries({ queryKey: queryKeys.recipes.detail(id) })
       ]);
     }
@@ -132,7 +146,7 @@ export function useRestoreRecipe() {
       return restoreRecipe(supabase, id);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
+      await invalidateRecipeAndGrocerySources(queryClient);
     }
   });
 }
@@ -146,7 +160,7 @@ export function useDeleteArchivedRecipes() {
       return deleteArchivedRecipes(supabase, ids);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.recipes.all });
+      await invalidateRecipeAndGrocerySources(queryClient);
     }
   });
 }

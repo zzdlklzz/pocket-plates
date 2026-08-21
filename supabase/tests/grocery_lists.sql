@@ -44,6 +44,11 @@ begin
       'authenticated',
       'public.refresh_grocery_list_from_meal_plan(uuid, jsonb)',
       'EXECUTE'
+    )
+    or not has_function_privilege(
+      'authenticated',
+      'public.search_grocery_list_recipe_options(text)',
+      'EXECUTE'
     ) then
     raise exception 'authenticated must execute grocery-list functions';
   end if;
@@ -57,6 +62,11 @@ begin
     or has_function_privilege(
       'anon',
       'public.refresh_grocery_list_from_meal_plan(uuid, jsonb)',
+      'EXECUTE'
+    )
+    or has_function_privilege(
+      'anon',
+      'public.search_grocery_list_recipe_options(text)',
       'EXECUTE'
     ) then
     raise exception 'anon must not execute grocery-list functions';
@@ -111,7 +121,39 @@ values
     'Owner two curry',
     4,
     null
+  ),
+  (
+    '22000000-0000-0000-0000-000000000004',
+    '12000000-0000-0000-0000-000000000001',
+    'ZZZ late needle salad',
+    2,
+    null
+  ),
+  (
+    '22000000-0000-0000-0000-000000000005',
+    '12000000-0000-0000-0000-000000000001',
+    '100% literal soup',
+    2,
+    null
   );
+
+insert into public.recipes (id, owner_id, title, servings, archived_at)
+select
+  gen_random_uuid(),
+  '12000000-0000-0000-0000-000000000001'::uuid,
+  'AAA prefix ' || lpad(series.value::text, 2, '0'),
+  2,
+  null
+from generate_series(1, 55) as series(value);
+
+insert into public.recipes (id, owner_id, title, servings, archived_at)
+select
+  gen_random_uuid(),
+  '12000000-0000-0000-0000-000000000001'::uuid,
+  'Limit recipe ' || lpad(series.value::text, 2, '0'),
+  1,
+  null
+from generate_series(1, 11) as series(value);
 
 insert into public.recipe_ingredients (
   id,
@@ -167,7 +209,36 @@ values
     'cup',
     null,
     0
+  ),
+  (
+    '32000000-0000-0000-0000-000000000006',
+    '22000000-0000-0000-0000-000000000004',
+    'Lime',
+    1,
+    'pcs',
+    null,
+    0
   );
+
+insert into public.recipe_ingredients (
+  id,
+  recipe_id,
+  name,
+  amount,
+  unit,
+  notes,
+  sort_order
+)
+select
+  gen_random_uuid(),
+  recipe.id,
+  'Limit ingredient ' || right(recipe.title, 2),
+  1,
+  'pcs',
+  null,
+  0
+from public.recipes as recipe
+where recipe.title like 'Limit recipe %';
 
 insert into public.meal_plans (id, owner_id, week_start_date)
 values
@@ -300,6 +371,42 @@ $$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '12000000-0000-0000-0000-000000000001', true);
 
+do $$
+declare
+  option_row record;
+begin
+  if (select count(*) from public.search_grocery_list_recipe_options(null)) <> 50 then
+    raise exception 'Blank recipe-option search must apply its bound.';
+  end if;
+
+  select * into option_row
+  from public.search_grocery_list_recipe_options('late needle');
+
+  if option_row.id <> '22000000-0000-0000-0000-000000000004'::uuid
+    or option_row.saved_servings <> 2
+    or option_row.ingredient_names <> array['Lime']::text[] then
+    raise exception 'Recipe-option search must filter before limiting and return ordered ingredients.';
+  end if;
+
+  if (select count(*) from public.search_grocery_list_recipe_options('%')) <> 1
+    or not exists (
+      select 1
+      from public.search_grocery_list_recipe_options('%')
+      where id = '22000000-0000-0000-0000-000000000005'::uuid
+    ) then
+    raise exception 'Recipe-option search must treat wildcard characters literally.';
+  end if;
+
+  if exists (
+    select 1
+    from public.search_grocery_list_recipe_options('Broccoli')
+    where id = '22000000-0000-0000-0000-000000000002'::uuid
+  ) then
+    raise exception 'Archived recipes must not appear in grocery recipe options.';
+  end if;
+end;
+$$;
+
 insert into public.grocery_lists (id, owner_id, title)
 values (
   '62000000-0000-0000-0000-000000000001',
@@ -353,6 +460,7 @@ begin
   where id = '62000000-0000-0000-0000-000000000001';
 
   if summary_row.source_type <> 'manual'::public.grocery_list_source_type
+    or summary_row.source_recipe_count <> 0
     or summary_row.item_count <> 1
     or summary_row.checked_item_count <> 0
     or summary_row.meal_plan_available then
@@ -526,6 +634,7 @@ begin
     from public.grocery_lists
     where id = selected_list_id
       and source_type = 'recipes'::public.grocery_list_source_type
+      and source_recipe_count = 1
   ) or not exists (
     select 1
     from public.grocery_list_item_sources as source
@@ -536,6 +645,23 @@ begin
     raise exception 'Generated creation must save one atomic snapshot.';
   end if;
 
+  if (
+    select source_recipe_count
+    from public.list_grocery_lists()
+    where id = selected_list_id
+  ) <> 1 then
+    raise exception 'Recipe-generated summaries must return the frozen source count.';
+  end if;
+
+  begin
+    update public.grocery_lists
+    set source_recipe_count = 2
+    where id = selected_list_id;
+    raise exception 'Frozen source recipe counts must not be directly editable.';
+  exception
+    when insufficient_privilege then null;
+  end;
+
   begin
     perform public.refresh_grocery_list_from_meal_plan(
       selected_list_id,
@@ -545,6 +671,17 @@ begin
   exception
     when insufficient_privilege then null;
   end;
+
+  delete from public.grocery_list_items
+  where grocery_list_id = selected_list_id;
+
+  if (
+    select source_recipe_count
+    from public.grocery_lists
+    where id = selected_list_id
+  ) <> 1 then
+    raise exception 'Removing generated items must not change the frozen recipe count.';
+  end if;
 
   begin
     perform public.create_grocery_list_with_items(
@@ -730,6 +867,110 @@ begin
   exception
     when invalid_parameter_value then null;
   end;
+end;
+$$;
+
+do $$
+declare
+  limit_payload jsonb;
+  plural_list_id uuid;
+begin
+  plural_list_id := public.create_grocery_list_with_items(
+    'Two recipe groceries',
+    'recipes'::public.grocery_list_source_type,
+    null,
+    null,
+    pg_temp.owner_one_recipe_payload() || jsonb_build_array(
+      jsonb_build_object(
+        'name', 'Lime',
+        'sort_order', 2,
+        'sources', jsonb_build_array(
+          jsonb_build_object(
+            'recipe_id', '22000000-0000-0000-0000-000000000004',
+            'recipe_ingredient_id', '32000000-0000-0000-0000-000000000006',
+            'recipe_title', 'ZZZ late needle salad',
+            'ingredient_name', 'Lime',
+            'ingredient_amount', 1,
+            'ingredient_unit', 'pcs',
+            'ingredient_notes', null,
+            'saved_servings', 2,
+            'target_servings', 2,
+            'scale_factor', 1,
+            'contributed_amount', 1,
+            'canonical_unit', 'pcs',
+            'sort_order', 0
+          )
+        )
+      )
+    )
+  );
+
+  if (
+    select source_recipe_count
+    from public.grocery_lists
+    where id = plural_list_id
+  ) <> 2 then
+    raise exception 'Recipe snapshots must persist distinct source recipe counts.';
+  end if;
+
+  with limit_sources as (
+    select
+      recipe.id as recipe_id,
+      recipe.title as recipe_title,
+      recipe_ingredient.id as ingredient_id,
+      recipe_ingredient.name as ingredient_name,
+      row_number() over (order by recipe.title, recipe.id) - 1 as item_order
+    from public.recipes as recipe
+    join public.recipe_ingredients as recipe_ingredient
+      on recipe_ingredient.recipe_id = recipe.id
+    where recipe.title like 'Limit recipe %'
+  )
+  select jsonb_agg(
+    jsonb_build_object(
+      'name', limit_sources.ingredient_name,
+      'sort_order', limit_sources.item_order,
+      'sources', jsonb_build_array(
+        jsonb_build_object(
+          'recipe_id', limit_sources.recipe_id,
+          'recipe_ingredient_id', limit_sources.ingredient_id,
+          'recipe_title', limit_sources.recipe_title,
+          'ingredient_name', limit_sources.ingredient_name,
+          'ingredient_amount', 1,
+          'ingredient_unit', 'pcs',
+          'ingredient_notes', null,
+          'saved_servings', 1,
+          'target_servings', 1,
+          'scale_factor', 1,
+          'contributed_amount', 1,
+          'canonical_unit', 'pcs',
+          'sort_order', 0
+        )
+      )
+    )
+    order by limit_sources.item_order
+  ) into limit_payload
+  from limit_sources;
+
+  begin
+    perform public.create_grocery_list_with_items(
+      'Too many recipe sources',
+      'recipes'::public.grocery_list_source_type,
+      null,
+      null,
+      limit_payload
+    );
+    raise exception 'Recipe generation must reject more than 10 source recipes.';
+  exception
+    when invalid_parameter_value then null;
+  end;
+
+  if exists (
+    select 1
+    from public.grocery_lists
+    where title = 'Too many recipe sources'
+  ) then
+    raise exception 'A source-limit failure must not leave a partial list.';
+  end if;
 end;
 $$;
 
@@ -1280,6 +1521,13 @@ declare
 begin
   if exists (
     select 1
+    from public.search_grocery_list_recipe_options('late needle')
+  ) then
+    raise exception 'Recipe-option search must be owner scoped.';
+  end if;
+
+  if exists (
+    select 1
     from public.grocery_lists
     where owner_id = '12000000-0000-0000-0000-000000000001'
   ) then
@@ -1414,6 +1662,18 @@ where id = '22000000-0000-0000-0000-000000000001';
 
 do $$
 begin
+  if (
+    select source_recipe_count
+    from public.grocery_lists
+    where title = 'Recipe groceries'
+  ) <> 1 or (
+    select source_recipe_count
+    from public.grocery_lists
+    where title = 'Two recipe groceries'
+  ) <> 2 then
+    raise exception 'Deleting source recipes must not change frozen recipe counts.';
+  end if;
+
   if not exists (
     select 1
     from public.grocery_list_item_sources

@@ -3,27 +3,39 @@ import type { Database } from "@/lib/supabase/database.types";
 import {
   DuplicateGroceryListItemError,
   GroceryListAuthenticationError,
-  GroceryListNotFoundError
+  GroceryListItemLimitError,
+  GroceryListNotFoundError,
+  GroceryListRecipeUnavailableError
 } from "./grocery-list.errors";
 import {
+  toGeneratedGroceryListRpcItems,
   toGroceryListDetailDto,
+  toGroceryListGenerationRecipeInput,
+  toGroceryListRecipeOptionDto,
   toGroceryListSummaryDto,
   type GroceryListDetailRow,
+  type GroceryListGenerationRecipeRow,
+  type GroceryListRecipeOptionRow,
   type GroceryListSummaryRow
 } from "./grocery-list.mappers";
+import { generateGroceryListItems } from "./grocery-list.generation";
 import type {
   AddGroceryListItemInput,
   CreateBlankGroceryListInput,
+  CreateGeneratedGroceryListInput,
   DeleteGroceryListInput,
   RemoveGroceryListItemInput,
   RenameGroceryListInput,
+  SelectedGroceryListRecipeInput,
   SetGroceryListItemCheckedInput,
   UpdateGroceryListItemInput
 } from "./grocery-list.types";
 import {
   isUuid,
+  parseCreateGeneratedGroceryListInput,
   parseGroceryListItemValues,
-  parseGroceryListTitle
+  parseGroceryListTitle,
+  parseSelectedGroceryListRecipes
 } from "./grocery-list.validation";
 
 type SupabaseBrowserClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -32,7 +44,9 @@ type GroceryListItemInsert = Database["public"]["Tables"]["grocery_list_items"][
 type GroceryListItemUpdate = Database["public"]["Tables"]["grocery_list_items"]["Update"];
 
 const GROCERY_LIST_DETAIL_SELECT =
-  "id,title,source_type,meal_plan_id,source_week_start_date,updated_at,meal_plans(id),grocery_list_items(id,name,amount,unit,notes,normalized_name,is_manual,quantity_overridden,checked,sort_order,grocery_list_item_sources(id,recipe_id,recipe_ingredient_id,recipe_title,ingredient_name,ingredient_amount,ingredient_unit,ingredient_notes,saved_servings,target_servings,scale_factor,contributed_amount,canonical_unit,sort_order))";
+  "id,title,source_type,source_recipe_count,meal_plan_id,source_week_start_date,updated_at,meal_plans(id),grocery_list_items(id,name,amount,unit,notes,normalized_name,is_manual,quantity_overridden,checked,sort_order,grocery_list_item_sources(id,recipe_id,recipe_ingredient_id,recipe_title,ingredient_name,ingredient_amount,ingredient_unit,ingredient_notes,saved_servings,target_servings,scale_factor,contributed_amount,canonical_unit,sort_order))";
+const GROCERY_LIST_GENERATION_RECIPE_SELECT =
+  "id,title,servings,recipe_ingredients(id,name,amount,unit,notes,sort_order)";
 
 function isUniqueViolation(error: unknown) {
   return (
@@ -57,6 +71,45 @@ function requireMutationRow<T>(row: T | null): T {
   }
 
   return row;
+}
+
+function getDatabaseError(error: unknown) {
+  if (typeof error !== "object" || error === null) {
+    return { code: "", message: "" };
+  }
+
+  const errorRecord = error as { code?: unknown; message?: unknown };
+  return {
+    code: String(errorRecord.code ?? ""),
+    message: String(errorRecord.message ?? "").toLowerCase()
+  };
+}
+
+function isStaleGeneratedSourceError(error: unknown) {
+  const { message } = getDatabaseError(error);
+
+  return [
+    "source recipe is not available",
+    "source ingredient is not available",
+    "must include every recipe ingredient"
+  ].some((candidate) => message.includes(candidate));
+}
+
+function generateSelectedRecipeItems(
+  sources: Parameters<typeof generateGroceryListItems>[0]
+) {
+  try {
+    return generateGroceryListItems(sources);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "A grocery list can contain at most 300 items."
+    ) {
+      throw new GroceryListItemLimitError();
+    }
+
+    throw error;
+  }
 }
 
 async function getAuthenticatedOwnerId(supabase: SupabaseBrowserClient) {
@@ -86,6 +139,115 @@ export async function listGroceryLists(supabase: SupabaseBrowserClient) {
   return ((data ?? []) as GroceryListSummaryRow[]).map(
     toGroceryListSummaryDto
   );
+}
+
+export async function listGroceryListRecipeOptions(
+  supabase: SupabaseBrowserClient,
+  search: string
+) {
+  await getAuthenticatedOwnerId(supabase);
+  const { data, error } = await supabase.rpc(
+    "search_grocery_list_recipe_options",
+    { p_search: search.trim() || null } as never
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as unknown as GroceryListRecipeOptionRow[]).map(
+    toGroceryListRecipeOptionDto
+  );
+}
+
+export async function getSelectedRecipeGenerationSources(
+  supabase: SupabaseBrowserClient,
+  recipes: SelectedGroceryListRecipeInput[]
+) {
+  const selections = parseSelectedGroceryListRecipes(recipes);
+  const ownerId = await getAuthenticatedOwnerId(supabase);
+  const { data, error } = await supabase
+    .from("recipes")
+    .select(GROCERY_LIST_GENERATION_RECIPE_SELECT)
+    .eq("owner_id", ownerId)
+    .in(
+      "id",
+      selections.map(({ recipeId }) => recipeId)
+    )
+    .is("archived_at", null);
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as unknown as GroceryListGenerationRecipeRow[];
+  const rowsById = new Map(rows.map((row) => [row.id, row]));
+  if (
+    rowsById.size !== selections.length ||
+    selections.some(
+      ({ recipeId }) =>
+        !(rowsById.get(recipeId)?.recipe_ingredients?.length ?? 0)
+    )
+  ) {
+    throw new GroceryListRecipeUnavailableError();
+  }
+
+  return selections.map((selection) =>
+    toGroceryListGenerationRecipeInput(
+      rowsById.get(selection.recipeId)!,
+      selection
+    )
+  );
+}
+
+export async function previewSelectedRecipeGroceryList(
+  supabase: SupabaseBrowserClient,
+  recipes: SelectedGroceryListRecipeInput[]
+) {
+  const sources = await getSelectedRecipeGenerationSources(supabase, recipes);
+  return generateSelectedRecipeItems(sources);
+}
+
+export async function createGeneratedGroceryList(
+  supabase: SupabaseBrowserClient,
+  input: CreateGeneratedGroceryListInput
+) {
+  const parsed = parseCreateGeneratedGroceryListInput(input);
+  const authoritativeSources = await getSelectedRecipeGenerationSources(
+    supabase,
+    parsed.recipes
+  );
+  const generatedItems = generateSelectedRecipeItems(authoritativeSources);
+  const { data, error } = await supabase.rpc(
+    "create_grocery_list_with_items",
+    {
+      p_items: toGeneratedGroceryListRpcItems(generatedItems),
+      p_meal_plan_id: null,
+      p_source_type: "recipes",
+      p_source_week_start_date: null,
+      p_title: parsed.title
+    } as never
+  );
+
+  if (error) {
+    const databaseError = getDatabaseError(error);
+    if (
+      databaseError.code === "42501" &&
+      databaseError.message.includes("authentication is required")
+    ) {
+      throw new GroceryListAuthenticationError();
+    }
+    if (isStaleGeneratedSourceError(error)) {
+      throw new GroceryListRecipeUnavailableError();
+    }
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("The grocery list was not created.");
+  }
+
+  return data as string;
 }
 
 export async function getGroceryListDetail(

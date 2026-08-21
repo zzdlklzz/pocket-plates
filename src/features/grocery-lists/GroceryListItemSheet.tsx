@@ -34,7 +34,10 @@ type GroceryListItemSheetProps = {
   item?: GroceryListItemDto;
   onClose: () => void;
   onRemove?: () => Promise<void>;
-  onSubmit: (values: GroceryListItemFormValues) => Promise<void>;
+  onSubmit: (
+    values: GroceryListItemFormValues,
+    quantityOverridden: boolean
+  ) => Promise<void>;
   removeError: unknown;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
 };
@@ -52,6 +55,7 @@ export function GroceryListItemSheet({
   returnFocusRef
 }: GroceryListItemSheetProps) {
   const isEditing = Boolean(item);
+  const isGenerated = Boolean(item && !item.isManual && item.sources.length > 0);
   const isBusy = isPending || isRemovePending;
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -61,6 +65,9 @@ export function GroceryListItemSheet({
   const [amount, setAmount] = useState(item?.amount?.toString() ?? "");
   const [unit, setUnit] = useState(item?.unit ?? "");
   const [notes, setNotes] = useState(item?.notes ?? "");
+  const [usesPracticalAmount, setUsesPracticalAmount] = useState(
+    !isGenerated || Boolean(item?.quantityOverridden)
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -117,7 +124,14 @@ export function GroceryListItemSheet({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = groceryListItemSchema.safeParse({ amount, name, notes, unit });
+    const submittedAmount = usesPracticalAmount ? amount : "";
+    const submittedUnit = usesPracticalAmount ? unit : "";
+    const result = groceryListItemSchema.safeParse({
+      amount: submittedAmount,
+      name,
+      notes,
+      unit: submittedUnit
+    });
 
     if (!result.success) {
       const amountIssue = result.error.issues.find(
@@ -129,9 +143,14 @@ export function GroceryListItemSheet({
       return;
     }
 
+    if (isGenerated && usesPracticalAmount && !result.data.amount) {
+      setValidationError("Add an amount, or use recipe requirements.");
+      return;
+    }
+
     setValidationError(null);
     try {
-      await onSubmit(result.data);
+      await onSubmit(result.data, isGenerated && usesPracticalAmount);
     } catch {
       // The mutation error is rendered above the actions.
     }
@@ -199,36 +218,67 @@ export function GroceryListItemSheet({
             />
           </label>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Amount
-              <input
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-3 text-base text-slate-800"
-                disabled={isBusy}
-                inputMode="decimal"
-                onChange={(event) => {
-                  setAmount(event.target.value);
-                  setValidationError(null);
-                }}
-                placeholder="Optional"
-                value={amount}
-              />
-            </label>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Unit
-              <input
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-3 text-base text-slate-800"
-                disabled={isBusy}
-                maxLength={MAX_GROCERY_LIST_UNIT_LENGTH}
-                onChange={(event) => {
-                  setUnit(event.target.value);
-                  setValidationError(null);
-                }}
-                placeholder="Optional"
-                value={unit}
-              />
-            </label>
-          </div>
+          {isGenerated && !usesPracticalAmount ? (
+            <ActionButton
+              className="mt-4"
+              fullWidth
+              onClick={() => {
+                setUsesPracticalAmount(true);
+                setValidationError(null);
+              }}
+              variant="secondary"
+            >
+              Set a practical shopping amount
+            </ActionButton>
+          ) : (
+            <>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Amount
+                  <input
+                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-3 text-base text-slate-800"
+                    disabled={isBusy}
+                    inputMode="decimal"
+                    onChange={(event) => {
+                      setAmount(event.target.value);
+                      setValidationError(null);
+                    }}
+                    placeholder="Optional"
+                    value={amount}
+                  />
+                </label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Unit
+                  <input
+                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-3 text-base text-slate-800"
+                    disabled={isBusy}
+                    maxLength={MAX_GROCERY_LIST_UNIT_LENGTH}
+                    onChange={(event) => {
+                      setUnit(event.target.value);
+                      setValidationError(null);
+                    }}
+                    placeholder="Optional"
+                    value={unit}
+                  />
+                </label>
+              </div>
+              {isGenerated ? (
+                <button
+                  className="mt-3 min-h-11 text-sm font-semibold text-leaf-700"
+                  disabled={isBusy}
+                  onClick={() => {
+                    setAmount("");
+                    setUnit("");
+                    setUsesPracticalAmount(false);
+                    setValidationError(null);
+                  }}
+                  type="button"
+                >
+                  Use recipe requirements
+                </button>
+              ) : null}
+            </>
+          )}
 
           <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Note

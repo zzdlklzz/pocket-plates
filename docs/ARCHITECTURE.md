@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, the weekly meal planner, and standalone manual grocery lists. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, a URL-stable weekly meal agenda, and private grocery-list library/create/detail routes with manual checklist editing. The data and pure grouping foundations for recipe- and meal-plan-generated grocery snapshots are present; their generator and week-refresh interfaces remain pending. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented discovery tags remain pending.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, the weekly meal planner, standalone manual grocery lists, and selected-recipe grocery generation. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, a URL-stable weekly meal agenda, and private grocery-list library/create/detail routes with manual editing or recipe-generated snapshots. Meal-plan-week generation and refresh remain pending. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented discovery tags remain pending.
 
 ## Stack
 
@@ -56,6 +56,7 @@ The database schema is migration-first and represented in:
 - `supabase/migrations/20260819205000_add_equipment_presets.sql`
 - `supabase/migrations/20260821090000_prepare_meal_planner_foundation.sql`
 - `supabase/migrations/20260821230000_add_grocery_list_foundation.sql`
+- `supabase/migrations/20260822012421_add_grocery_recipe_snapshot_counts.sql`
 - `docs/database-schema.dbml`
 - `docs/database-erd.mmd`
 
@@ -78,7 +79,7 @@ Meal-planning foundation entities:
 
 Grocery-list foundation entities:
 
-- `grocery_lists`: private manual, selected-recipe, or meal-plan-week list snapshots. Meal-plan lists retain their source week after the linked plan is deleted.
+- `grocery_lists`: private manual, selected-recipe, or meal-plan-week list snapshots. Selected-recipe lists retain their frozen recipe count even when source links later disappear; meal-plan lists retain their source week after the linked plan is deleted.
 - `grocery_list_items`: one editable checklist product per normalized name, including manual/generated ownership, checked state, and an optional practical quantity override.
 - `grocery_list_item_sources`: durable recipe-requirement snapshots for generated products. Nullable recipe and ingredient references preserve snapshot text after a source is deleted.
 
@@ -90,11 +91,11 @@ Authenticated browser clients have explicit CRUD grants on both planner tables, 
 
 Authenticated browser clients also have owner-scoped CRUD access to grocery lists and products. Grocery source rows permit authenticated read, insert, and delete but not direct update; their RLS policy follows the parent list and rejects recipe or ingredient references outside the owner boundary. One immutable SQL normalizer collapses every PostgreSQL whitespace run before trimming and lowercasing, so spaces, tabs, and newlines produce the same stored product key and per-list uniqueness behavior; display names remain editable. Item mutations trigger one parent timestamp update so list-library activity and progress queries stay current.
 
-`list_grocery_lists()` returns owner-scoped list metadata and checked/total counts without downloading item bodies. `create_grocery_list_with_items(...)` atomically creates a bounded recipe or meal-plan snapshot after validating source ownership, every current ingredient exactly once, canonical unit buckets, six-decimal scaling arithmetic, and current snapshot fields. `refresh_grocery_list_from_meal_plan(...)` accepts only an available linked owned plan, locks that grocery-list row for the transaction, and then replaces its generated source requirements. The row lock serializes concurrent refresh attempts for one list. Refresh preserves manual rows plus matched checked states and quantity overrides, adds new generated rows unchecked, and removes obsolete generated rows. All grocery functions are security-invoker boundaries with explicit authenticated execution grants; no background sync, refresh history, version table, or separate requirement-group table exists.
+`list_grocery_lists()` returns owner-scoped list metadata, the frozen selected-recipe count, and checked/total counts without downloading item bodies. `search_grocery_list_recipe_options(...)` applies literal title-or-ingredient matching before its bounded result limit, so search is complete rather than restricted to an arbitrary alphabetical prefix. `create_grocery_list_with_items(...)` atomically creates a bounded recipe or meal-plan snapshot after validating source ownership, every current ingredient exactly once, canonical unit buckets, six-decimal scaling arithmetic, and current snapshot fields; selected-recipe requests are capped at ten distinct recipes and record their count server-side. `refresh_grocery_list_from_meal_plan(...)` accepts only an available linked owned plan, locks that grocery-list row for the transaction, and then replaces its generated source requirements. The row lock serializes concurrent refresh attempts for one list. Refresh preserves manual rows plus matched checked states and quantity overrides, adds new generated rows unchecked, and removes obsolete generated rows. All grocery functions are security-invoker boundaries with explicit authenticated execution grants; no background sync, refresh history, version table, or separate requirement-group table exists.
 
-The pure grocery generation layer has no database or React dependency. It scales each authoritative ingredient to the requested servings with six-decimal precision, groups products only by trimmed/collapsed/lowercased names, totals compatible unit buckets, and retains incompatible units inside one checklist item. Null amounts form one `extra` requirement group; an all-null product omits a quantity label. Compact display shows at most two groups plus `+ n more`, while every original recipe line and preparation note remains in the source snapshot. The selected-recipe picker will enforce its own 10-recipe and 1–100 serving limits; the shared engine deliberately accepts larger meal-plan weeks and summed serving totals.
+The pure grocery generation layer has no database or React dependency. It scales each authoritative ingredient to the requested servings with six-decimal precision, groups products only by trimmed/collapsed/lowercased names, totals compatible unit buckets, and retains incompatible units inside one checklist item. Null amounts form one `extra` requirement group; an all-null product omits a quantity label. Compact display shows at most two groups plus `+ n more`, while every original recipe line and preparation note remains in the source snapshot. The selected-recipe picker and atomic database boundary both enforce the 10-recipe limit, while target servings remain 1–100 per selected recipe. The shared engine deliberately accepts larger meal-plan weeks and summed serving totals.
 
-The authenticated `/grocery-lists`, `/grocery-lists/new`, and `/grocery-lists/[id]` routes provide the first application slice. The library reads compact owner-scoped progress summaries newest-activity first and links to blank creation or the pending recipe generator. One shared detail screen partitions unchecked and checked rows, keeps Completed collapsed initially, and uses distinct checkbox and edit controls. Manual items accept an optional amount, unit, and note; add and edit share one focus-trapped sheet, while rename and deliberate delete use focused dialogs. Mutations stay behind feature repository and TanStack Query hooks, invalidate only the affected grocery caches, and map missing or inaccessible lists to the same safe unavailable state. Manual lists never render a week-refresh control.
+The authenticated `/grocery-lists`, `/grocery-lists/new`, and `/grocery-lists/[id]` routes serve manual and recipe-generated lists through one shared detail experience. The library reads compact owner-scoped progress summaries newest-activity first and links to blank creation or a one-page recipe generator. The generator searches the complete active owned recipe set by title or ingredient, adds each recipe once, lets the user choose target servings, and forces a fresh ingredient review before creation. Creation refetches authoritative recipes, recomputes the snapshot, and makes one atomic write; stale or archived selections fail without a partial list. Generated rows preserve expandable recipe requirements while an optional practical shopping amount changes only the compact display and can be reset. The detail screen partitions unchecked and checked rows, keeps Completed collapsed initially, and uses distinct checkbox and edit controls. Manual items accept an optional amount, unit, and note; add and edit share one focus-trapped sheet, while rename and deliberate delete use focused dialogs. Mutations stay behind feature repository and TanStack Query hooks and invalidate only affected grocery caches. Manual and selected-recipe lists never render a week-refresh control.
 
 The authenticated `/meal-planner` route shows the approved Monday-through-Sunday vertical agenda. Its normalized `week=YYYY-MM-DD` Monday value survives refresh and browser history; missing, invalid, or non-Monday values canonicalize from the browser's local calendar without parsing date-only strings as UTC. Previous, current, and next controls navigate by exact calendar weeks.
 
@@ -221,9 +222,11 @@ src/
     grocery-lists/
       GroceryListCard.tsx
       GroceryListDetail.tsx
+      GroceryListGenerator.tsx
       GroceryListItemRow.tsx
       GroceryListItemSheet.tsx
       GroceryListLibrary.tsx
+      GroceryListSourceDisclosure.tsx
       grocery-list.generation.ts
       grocery-list.mappers.ts
       grocery-list.queries.ts
@@ -747,6 +750,6 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 1. Stage 0: foundation, app shell, CI, tests, Supabase boundary, TanStack Query setup.
 2. Stage 1: true MVP private recipe library with archived recipe viewing and restoration.
 3. Stage 2: title-or-ingredient search plus controlled effort and equipment/setup discovery are complete; student-oriented tags remain intentionally deferred.
-4. Stage 3: weekly meal planning and its recipe-level prep summary are complete; the grocery-list data foundation, grouping engine, and standalone manual checklist are complete, while generated-list and week-refresh interfaces plus pantry/cost features remain pending.
+4. Stage 3: weekly meal planning and its recipe-level prep summary are complete; the grocery-list data foundation, grouping engine, standalone checklist, and selected-recipe generator are complete, while meal-plan generation/refresh plus pantry/cost features remain pending.
 5. Stage 4: public/shared recipe discovery.
 6. Stage 5: polish, import flows, nutrition/macros, recommendations.

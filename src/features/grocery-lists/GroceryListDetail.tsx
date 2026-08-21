@@ -17,6 +17,7 @@ import { RecipeNavigation } from "@/features/recipes/RecipeNavigation";
 import { DeleteGroceryListDialog } from "./DeleteGroceryListDialog";
 import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
+import { formatSelectedRecipeSource } from "./grocery-list.source-formatting";
 import {
   useAddGroceryListItem,
   useDeleteGroceryList,
@@ -61,10 +62,12 @@ function formatWeekRange(weekStartDate: string | null) {
 
 function getSourceLabel({
   mealPlanAvailable,
+  sourceRecipeCount,
   sourceType,
   sourceWeekStartDate
 }: {
   mealPlanAvailable: boolean;
+  sourceRecipeCount: number;
   sourceType: "manual" | "meal_plan" | "recipes";
   sourceWeekStartDate: string | null;
 }) {
@@ -72,7 +75,7 @@ function getSourceLabel({
     return "Manual list";
   }
   if (sourceType === "recipes") {
-    return "Recipe snapshot";
+    return formatSelectedRecipeSource(sourceRecipeCount);
   }
 
   const weekRange = formatWeekRange(sourceWeekStartDate);
@@ -182,7 +185,10 @@ export function GroceryListDetail({ id }: { id: string }) {
     removeItem.reset();
   }
 
-  async function saveItem(values: GroceryListItemFormValues) {
+  async function saveItem(
+    values: GroceryListItemFormValues,
+    quantityOverridden: boolean
+  ) {
     if (selectedItem === "new") {
       await addItem.mutateAsync({ groceryListId: id, values });
       setFeedback(`${values.name} added.`);
@@ -190,8 +196,7 @@ export function GroceryListDetail({ id }: { id: string }) {
       await updateItem.mutateAsync({
         groceryListId: id,
         itemId: selectedItem.id,
-        quantityOverridden:
-          selectedItem.sources.length > 0 && Boolean(values.amount || values.unit),
+        quantityOverridden,
         values
       });
       setFeedback(`${values.name} updated.`);

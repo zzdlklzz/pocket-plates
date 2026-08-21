@@ -4,10 +4,16 @@ import { isRepresentableGroceryQuantity } from "./grocery-list.generation";
 import {
   MAX_GROCERY_LIST_ITEM_NAME_LENGTH,
   MAX_GROCERY_LIST_ITEM_NOTE_LENGTH,
+  MAX_GROCERY_LIST_RECIPES,
+  MAX_GROCERY_LIST_TARGET_SERVINGS,
   MAX_GROCERY_LIST_TITLE_LENGTH,
   MAX_GROCERY_LIST_UNIT_LENGTH
 } from "./grocery-list.constants";
 import type { GroceryListItemValues } from "./grocery-list.types";
+import type {
+  CreateGeneratedGroceryListInput,
+  SelectedGroceryListRecipeInput
+} from "./grocery-list.types";
 
 export const groceryListTitleSchema = z
   .string()
@@ -38,6 +44,83 @@ const UUID_PATTERN =
 
 export function isUuid(value: string) {
   return UUID_PATTERN.test(value);
+}
+
+const selectedGroceryListRecipeSchema = z.object({
+  recipeId: z.string().refine(isUuid, "A selected recipe is unavailable."),
+  selectedRecipeOrder: z
+    .number()
+    .int("Recipe order must be a whole number.")
+    .min(0, "Recipe order cannot be negative.")
+    .max(MAX_GROCERY_LIST_RECIPES - 1, "Recipe order is outside the supported range."),
+  targetServings: z
+    .number()
+    .int("Target servings must be a whole number.")
+    .min(1, "Target servings must be at least 1.")
+    .max(
+      MAX_GROCERY_LIST_TARGET_SERVINGS,
+      `Target servings must be ${MAX_GROCERY_LIST_TARGET_SERVINGS} or less.`
+    )
+});
+
+export const selectedGroceryListRecipesSchema = z
+  .array(selectedGroceryListRecipeSchema)
+  .min(1, "Choose at least one recipe.")
+  .max(
+    MAX_GROCERY_LIST_RECIPES,
+    `Choose no more than ${MAX_GROCERY_LIST_RECIPES} recipes.`
+  )
+  .superRefine((recipes, context) => {
+    const recipeIds = new Set<string>();
+    const recipeOrders = new Set<number>();
+
+    recipes.forEach((recipe, index) => {
+      if (recipeIds.has(recipe.recipeId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Choose each recipe only once.",
+          path: [index, "recipeId"]
+        });
+      }
+      recipeIds.add(recipe.recipeId);
+
+      if (recipeOrders.has(recipe.selectedRecipeOrder)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Recipe order must be unique.",
+          path: [index, "selectedRecipeOrder"]
+        });
+      }
+      recipeOrders.add(recipe.selectedRecipeOrder);
+    });
+  });
+
+export const createGeneratedGroceryListSchema = z.object({
+  recipes: selectedGroceryListRecipesSchema,
+  title: groceryListTitleSchema
+});
+
+export function parseSelectedGroceryListRecipes(
+  recipes: SelectedGroceryListRecipeInput[]
+) {
+  return selectedGroceryListRecipesSchema
+    .parse(recipes)
+    .slice()
+    .sort((left, right) => left.selectedRecipeOrder - right.selectedRecipeOrder);
+}
+
+export function parseCreateGeneratedGroceryListInput(
+  input: CreateGeneratedGroceryListInput
+) {
+  const parsed = createGeneratedGroceryListSchema.parse(input);
+  return {
+    ...parsed,
+    recipes: parsed.recipes
+      .slice()
+      .sort(
+        (left, right) => left.selectedRecipeOrder - right.selectedRecipeOrder
+      )
+  };
 }
 
 export const groceryListItemSchema = z.object({

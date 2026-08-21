@@ -10,6 +10,7 @@ import type {
   GroceryListItemDto,
   GroceryListItemSourceDto
 } from "./grocery-list.types";
+import { formatGroceryRequirementSourceCount } from "./grocery-list.requirement-formatting";
 
 function countRecipes(sources: readonly GroceryListItemSourceDto[]) {
   return new Set(
@@ -85,7 +86,9 @@ export function GroceryListItemRow({
             ) : null}
             {recipeCount > 0 ? (
               <span className="mt-1 block text-xs text-slate-500">
-                {recipeCount === 1 ? "From 1 recipe" : `Used in ${recipeCount} recipes`}
+                {recipeCount === 1
+                  ? `From ${item.sources[0]?.recipeTitle}`
+                  : `Used in ${recipeCount} recipes`}
               </span>
             ) : null}
           </span>
@@ -104,7 +107,7 @@ export function GroceryListItemRow({
                 <li className="flex justify-between gap-3" key={`${group.kind}-${group.key}`}>
                   <span>{formatGroceryRequirementGroup(group)}</span>
                   <span className="text-right text-xs text-slate-500">
-                    {group.sourceCount} recipe{group.sourceCount === 1 ? "" : "s"}
+                    {formatGroceryRequirementSourceCount(group)}
                   </span>
                 </li>
               ))}

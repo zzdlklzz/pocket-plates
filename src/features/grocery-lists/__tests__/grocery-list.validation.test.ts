@@ -6,9 +6,13 @@ import {
 import { toGroceryListItemDto } from "../grocery-list.mappers";
 import {
   groceryListItemSchema,
+  parseCreateGeneratedGroceryListInput,
   parseGroceryListItemValues,
   parseGroceryListTitle
 } from "../grocery-list.validation";
+
+const recipeId = (index: number) =>
+  `22000000-0000-0000-0000-${index.toString().padStart(12, "0")}`;
 
 describe("grocery list validation", () => {
   it("trims list and item text and parses shared ingredient amounts", () => {
@@ -101,5 +105,61 @@ describe("grocery list validation", () => {
         quantityOverridden: item.isManual || item.quantityOverridden
       })
     ).toBe("⅓ bag");
+  });
+
+  it("trims generated titles and canonicalizes selected recipe order", () => {
+    expect(
+      parseCreateGeneratedGroceryListInput({
+        recipes: [
+          { recipeId: recipeId(2), selectedRecipeOrder: 1, targetServings: 4 },
+          { recipeId: recipeId(1), selectedRecipeOrder: 0, targetServings: 2 }
+        ],
+        title: "  Recipe groceries  "
+      })
+    ).toEqual({
+      recipes: [
+        { recipeId: recipeId(1), selectedRecipeOrder: 0, targetServings: 2 },
+        { recipeId: recipeId(2), selectedRecipeOrder: 1, targetServings: 4 }
+      ],
+      title: "Recipe groceries"
+    });
+  });
+
+  it("enforces selected recipe count, identity, order, and serving limits", () => {
+    const parse = (recipes: Parameters<typeof parseCreateGeneratedGroceryListInput>[0]["recipes"]) =>
+      parseCreateGeneratedGroceryListInput({ recipes, title: "Groceries" });
+
+    expect(() => parse([])).toThrow("Choose at least one recipe");
+    expect(() =>
+      parse(
+        Array.from({ length: 11 }, (_, index) => ({
+          recipeId: recipeId(index + 1),
+          selectedRecipeOrder: index,
+          targetServings: 1
+        }))
+      )
+    ).toThrow("Choose no more than 10 recipes");
+    expect(() =>
+      parse([
+        { recipeId: recipeId(1), selectedRecipeOrder: 0, targetServings: 1 },
+        { recipeId: recipeId(1), selectedRecipeOrder: 1, targetServings: 1 }
+      ])
+    ).toThrow("Choose each recipe only once");
+    expect(() =>
+      parse([
+        { recipeId: recipeId(1), selectedRecipeOrder: 0, targetServings: 1 },
+        { recipeId: recipeId(2), selectedRecipeOrder: 0, targetServings: 1 }
+      ])
+    ).toThrow("Recipe order must be unique");
+    expect(() =>
+      parse([
+        { recipeId: recipeId(1), selectedRecipeOrder: 0, targetServings: 101 }
+      ])
+    ).toThrow("Target servings must be 100 or less");
+    expect(() =>
+      parse([
+        { recipeId: "not-a-uuid", selectedRecipeOrder: 0, targetServings: 1 }
+      ])
+    ).toThrow("A selected recipe is unavailable");
   });
 });

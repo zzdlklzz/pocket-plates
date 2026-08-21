@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { GroceryListSummaryDto } from "./grocery-list.types";
+import { formatSelectedRecipeSource } from "./grocery-list.source-formatting";
 
 function parseLocalDate(value: string) {
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
@@ -33,7 +34,11 @@ function formatSourceLabel(list: GroceryListSummaryDto) {
     return formatWeekLabel(list.sourceWeekStartDate, list.mealPlanAvailable);
   }
 
-  return list.sourceType === "recipes" ? "Recipe snapshot" : "Manual";
+  if (list.sourceType === "recipes") {
+    return formatSelectedRecipeSource(list.sourceRecipeCount);
+  }
+
+  return "Manual";
 }
 
 function formatActivity(updatedAt: string) {

@@ -133,6 +133,7 @@ function detail(): GroceryListDetailDto {
     ],
     mealPlanAvailable: false,
     mealPlanId: null,
+    sourceRecipeCount: 0,
     sourceType: "manual",
     sourceWeekStartDate: null,
     title: "Weekend shop",
@@ -168,9 +169,42 @@ describe("GroceryListDetail", () => {
     expect(screen.queryByText("Eggs")).not.toBeInTheDocument();
     expect(screen.getByText("1 tbsp + extra")).toBeInTheDocument();
     expect(screen.getByText("Recipe requirements")).toBeInTheDocument();
+    expect(screen.getByText("1 recipe gave no quantity")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Completed (1)" }));
     expect(screen.getByText("Eggs")).toBeInTheDocument();
+  });
+
+  it("shows the frozen recipe count on a selected-recipe detail", () => {
+    const selectedRecipeDetail = detail();
+    selectedRecipeDetail.sourceRecipeCount = 1;
+    selectedRecipeDetail.sourceType = "recipes";
+    mocks.detailResult = {
+      data: selectedRecipeDetail,
+      isError: false,
+      isPending: false
+    };
+
+    render(<GroceryListDetail id="list-1" />);
+
+    expect(within(screen.getByRole("banner")).getByText("1 recipe")).toBeInTheDocument();
+    expect(screen.queryByText("Recipe snapshot")).not.toBeInTheDocument();
+  });
+
+  it("falls back safely when an older selected-recipe payload has no count", () => {
+    const selectedRecipeDetail = detail();
+    selectedRecipeDetail.sourceRecipeCount = undefined as unknown as number;
+    selectedRecipeDetail.sourceType = "recipes";
+    mocks.detailResult = {
+      data: selectedRecipeDetail,
+      isError: false,
+      isPending: false
+    };
+
+    render(<GroceryListDetail id="list-1" />);
+
+    expect(within(screen.getByRole("banner")).getByText("Recipe snapshot")).toBeInTheDocument();
+    expect(screen.queryByText("undefined recipes")).not.toBeInTheDocument();
   });
 
   it("adds and edits an item through the shared sheet", async () => {
@@ -211,6 +245,60 @@ describe("GroceryListDetail", () => {
         values: { amount: "2", name: "Rice", notes: "Basmati", unit: "cups" }
       });
     });
+  });
+
+  it("saves and resets generated-item overrides without replacing sources", async () => {
+    const currentDetail = detail();
+    const pepper = currentDetail.items.find(({ id }) => id === "item-pepper")!;
+    const originalSources = structuredClone(pepper.sources);
+    mocks.detailResult = { data: currentDetail, isError: false, isPending: false };
+    const view = render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Pepper" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set a practical shopping amount" })
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Amount" }), {
+      target: { value: "1" }
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Unit" }), {
+      target: { value: "jar" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(mocks.update.mutateAsync).toHaveBeenLastCalledWith({
+        groceryListId: "list-1",
+        itemId: "item-pepper",
+        quantityOverridden: true,
+        values: {
+          amount: "1",
+          name: "Pepper",
+          notes: "",
+          unit: "jar"
+        }
+      });
+    });
+    expect(pepper.sources).toEqual(originalSources);
+
+    pepper.amount = 1;
+    pepper.quantityOverridden = true;
+    pepper.unit = "jar";
+    view.rerender(<GroceryListDetail id="list-1" />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Pepper" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use recipe requirements" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(mocks.update.mutateAsync).toHaveBeenLastCalledWith({
+        groceryListId: "list-1",
+        itemId: "item-pepper",
+        quantityOverridden: false,
+        values: { amount: "", name: "Pepper", notes: "", unit: "" }
+      });
+    });
+    expect(pepper.sources).toEqual(originalSources);
+    expect(screen.getByText("Pepper noodles · ground")).toBeInTheDocument();
   });
 
   it("checks an item with a distinct control and announces the move", async () => {

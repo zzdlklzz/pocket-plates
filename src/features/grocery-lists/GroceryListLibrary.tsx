@@ -16,6 +16,7 @@ import {
 import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
 import { GroceryListCard } from "./GroceryListCard";
+import { GroceryListGenerator } from "./GroceryListGenerator";
 import { GroceryListLibrarySkeleton } from "./grocery-list-skeletons";
 
 const LINK_BUTTON_CLASSES =
@@ -115,28 +116,18 @@ export function GroceryListLibrary() {
 }
 
 export function NewGroceryList({ source }: { source: "blank" | "recipes" }) {
+  if (source === "recipes") {
+    return <GroceryListGenerator />;
+  }
+
+  return <NewBlankGroceryList />;
+}
+
+function NewBlankGroceryList() {
   const router = useRouter();
   const createList = useCreateBlankGroceryList();
   const [title, setTitle] = useState("Grocery list");
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  if (source === "recipes") {
-    return (
-      <AppPageShell spacing="compact">
-        <BackLink href="/grocery-lists">Grocery lists</BackLink>
-        <h1 className="mt-6 text-3xl font-bold text-slate-900">Generate from recipes</h1>
-        <InlineNotice className="mt-5" tone="info">
-          Recipe selection is coming in the next grocery-list step.
-        </InlineNotice>
-        <Link
-          className="mt-5 inline-flex text-sm font-semibold text-leaf-700"
-          href="/grocery-lists/new"
-        >
-          Create a blank list instead
-        </Link>
-      </AppPageShell>
-    );
-  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

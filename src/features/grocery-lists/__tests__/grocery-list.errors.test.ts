@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   DuplicateGroceryListItemError,
+  GroceryListItemLimitError,
   GroceryListNotFoundError,
+  GroceryListRecipeUnavailableError,
   getGroceryListErrorMessage
 } from "../grocery-list.errors";
 
@@ -13,6 +15,19 @@ describe("grocery list errors", () => {
     expect(
       getGroceryListErrorMessage(new GroceryListNotFoundError(), "loadDetail")
     ).toBe("This grocery list is unavailable.");
+    expect(
+      getGroceryListErrorMessage(
+        new GroceryListRecipeUnavailableError(),
+        "create"
+      )
+    ).toBe(
+      "One selected recipe is no longer available. Review your selections and try again."
+    );
+    expect(
+      getGroceryListErrorMessage(new GroceryListItemLimitError(), "create")
+    ).toBe(
+      "This selection creates more than 300 grocery items. Remove a recipe or choose recipes with fewer ingredients."
+    );
   });
 
   it("does not expose permission, constraint, or network details", () => {

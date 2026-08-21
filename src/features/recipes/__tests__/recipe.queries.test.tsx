@@ -5,12 +5,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/query/query-keys";
 
 const mocks = vi.hoisted(() => ({
+  archiveRecipe: vi.fn(),
+  createRecipe: vi.fn(),
   createSupabaseBrowserClient: vi.fn(),
   deleteArchivedRecipes: vi.fn(),
   getRecipeImageUrls: vi.fn(),
   listArchivedRecipes: vi.fn(),
   listRecipes: vi.fn(),
-  restoreRecipe: vi.fn()
+  restoreRecipe: vi.fn(),
+  updateRecipe: vi.fn()
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -23,8 +26,8 @@ vi.mock("../recipe-image.repository", () => ({
 }));
 
 vi.mock("../recipe.repository", () => ({
-  archiveRecipe: vi.fn(),
-  createRecipe: vi.fn(),
+  archiveRecipe: mocks.archiveRecipe,
+  createRecipe: mocks.createRecipe,
   deleteArchivedRecipes: mocks.deleteArchivedRecipes,
   getRecipe: vi.fn(),
   listArchivedRecipes: mocks.listArchivedRecipes,
@@ -45,10 +48,18 @@ vi.mock("../recipe.repository", () => ({
     equipmentKeys: filters.equipmentKeys?.length ? Array.from(new Set(filters.equipmentKeys)).sort() : undefined
   }),
   restoreRecipe: mocks.restoreRecipe,
-  updateRecipe: vi.fn()
+  updateRecipe: mocks.updateRecipe
 }));
 
-import { useArchivedRecipeList, useDeleteArchivedRecipes, useRecipeList, useRestoreRecipe } from "../recipe.queries";
+import {
+  useArchiveRecipe,
+  useArchivedRecipeList,
+  useCreateRecipe,
+  useDeleteArchivedRecipes,
+  useRecipeList,
+  useRestoreRecipe,
+  useUpdateRecipe
+} from "../recipe.queries";
 
 function createWrapper(queryClient: QueryClient) {
   return function QueryWrapper({ children }: { children: ReactNode }) {
@@ -121,6 +132,12 @@ describe("archived recipe queries", () => {
 
     expect(mocks.restoreRecipe).toHaveBeenCalledWith({ client: "supabase" }, "recipe-1");
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.recipes.all });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.groceryLists.recipeOptions
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.groceryLists.recipePreviews
+    });
   });
 
   it("invalidates all recipe queries after permanent deletion", async () => {
@@ -140,6 +157,12 @@ describe("archived recipe queries", () => {
       ["recipe-1", "recipe-2"]
     );
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.recipes.all });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.groceryLists.recipeOptions
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.groceryLists.recipePreviews
+    });
   });
 });
 
@@ -147,6 +170,36 @@ describe("active recipe queries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createSupabaseBrowserClient.mockReturnValue({ client: "supabase" });
+  });
+
+  it("invalidates grocery source caches after active recipe mutations", async () => {
+    mocks.createRecipe.mockResolvedValue("recipe-new");
+    mocks.updateRecipe.mockResolvedValue(undefined);
+    mocks.archiveRecipe.mockResolvedValue(undefined);
+    const queryClient = createQueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const wrapper = createWrapper(queryClient);
+    const createHook = renderHook(() => useCreateRecipe(), { wrapper });
+    const updateHook = renderHook(() => useUpdateRecipe("recipe-1"), {
+      wrapper
+    });
+    const archiveHook = renderHook(() => useArchiveRecipe(), { wrapper });
+
+    await act(async () => {
+      await createHook.result.current.mutateAsync({} as never);
+      await updateHook.result.current.mutateAsync({} as never);
+      await archiveHook.result.current.mutateAsync("recipe-1");
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.groceryLists.recipeOptions
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.groceryLists.recipePreviews
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.recipes.detail("recipe-1")
+    });
   });
 
   it("normalizes list filters and maps RPC rows through batched images", async () => {

@@ -6,9 +6,12 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   addGroceryListItem,
   createBlankGroceryList,
+  createGeneratedGroceryList,
   deleteGroceryList,
   getGroceryListDetail,
+  listGroceryListRecipeOptions,
   listGroceryLists,
+  previewSelectedRecipeGroceryList,
   removeGroceryListItem,
   renameGroceryList,
   setGroceryListItemChecked,
@@ -17,11 +20,13 @@ import {
 import type {
   AddGroceryListItemInput,
   CreateBlankGroceryListInput,
+  CreateGeneratedGroceryListInput,
   DeleteGroceryListInput,
   GroceryListDetailDto,
   GroceryListSummaryDto,
   RemoveGroceryListItemInput,
   RenameGroceryListInput,
+  SelectedGroceryListRecipeInput,
   SetGroceryListItemCheckedInput,
   UpdateGroceryListItemInput
 } from "./grocery-list.types";
@@ -51,6 +56,34 @@ export function useGroceryLists() {
   });
 }
 
+export function useGroceryListRecipeOptions(search: string) {
+  const normalizedSearch = search.trim();
+  return useQuery({
+    queryKey: queryKeys.groceryLists.recipeOptionSearch(normalizedSearch),
+    queryFn: () =>
+      listGroceryListRecipeOptions(
+        createSupabaseBrowserClient(),
+        normalizedSearch
+      )
+  });
+}
+
+export function useSelectedRecipeGroceryPreview(
+  recipes: SelectedGroceryListRecipeInput[]
+) {
+  return useQuery({
+    enabled: recipes.length > 0,
+    queryKey: queryKeys.groceryLists.recipePreview(recipes),
+    queryFn: () =>
+      previewSelectedRecipeGroceryList(
+        createSupabaseBrowserClient(),
+        recipes
+      ),
+    refetchOnMount: "always",
+    staleTime: 0
+  });
+}
+
 export function useGroceryListDetail(id: string) {
   return useQuery({
     queryKey: queryKeys.groceryLists.detail(id),
@@ -64,6 +97,20 @@ export function useCreateBlankGroceryList() {
   return useMutation({
     mutationFn: (input: CreateBlankGroceryListInput) =>
       createBlankGroceryList(createSupabaseBrowserClient(), input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.groceryLists.list
+      });
+    }
+  });
+}
+
+export function useCreateGeneratedGroceryList() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateGeneratedGroceryListInput) =>
+      createGeneratedGroceryList(createSupabaseBrowserClient(), input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.groceryLists.list

@@ -7,6 +7,7 @@ export type GroceryListSummaryDto = {
   id: string;
   itemCount: number;
   mealPlanAvailable: boolean;
+  sourceRecipeCount: number;
   sourceType: GroceryListSourceType;
   sourceWeekStartDate: IsoDate | null;
   title: string;
@@ -61,6 +62,7 @@ export type GroceryListDetailDto = {
   items: GroceryListItemDto[];
   mealPlanAvailable: boolean;
   mealPlanId: string | null;
+  sourceRecipeCount: number;
   sourceType: GroceryListSourceType;
   sourceWeekStartDate: IsoDate | null;
   title: string;
@@ -76,6 +78,46 @@ export type GroceryListItemValues = {
 
 export type CreateBlankGroceryListInput = {
   title: string;
+};
+
+export type GroceryListRecipeOptionDto = {
+  id: string;
+  ingredientNames: string[];
+  savedServings: number;
+  title: string;
+};
+
+export type SelectedGroceryListRecipeInput = {
+  recipeId: string;
+  selectedRecipeOrder: number;
+  targetServings: number;
+};
+
+export type CreateGeneratedGroceryListInput = {
+  recipes: SelectedGroceryListRecipeInput[];
+  title: string;
+};
+
+export type GeneratedGroceryListRpcSource = {
+  canonical_unit: string | null;
+  contributed_amount: number | null;
+  ingredient_amount: number | null;
+  ingredient_name: string;
+  ingredient_notes: string | null;
+  ingredient_unit: string | null;
+  recipe_id: string;
+  recipe_ingredient_id: string;
+  recipe_title: string;
+  saved_servings: number;
+  scale_factor: number;
+  sort_order: number;
+  target_servings: number;
+};
+
+export type GeneratedGroceryListRpcItem = {
+  name: string;
+  sort_order: number;
+  sources: GeneratedGroceryListRpcSource[];
 };
 
 export type RenameGroceryListInput = {

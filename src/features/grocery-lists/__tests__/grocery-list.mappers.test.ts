@@ -1,11 +1,145 @@
 import { describe, expect, it } from "vitest";
 import {
+  toGeneratedGroceryListRpcItems,
   toGroceryListDetailDto,
+  toGroceryListGenerationRecipeInput,
+  toGroceryListRecipeOptionDto,
   toGroceryListSummaryDto,
   type GroceryListDetailRow
 } from "../grocery-list.mappers";
 
 describe("grocery list mappers", () => {
+  it("maps lightweight recipe options without database row shapes", () => {
+    expect(
+      toGroceryListRecipeOptionDto({
+        id: "recipe-1",
+        ingredient_names: ["Rice", "Pepper"],
+        saved_servings: 4,
+        title: "Curry"
+      })
+    ).toEqual({
+      id: "recipe-1",
+      ingredientNames: ["Rice", "Pepper"],
+      savedServings: 4,
+      title: "Curry"
+    });
+  });
+
+  it("maps full sources in authoritative ingredient order", () => {
+    expect(
+      toGroceryListGenerationRecipeInput(
+        {
+          id: "recipe-1",
+          recipe_ingredients: [
+            {
+              amount: 1,
+              id: "ingredient-2",
+              name: "Pepper",
+              notes: null,
+              sort_order: 1,
+              unit: "tbsp"
+            },
+            {
+              amount: 2,
+              id: "ingredient-1",
+              name: "Rice",
+              notes: null,
+              sort_order: 0,
+              unit: "cups"
+            }
+          ],
+          servings: 4,
+          title: "Curry"
+        },
+        {
+          recipeId: "recipe-1",
+          selectedRecipeOrder: 2,
+          targetServings: 8
+        }
+      )
+    ).toEqual({
+      ingredients: [
+        {
+          amount: 2,
+          id: "ingredient-1",
+          name: "Rice",
+          notes: null,
+          sortOrder: 0,
+          unit: "cups"
+        },
+        {
+          amount: 1,
+          id: "ingredient-2",
+          name: "Pepper",
+          notes: null,
+          sortOrder: 1,
+          unit: "tbsp"
+        }
+      ],
+      recipeId: "recipe-1",
+      recipeTitle: "Curry",
+      savedServings: 4,
+      selectedRecipeOrder: 2,
+      targetServings: 8
+    });
+  });
+
+  it("maps generated items to the exact atomic RPC payload", () => {
+    expect(
+      toGeneratedGroceryListRpcItems([
+        {
+          name: "Rice",
+          normalizedName: "rice",
+          requirementGroups: [],
+          sortOrder: 0,
+          sources: [
+            {
+              canonicalUnit: "cup",
+              contributedAmount: 4,
+              ingredientSortOrder: 0,
+              original: {
+                amount: 2,
+                name: "Rice",
+                notes: null,
+                unit: "cups"
+              },
+              recipeId: "recipe-1",
+              recipeIngredientId: "ingredient-1",
+              recipeTitle: "Curry",
+              savedServings: 4,
+              scaleFactor: 2,
+              selectedRecipeOrder: 0,
+              sortOrder: 0,
+              targetServings: 8
+            }
+          ]
+        }
+      ])
+    ).toEqual([
+      {
+        name: "Rice",
+        sort_order: 0,
+        sources: [
+          {
+            canonical_unit: "cup",
+            contributed_amount: 4,
+            ingredient_amount: 2,
+            ingredient_name: "Rice",
+            ingredient_notes: null,
+            ingredient_unit: "cups",
+            recipe_id: "recipe-1",
+            recipe_ingredient_id: "ingredient-1",
+            recipe_title: "Curry",
+            saved_servings: 4,
+            scale_factor: 2,
+            sort_order: 0,
+            target_servings: 8
+          }
+        ]
+      }
+    ]);
+  });
+
   it("maps the lightweight list RPC result explicitly", () => {
     expect(
       toGroceryListSummaryDto({
@@ -13,6 +147,7 @@ describe("grocery list mappers", () => {
         id: "list-1",
         item_count: 5,
         meal_plan_available: true,
+        source_recipe_count: 0,
         source_type: "meal_plan",
         source_week_start_date: "2026-08-17",
         title: "Weekly shop",
@@ -23,6 +158,7 @@ describe("grocery list mappers", () => {
       id: "list-1",
       itemCount: 5,
       mealPlanAvailable: true,
+      sourceRecipeCount: 0,
       sourceType: "meal_plan",
       sourceWeekStartDate: "2026-08-17",
       title: "Weekly shop",
@@ -96,6 +232,7 @@ describe("grocery list mappers", () => {
       id: "list-1",
       meal_plan_id: "plan-1",
       meal_plans: { id: "plan-1" },
+      source_recipe_count: 0,
       source_type: "meal_plan",
       source_week_start_date: "2026-08-17",
       title: "Weekly shop",
@@ -137,6 +274,7 @@ describe("grocery list mappers", () => {
         id: "list-1",
         meal_plan_id: null,
         meal_plans: null,
+        source_recipe_count: 0,
         source_type: "meal_plan",
         source_week_start_date: "2026-08-17",
         title: "Old weekly shop",
