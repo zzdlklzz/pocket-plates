@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1990" height="1040" viewBox="0 0 1990 1040" role="img" aria-labelledby="title desc">
   <title id="title">PocketPlates weekly meal planner mockups</title>
-  <desc id="desc">Five mobile list-view mockups showing the approved weekly agenda, copying a week into an empty target, adding a meal with an editable day and one-serving default, day copy, direct removal, Undo, entry editing, and a weekly preparation summary. No calendar-grid view is included.</desc>
+  <desc id="desc">Five mobile list-view mockups showing the approved weekly agenda, copying a week into an empty target, adding a meal with bounded visible recipe search results, an editable day, and a one-serving default, day copy, direct removal, Undo, entry editing, and a weekly preparation summary. No calendar-grid view is included.</desc>
   <defs>
     <style>
       .canvas { fill: #f7faf7; }
@@ -187,18 +187,30 @@
     <text class="tiny" x="860" y="458">DINNER</text><text class="label" x="920" y="458">Coconut lentil curry</text><text class="small" x="920" y="476">4 servings</text>
     <rect class="overlay" x="832" y="112" width="326" height="796"/>
 
-    <path class="sheet" d="M832 405 Q832 383 854 383 H1136 Q1158 383 1158 405 V908 H832 Z"/>
-    <rect x="975" y="395" width="40" height="4" rx="2" fill="#cbd6ce"/>
-    <text class="heading" x="854" y="435">Add meal</text><text class="body end" x="1136" y="435">×</text>
-    <text class="small" x="854" y="467">DAY</text>
-    <rect class="surface" x="854" y="476" width="282" height="39" rx="10"/><text class="body" x="866" y="500">Wednesday, 19 August</text><text class="body end" x="1124" y="500">⌄</text>
-    <text class="small" x="854" y="543">RECIPE</text>
-    <rect class="surface" x="854" y="552" width="282" height="43" rx="10"/><text class="body" x="866" y="578">Ginger tofu bowls</text><text class="body end" x="1124" y="578">⌄</text>
-    <text class="small" x="854" y="623">MEAL</text><text class="small" x="1000" y="623">SERVINGS</text>
-    <rect class="surface" x="854" y="632" width="136" height="43" rx="10"/><text class="body" x="866" y="658">Dinner</text><text class="body end" x="978" y="658">⌄</text>
-    <rect class="surface" x="1000" y="632" width="136" height="43" rx="10"/><text class="body" x="1012" y="658">1</text><text class="body end" x="1124" y="658">−  ＋</text>
-    <text class="small" x="854" y="697">Planned portions · defaults to 1</text><text class="small end" x="1136" y="697">Recipe makes 4</text>
-    <rect class="accent" x="854" y="718" width="282" height="45" rx="11"/><text class="white center" x="995" y="745">Add to Wednesday</text>
+    <path class="sheet" d="M832 300 Q832 278 854 278 H1136 Q1158 278 1158 300 V908 H832 Z"/>
+    <rect x="975" y="290" width="40" height="4" rx="2" fill="#cbd6ce"/>
+    <text class="heading" x="854" y="326">Add meal</text><text class="body end" x="1136" y="326">×</text>
+    <text class="small" x="854" y="351">DAY</text>
+    <rect class="surface" x="854" y="359" width="282" height="38" rx="10"/><text class="body" x="866" y="383">Wednesday, 19 August</text><text class="body end" x="1124" y="383">⌄</text>
+
+    <text class="small" x="854" y="415">SEARCH RECIPES</text>
+    <rect class="surface" x="854" y="423" width="282" height="39" rx="10"/><text class="body" x="868" y="447">⌕  rice</text>
+    <text class="small" x="854" y="481">12 matches</text><text class="small end" x="1136" y="481">Scroll for more</text>
+    <rect class="surface" x="854" y="490" width="282" height="133" rx="10"/>
+    <text class="label" x="866" y="508">Ginger tofu bowls</text><text class="small" x="866" y="523">rice, tofu, ginger</text>
+    <line class="divider" x1="862" y1="534" x2="1128" y2="534"/>
+    <text class="label" x="866" y="551">Tomato rice</text><text class="small" x="866" y="566">tomato, rice, basil</text>
+    <line class="divider" x1="862" y1="577" x2="1128" y2="577"/>
+    <text class="label" x="866" y="594">Crispy rice salad</text><text class="small" x="866" y="609">rice, cucumber, herbs</text>
+    <rect class="accent-soft" x="1127" y="500" width="4" height="33" rx="2"/>
+
+    <text class="small" x="854" y="644">RECIPE</text>
+    <rect class="surface" x="854" y="652" width="282" height="39" rx="10"/><text class="body" x="866" y="676">Choose a recipe</text><text class="body end" x="1124" y="676">⌄</text>
+    <text class="small" x="854" y="712">MEAL</text><text class="small" x="1000" y="712">PLANNED SERVINGS</text>
+    <rect class="surface" x="854" y="720" width="136" height="39" rx="10"/><text class="body" x="866" y="744">Dinner</text><text class="body end" x="978" y="744">⌄</text>
+    <rect class="surface" x="1000" y="720" width="136" height="39" rx="10"/><text class="body" x="1012" y="744">1</text>
+    <text class="small" x="854" y="780">Defaults to 1 · change for guests or leftovers.</text>
+    <rect class="accent" x="854" y="799" width="282" height="45" rx="11"/><text class="white center" x="995" y="826">Add to Wednesday</text>
   </g>
 
   <!-- Phone 5: weekly preparation summary -->
@@ -284,8 +296,8 @@
   <text class="heading center" x="605" y="960">Copy week</text>
   <text class="body center" x="605" y="981">Empty targets prioritize an additive paste with preview.</text>
   <text class="heading center" x="995" y="960">Add meal</text>
-  <text class="body center" x="995" y="981">The tapped day is preselected but editable within the week.</text>
-  <text class="body center" x="995" y="999">Planned servings defaults to 1; saved yield stays contextual.</text>
+  <text class="body center" x="995" y="981">Search matches stay visible in a bounded, scrollable list.</text>
+  <text class="body center" x="995" y="999">The day stays editable; planned servings defaults to 1.</text>
   <text class="heading center" x="1385" y="960">Manage with low friction</text>
   <text class="body center" x="1385" y="981">Copy day, paste, remove, Undo, or edit without drag-and-drop.</text>
   <text class="heading center" x="1775" y="960">Weekly prep summary</text>
