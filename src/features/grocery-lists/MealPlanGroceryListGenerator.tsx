@@ -12,7 +12,10 @@ import type { IsoDate } from "@/features/meal-planning/meal-planning.types";
 import { MAX_GROCERY_LIST_TITLE_LENGTH } from "./grocery-list.constants";
 import { getGroceryListErrorMessage } from "./grocery-list.errors";
 import { validateGroceryListTitle } from "./grocery-list.validation";
-import { formatGroceryListWeekRange } from "./grocery-list.week-formatting";
+import {
+  formatGroceryListWeekRange,
+  formatMealPlanGroceryListTitle
+} from "./grocery-list.week-formatting";
 import {
   useCreateMealPlanGroceryList,
   useMealPlanGrocerySource
@@ -26,7 +29,9 @@ export function MealPlanGroceryListGenerator({
 }) {
   const router = useRouter();
   const weekRange = formatGroceryListWeekRange(weekStartDate)!;
-  const [title, setTitle] = useState(`Groceries · ${weekRange}`);
+  const [title, setTitle] = useState(
+    formatMealPlanGroceryListTitle(weekStartDate)!
+  );
   const [reviewRequested, setReviewRequested] = useState(false);
   const [reviewError, setReviewError] = useState<unknown>(null);
   const [validationError, setValidationError] = useState<string | null>(null);

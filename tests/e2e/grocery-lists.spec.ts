@@ -388,9 +388,11 @@ test("refreshes a meal-plan grocery snapshot while preserving shopping state", a
   ).toBeVisible();
   const weekSummary = page.getByText(/^Meal plan · /).first();
   const weekRange = (await weekSummary.textContent())!.replace("Meal plan · ", "");
-  await expect(page.getByRole("textbox", { name: "List title" })).toHaveValue(
-    `Groceries · ${weekRange}`
-  );
+  const defaultWeekTitle = await page
+    .getByRole("textbox", { name: "List title" })
+    .inputValue();
+  expect(defaultWeekTitle).toContain(`Groceries · ${weekRange}`);
+  expect(defaultWeekTitle).toMatch(/\b\d{4}\b/);
 
   const plannedRecipes = page
     .locator("section")
@@ -420,6 +422,11 @@ test("refreshes a meal-plan grocery snapshot while preserving shopping state", a
   const groceryListUrl = page.url();
   await expect(page.getByText(`Meal plan · ${weekRange}`, { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh from week" })).toBeVisible();
+
+  await page.goto(`/meal-planner?week=${weekStartDate}`);
+  await page.getByRole("link", { name: "Grocery list" }).click();
+  await expect(page).toHaveURL(groceryListUrl);
+  await expect(page.getByRole("heading", { name: groceryListTitle })).toBeVisible();
 
   await page.getByRole("button", { name: "Edit Pepper" }).click();
   const pepperEditor = page.getByRole("dialog", { name: "Edit Pepper" });

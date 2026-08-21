@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { NewGroceryList } from "@/features/grocery-lists/GroceryListLibrary";
+import { findLinkedMealPlanGroceryListId } from "@/features/grocery-lists/grocery-list-generation.repository";
 import {
   getWeekStart,
   parseIsoDate
@@ -35,6 +36,15 @@ export default async function NewGroceryListPage({
     const parsedWeek = parseIsoDate(requestedWeek);
     if (parsedWeek) {
       const weekStartDate = getWeekStart(parsedWeek);
+      const linkedGroceryListId = await findLinkedMealPlanGroceryListId(
+        supabase,
+        user.id,
+        weekStartDate
+      );
+      if (linkedGroceryListId) {
+        redirect(`/grocery-lists/${linkedGroceryListId}`);
+      }
+
       return (
         <NewGroceryList
           source="meal-plan"

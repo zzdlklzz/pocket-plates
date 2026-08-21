@@ -82,6 +82,33 @@ begin
     raise exception 'Meal-plan refresh must lock the grocery-list row before replacement.';
   end if;
 
+  if not exists (
+    select 1
+    from pg_catalog.pg_index as database_index
+    join pg_catalog.pg_class as index_class
+      on index_class.oid = database_index.indexrelid
+    join pg_catalog.pg_namespace as index_namespace
+      on index_namespace.oid = index_class.relnamespace
+    where index_namespace.nspname = 'public'
+      and index_class.relname =
+        'grocery_lists_one_linked_meal_plan_week_idx'
+      and database_index.indisunique
+      and position(
+        '(owner_id, source_week_start_date)' in
+        lower(pg_get_indexdef(database_index.indexrelid))
+      ) > 0
+      and position(
+        'source_type = ''meal_plan''' in
+        lower(pg_get_expr(database_index.indpred, database_index.indrelid))
+      ) > 0
+      and position(
+        'meal_plan_id is not null' in
+        lower(pg_get_expr(database_index.indpred, database_index.indrelid))
+      ) > 0
+  ) then
+    raise exception 'The linked meal-plan grocery-list uniqueness index is incorrect.';
+  end if;
+
   if (
     select is_nullable
     from information_schema.columns as information_schema_column
@@ -404,6 +431,113 @@ begin
   ) then
     raise exception 'Archived recipes must not appear in grocery recipe options.';
   end if;
+end;
+$$;
+
+do $$
+begin
+  insert into public.grocery_lists (
+    id,
+    owner_id,
+    title,
+    source_type,
+    source_recipe_count
+  ) values
+    (
+      '62000000-0000-0000-0000-000000000020',
+      '12000000-0000-0000-0000-000000000001',
+      'Manual uniqueness case one',
+      'manual'::public.grocery_list_source_type,
+      0
+    ),
+    (
+      '62000000-0000-0000-0000-000000000021',
+      '12000000-0000-0000-0000-000000000001',
+      'Manual uniqueness case two',
+      'manual'::public.grocery_list_source_type,
+      0
+    ),
+    (
+      '62000000-0000-0000-0000-000000000022',
+      '12000000-0000-0000-0000-000000000001',
+      'Recipe uniqueness case one',
+      'recipes'::public.grocery_list_source_type,
+      1
+    ),
+    (
+      '62000000-0000-0000-0000-000000000023',
+      '12000000-0000-0000-0000-000000000001',
+      'Recipe uniqueness case two',
+      'recipes'::public.grocery_list_source_type,
+      1
+    );
+
+  insert into public.grocery_lists (
+    id,
+    owner_id,
+    title,
+    source_type,
+    source_recipe_count,
+    source_week_start_date
+  ) values
+    (
+      '62000000-0000-0000-0000-000000000024',
+      '12000000-0000-0000-0000-000000000001',
+      'Detached week uniqueness case one',
+      'meal_plan'::public.grocery_list_source_type,
+      0,
+      '2026-08-17'
+    ),
+    (
+      '62000000-0000-0000-0000-000000000025',
+      '12000000-0000-0000-0000-000000000001',
+      'Detached week uniqueness case two',
+      'meal_plan'::public.grocery_list_source_type,
+      0,
+      '2026-08-17'
+    );
+
+  insert into public.grocery_lists (
+    id,
+    owner_id,
+    meal_plan_id,
+    title,
+    source_type,
+    source_week_start_date
+  ) values (
+    '62000000-0000-0000-0000-000000000026',
+    '12000000-0000-0000-0000-000000000001',
+    '42000000-0000-0000-0000-000000000001',
+    'Linked week uniqueness case one',
+    'meal_plan'::public.grocery_list_source_type,
+    '2026-08-17'
+  );
+
+  begin
+    insert into public.grocery_lists (
+      id,
+      owner_id,
+      meal_plan_id,
+      title,
+      source_type,
+      source_week_start_date
+    ) values (
+      '62000000-0000-0000-0000-000000000027',
+      '12000000-0000-0000-0000-000000000001',
+      '42000000-0000-0000-0000-000000000001',
+      'Linked week uniqueness case two',
+      'meal_plan'::public.grocery_list_source_type,
+      '2026-08-17'
+    );
+    raise exception 'A second linked grocery list for one owner/week must fail.';
+  exception
+    when unique_violation then null;
+  end;
+
+  delete from public.grocery_lists
+  where id between
+    '62000000-0000-0000-0000-000000000020'::uuid and
+    '62000000-0000-0000-0000-000000000027'::uuid;
 end;
 $$;
 

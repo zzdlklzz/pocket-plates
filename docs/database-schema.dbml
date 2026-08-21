@@ -258,6 +258,10 @@ Table grocery_lists {
   source_week_start_date date
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (owner_id, source_week_start_date) [unique, name: 'grocery_lists_one_linked_meal_plan_week_idx', note: 'Partial: source_type = meal_plan and meal_plan_id is not null']
+  }
 }
 
 Table grocery_list_items {

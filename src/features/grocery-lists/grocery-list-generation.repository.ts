@@ -40,6 +40,8 @@ const MEAL_PLAN_GROCERY_SOURCE_SELECT =
   "id,week_start_date,meal_plan_entries(id,recipe_id,planned_for,meal_type,servings,recipes(id,title,servings,archived_at,recipe_ingredients(id,name,amount,unit,notes,sort_order)))";
 const LINKED_MEAL_PLAN_GROCERY_SOURCE_SELECT =
   `id,source_type,meal_plan_id,meal_plans(${MEAL_PLAN_GROCERY_SOURCE_SELECT})`;
+const LINKED_MEAL_PLAN_GROCERY_LIST_INDEX =
+  "grocery_lists_one_linked_meal_plan_week_idx";
 
 type LinkedMealPlanGrocerySourceRow = {
   id: string;
@@ -70,6 +72,14 @@ function isUnavailableMealPlanError(error: unknown) {
     "must include every recipe ingredient",
     "do not match the meal plan"
   ].some((candidate) => message.includes(candidate));
+}
+
+function isLinkedMealPlanGroceryListConflict(error: unknown) {
+  const databaseError = getGroceryListDatabaseError(error);
+  return (
+    databaseError.code === "23505" &&
+    databaseError.message.includes(LINKED_MEAL_PLAN_GROCERY_LIST_INDEX)
+  );
 }
 
 function generateSelectedRecipeItems(
@@ -238,6 +248,28 @@ export async function createGeneratedGroceryList(
   return data as string;
 }
 
+export async function findLinkedMealPlanGroceryListId(
+  supabase: SupabaseBrowserClient,
+  ownerId: string,
+  weekStartDate: IsoDate
+) {
+  const parsedWeekStart = parseMealPlanGroceryWeekStart(weekStartDate);
+  const { data, error } = await supabase
+    .from("grocery_lists")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("source_type", "meal_plan")
+    .eq("source_week_start_date", parsedWeekStart)
+    .not("meal_plan_id", "is", null)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as { id: string } | null)?.id ?? null;
+}
+
 export async function getMealPlanGrocerySource(
   supabase: SupabaseBrowserClient,
   weekStartDate: IsoDate
@@ -288,6 +320,18 @@ export async function createMealPlanGroceryList(
   );
 
   if (error) {
+    if (isLinkedMealPlanGroceryListConflict(error)) {
+      const ownerId = await getAuthenticatedGroceryListOwnerId(supabase);
+      const linkedGroceryListId = await findLinkedMealPlanGroceryListId(
+        supabase,
+        ownerId,
+        authoritativeSource.weekStartDate
+      );
+      if (linkedGroceryListId) {
+        return linkedGroceryListId;
+      }
+    }
+
     throwMealPlanRpcError(error);
   }
 

@@ -144,6 +144,9 @@ describe("MealPlanGroceryListGenerator", () => {
     render(<MealPlanGroceryListGenerator weekStartDate="2026-08-17" />);
 
     expect(mocks.requestedWeek).toBe("2026-08-17");
+    expect(screen.getByRole("textbox", { name: "List title" })).toHaveValue(
+      "Groceries · 17–23 Aug 2026"
+    );
     expect(screen.getByText(/Meal plan · 17–23 Aug/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Planned recipes" })).toBeInTheDocument();
     expect(screen.getByText("Pepper noodles")).toBeInTheDocument();

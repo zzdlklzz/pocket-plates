@@ -1,6 +1,6 @@
 # PocketPlates
 
-PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, a low-friction weekly meal planner, private standalone grocery checklists, and grocery lists generated from saved recipes or a planned week. Grocery checklists can be reset for reuse, and week-generated lists can be explicitly refreshed in place after the plan changes.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, a low-friction weekly meal planner, private standalone grocery checklists, and grocery lists generated from saved recipes or a planned week. Grocery checklists can be reset for reuse, week-generated lists can be explicitly refreshed in place after the plan changes, and the planner reopens the existing active list for that week instead of generating a duplicate.
 
 ## Recommended Stack
 
@@ -50,6 +50,7 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `supabase/migrations/20260821090000_prepare_meal_planner_foundation.sql`: authenticated meal-planner CRUD grants and uniqueness guarantees for one plan per owner/week and one exact recipe/slot entry
 - `supabase/migrations/20260821230000_add_grocery_list_foundation.sql`: private manual and generated grocery snapshots, normalized product uniqueness, provenance rows, and atomic create/meal-plan-refresh functions
 - `supabase/migrations/20260822012421_add_grocery_recipe_snapshot_counts.sql`: frozen selected-recipe counts, bounded recipe generation, and complete owner-scoped grocery recipe search
+- `supabase/migrations/20260822033256_enforce_one_linked_grocery_list_per_week.sql`: indexed uniqueness for one active linked grocery list per owner and meal-plan week
 - `supabase/tests/equipment_presets.sql`: transactional local SQL checks for preset reuse, filter semantics, validation, and RLS
 - `supabase/tests/meal_planner_foundation.sql`: transactional local SQL checks for planner grants, uniqueness, and owner isolation
 - `supabase/tests/grocery_lists.sql`: transactional local SQL checks for grocery-list grants, isolation, generated snapshots, and refresh preservation rules
@@ -83,7 +84,7 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Add/edit recipe screen
 - Filter sheet
 - Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with bounded title-or-ingredient recipe results, in-week day selection and one-serving defaults, in-app day/week copy and paste, and a grouped preparation summary linked to active recipes
-- Grocery-list library, blank-list creation, private checklist editing and reuse through reset, selected-recipe generation with serving adjustments, and whole-week generation with explicit in-place refresh
+- Grocery-list library, blank-list creation, private checklist editing and reuse through reset, selected-recipe generation with serving adjustments, and canonical whole-week generation that reopens an existing active list and supports explicit in-place refresh
 
 ## Future Features
 

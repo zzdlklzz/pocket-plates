@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   createSupabaseServerClient: vi.fn(),
+  findLinkedMealPlanGroceryListId: vi.fn(),
   getUser: vi.fn(),
   newGroceryList: vi.fn(),
   redirect: vi.fn()
@@ -19,6 +20,9 @@ vi.mock("@/features/grocery-lists/GroceryListLibrary", () => ({
     return <div>New grocery list: {source}</div>;
   }
 }));
+vi.mock("@/features/grocery-lists/grocery-list-generation.repository", () => ({
+  findLinkedMealPlanGroceryListId: mocks.findLinkedMealPlanGroceryListId
+}));
 
 import Loading from "../loading";
 import NewGroceryListPage from "../page";
@@ -26,6 +30,7 @@ import NewGroceryListPage from "../page";
 describe("NewGroceryListPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.findLinkedMealPlanGroceryListId.mockResolvedValue(null);
     mocks.createSupabaseServerClient.mockResolvedValue({
       auth: { getUser: mocks.getUser }
     });
@@ -66,6 +71,31 @@ describe("NewGroceryListPage", () => {
       source: "meal-plan",
       weekStartDate: "2026-08-17"
     });
+    expect(mocks.findLinkedMealPlanGroceryListId).toHaveBeenCalledWith(
+      expect.anything(),
+      "user-1",
+      "2026-08-17"
+    );
+  });
+
+  it("redirects an existing meal-plan week to its linked grocery list", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    mocks.findLinkedMealPlanGroceryListId.mockResolvedValue("list-week");
+    mocks.redirect.mockImplementation(() => {
+      throw new Error("NEXT_REDIRECT");
+    });
+
+    await expect(
+      NewGroceryListPage({
+        searchParams: Promise.resolve({
+          source: "meal-plan",
+          week: "2026-08-17"
+        })
+      })
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(mocks.redirect).toHaveBeenCalledWith("/grocery-lists/list-week");
+    expect(mocks.newGroceryList).not.toHaveBeenCalled();
   });
 
   it.each([

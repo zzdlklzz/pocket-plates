@@ -10,6 +10,7 @@ import {
 import {
   createGeneratedGroceryList,
   createMealPlanGroceryList,
+  findLinkedMealPlanGroceryListId,
   getMealPlanGrocerySource,
   getSelectedRecipeGenerationSources,
   listGroceryListRecipeOptions,
@@ -117,7 +118,8 @@ function mealPlanSourceRow(entries: unknown[] = [
 function createBoundedRead(data: unknown) {
   const chain = {
     eq: vi.fn(() => chain),
-    maybeSingle: vi.fn().mockResolvedValue({ data, error: null })
+    maybeSingle: vi.fn().mockResolvedValue({ data, error: null }),
+    not: vi.fn(() => chain)
   };
   const select = vi.fn(() => chain);
   const from = vi.fn(() => ({ select }));
@@ -509,6 +511,47 @@ describe("selected recipe grocery creation", () => {
 });
 
 describe("meal-plan grocery generation and refresh", () => {
+  it("finds only the active linked list for an owned meal-plan week", async () => {
+    const read = createBoundedRead({
+      id: "62000000-0000-0000-0000-000000000001"
+    });
+
+    await expect(
+      findLinkedMealPlanGroceryListId(
+        { from: read.from } as never,
+        OWNER_ID,
+        "2026-08-17"
+      )
+    ).resolves.toBe("62000000-0000-0000-0000-000000000001");
+
+    expect(read.from).toHaveBeenCalledWith("grocery_lists");
+    expect(read.select).toHaveBeenCalledWith("id");
+    expect(read.chain.eq).toHaveBeenNthCalledWith(1, "owner_id", OWNER_ID);
+    expect(read.chain.eq).toHaveBeenNthCalledWith(
+      2,
+      "source_type",
+      "meal_plan"
+    );
+    expect(read.chain.eq).toHaveBeenNthCalledWith(
+      3,
+      "source_week_start_date",
+      "2026-08-17"
+    );
+    expect(read.chain.not).toHaveBeenCalledWith("meal_plan_id", "is", null);
+  });
+
+  it("returns no linked list when the meal-plan week has none", async () => {
+    const read = createBoundedRead(null);
+
+    await expect(
+      findLinkedMealPlanGroceryListId(
+        { from: read.from } as never,
+        OWNER_ID,
+        "2026-08-17"
+      )
+    ).resolves.toBeNull();
+  });
+
   it("loads one authoritative owned Monday week including archived sources", async () => {
     const read = createBoundedRead(mealPlanSourceRow());
 
@@ -583,6 +626,64 @@ describe("meal-plan grocery generation and refresh", () => {
       p_source_week_start_date: "2026-08-17",
       p_title: "Weekly shop"
     });
+  });
+
+  it("returns the canonical list when another request creates the week first", async () => {
+    const plan = mealPlanSourceRow();
+    const chain = {
+      eq: vi.fn(() => chain),
+      maybeSingle: vi
+        .fn()
+        .mockResolvedValueOnce({ data: plan, error: null })
+        .mockResolvedValueOnce({
+          data: { id: "62000000-0000-0000-0000-000000000001" },
+          error: null
+        }),
+      not: vi.fn(() => chain)
+    };
+    const select = vi.fn(() => chain);
+    const from = vi.fn(() => ({ select }));
+    const rpc = vi.fn().mockResolvedValue({
+      data: null,
+      error: {
+        code: "23505",
+        message:
+          'duplicate key value violates unique constraint "grocery_lists_one_linked_meal_plan_week_idx"'
+      }
+    });
+
+    await expect(
+      createMealPlanGroceryList(
+        { auth: authenticatedAuth(), from, rpc } as never,
+        { title: "Weekly shop", weekStartDate: "2026-08-17" }
+      )
+    ).resolves.toBe("62000000-0000-0000-0000-000000000001");
+
+    expect(from).toHaveBeenNthCalledWith(1, "meal_plans");
+    expect(from).toHaveBeenNthCalledWith(2, "grocery_lists");
+    expect(chain.not).toHaveBeenCalledWith("meal_plan_id", "is", null);
+  });
+
+  it("does not treat an unrelated unique violation as a canonical-list race", async () => {
+    const read = createBoundedRead(mealPlanSourceRow());
+    const unrelatedConflict = {
+      code: "23505",
+      message:
+        'duplicate key value violates unique constraint "grocery_list_items_grocery_list_normalized_name_key"'
+    };
+    const rpc = vi.fn().mockResolvedValue({
+      data: null,
+      error: unrelatedConflict
+    });
+
+    await expect(
+      createMealPlanGroceryList(
+        { auth: authenticatedAuth(), from: read.from, rpc } as never,
+        { title: "Weekly shop", weekStartDate: "2026-08-17" }
+      )
+    ).rejects.toBe(unrelatedConflict);
+
+    expect(read.from).toHaveBeenCalledOnce();
   });
 
   it("resolves refresh only through the linked owned list and permits an empty week", async () => {

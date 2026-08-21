@@ -28,3 +28,27 @@ export function formatGroceryListWeekRange(weekStartDate: string | null) {
 
   return `${start.getDate()} ${monthFormatter.format(start)}–${end.getDate()} ${monthFormatter.format(end)}`;
 }
+
+export function formatMealPlanGroceryListTitle(
+  weekStartDate: string | null
+) {
+  const weekRange = formatGroceryListWeekRange(weekStartDate);
+  if (!weekRange || !weekStartDate) {
+    return null;
+  }
+
+  const start = parseIsoDate(weekStartDate);
+  if (!start) {
+    return null;
+  }
+
+  const end = parseIsoDate(addCalendarDays(weekStartDate as IsoDate, 6))!;
+  if (start.getFullYear() === end.getFullYear()) {
+    return `Groceries · ${weekRange} ${end.getFullYear()}`;
+  }
+
+  const monthFormatter = new Intl.DateTimeFormat(undefined, {
+    month: "short"
+  });
+  return `Groceries · ${start.getDate()} ${monthFormatter.format(start)} ${start.getFullYear()}–${end.getDate()} ${monthFormatter.format(end)} ${end.getFullYear()}`;
+}
