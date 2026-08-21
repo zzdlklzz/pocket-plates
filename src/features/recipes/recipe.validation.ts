@@ -1,8 +1,10 @@
 import { z } from "zod";
+import { parseIngredientAmount } from "@/features/ingredients/ingredient-amount";
 import { EFFORT_LABEL_VALUES, EQUIPMENT_PRESET_VALUES } from "./recipe-discovery.constants";
 import { MAX_SERVINGS } from "./recipe.constants";
 
 export { MAX_SERVINGS } from "./recipe.constants";
+export { parseIngredientAmount } from "@/features/ingredients/ingredient-amount";
 
 export const MAX_RECIPE_TITLE_LENGTH = 120;
 export const MAX_RECIPE_NOTES_LENGTH = 2000;
@@ -80,42 +82,6 @@ const equipmentKeysSchema = z
       });
     }
   });
-
-export function parseIngredientAmount(value: string) {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return null;
-  }
-
-  const numberValue = Number(trimmed);
-  if (Number.isFinite(numberValue) && numberValue > 0) {
-    return numberValue;
-  }
-
-  const mixedFractionMatch = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)$/);
-  if (mixedFractionMatch) {
-    const whole = Number(mixedFractionMatch[1]);
-    const numerator = Number(mixedFractionMatch[2]);
-    const denominator = Number(mixedFractionMatch[3]);
-
-    if (denominator > 0 && numerator > 0 && numerator < denominator) {
-      return whole + numerator / denominator;
-    }
-  }
-
-  const fractionMatch = trimmed.match(/^(\d+)\/(\d+)$/);
-  if (fractionMatch) {
-    const numerator = Number(fractionMatch[1]);
-    const denominator = Number(fractionMatch[2]);
-
-    if (denominator > 0 && numerator > 0) {
-      return numerator / denominator;
-    }
-  }
-
-  return null;
-}
 
 export const recipeFormSchema = z.object({
   title: z.string().trim().min(1, "Add a recipe title.").max(MAX_RECIPE_TITLE_LENGTH, `Keep the title under ${MAX_RECIPE_TITLE_LENGTH} characters.`),

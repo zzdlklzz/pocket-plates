@@ -212,7 +212,7 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Complete local mobile and desktop acceptance for the three refinements while retaining the existing planner journey.
 - [ ] Private grocery lists and generated recipe snapshots.
   - [x] Slice 1: establish the private schema, normalized product uniqueness, source snapshots, owner isolation, summary reads, and atomic generated-create/week-refresh boundaries.
-  - [ ] Slice 2: add the reusable ingredient grouping engine and shared amount parsing.
+  - [x] Slice 2: add the reusable ingredient grouping engine and shared amount parsing.
   - [ ] Slice 3: add standalone list library/detail routes and manual checklist editing.
   - [ ] Slice 4: generate lists from selected recipes with a grouped review.
   - [ ] Slice 5: generate and explicitly refresh a list from one meal-plan week on the existing detail page.
