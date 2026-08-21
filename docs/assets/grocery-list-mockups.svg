@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="1040" viewBox="0 0 1250 1040" role="img" aria-labelledby="title desc">
+  <title id="title">PocketPlates grocery-list mockups</title>
+  <desc id="desc">Three approved mobile mockups showing the grocery-list library, a shopping checklist with one row per normalized ingredient name, and expanded Pepper requirements grouped by unit across ten recipes. Quantified and unquantified sources share one item, different units remain visible inside that item, and compact rows show at most two groups followed by a more count.</desc>
+  <defs>
+    <style>
+      .canvas { fill: #f7faf7; }
+      .phone { fill: #172019; }
+      .screen { fill: #fffdf8; stroke: #d4ded7; stroke-width: 1; }
+      .appbar { fill: #f3f8f4; }
+      .surface { fill: #ffffff; stroke: #d7e2da; stroke-width: 1.1; }
+      .soft { fill: #edf6ef; stroke: #cee0d2; stroke-width: 1; }
+      .accent { fill: #2f6f50; }
+      .accent-soft { fill: #e8f4eb; stroke: #b9d5c1; stroke-width: 1; }
+      .muted-fill { fill: #edf1ee; }
+      .divider { stroke: #dce6df; stroke-width: 1; }
+      .title { font: 700 28px Arial, sans-serif; fill: #1c3528; }
+      .screen-title { font: 700 22px Arial, sans-serif; fill: #193326; }
+      .heading { font: 700 15px Arial, sans-serif; fill: #193326; }
+      .label { font: 700 12px Arial, sans-serif; fill: #263c30; }
+      .body { font: 500 11px Arial, sans-serif; fill: #52655a; }
+      .small { font: 500 9px Arial, sans-serif; fill: #687970; }
+      .tiny { font: 700 8px Arial, sans-serif; fill: #4b6e5a; }
+      .accent-text { font: 700 10px Arial, sans-serif; fill: #2f6f50; }
+      .white { font: 700 10px Arial, sans-serif; fill: #ffffff; }
+      .white-large { font: 700 17px Arial, sans-serif; fill: #ffffff; }
+      .center { text-anchor: middle; }
+      .end { text-anchor: end; }
+      .strike { text-decoration: line-through; fill: #89978f; }
+    </style>
+    <clipPath id="clip1"><rect x="52" y="112" width="326" height="796" rx="23"/></clipPath>
+    <clipPath id="clip2"><rect x="462" y="112" width="326" height="796" rx="23"/></clipPath>
+    <clipPath id="clip3"><rect x="872" y="112" width="326" height="796" rx="23"/></clipPath>
+  </defs>
+
+  <rect class="canvas" width="1250" height="1040"/>
+  <text class="title" x="40" y="52">PocketPlates grocery lists</text>
+  <text class="body" x="40" y="75">Approved direction: one product row per normalized ingredient name, with compact grouped requirements</text>
+
+  <rect class="phone" x="40" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="52" y="112" width="326" height="796" rx="23"/>
+  <rect class="phone" x="450" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="462" y="112" width="326" height="796" rx="23"/>
+  <rect class="phone" x="860" y="100" width="350" height="820" rx="31"/>
+  <rect class="screen" x="872" y="112" width="326" height="796" rx="23"/>
+
+  <!-- Phone 1: grocery-list library -->
+  <g clip-path="url(#clip1)">
+    <rect class="appbar" x="52" y="112" width="326" height="52"/>
+    <rect class="accent-soft" x="67" y="123" width="30" height="30" rx="9"/>
+    <text class="accent-text center" x="82" y="143">♨</text>
+    <text class="label" x="105" y="143">PocketPlates</text>
+
+    <text class="screen-title" x="68" y="198">Grocery lists</text>
+    <text class="body" x="68" y="219">Plan what to buy, then check items off in store.</text>
+    <rect class="accent" x="68" y="239" width="294" height="42" rx="11"/>
+    <text class="white center" x="215" y="265">Generate from recipes</text>
+    <rect class="surface" x="68" y="291" width="294" height="42" rx="11"/>
+    <text class="accent-text center" x="215" y="317">＋ New blank list</text>
+
+    <text class="heading" x="68" y="365">Your lists</text>
+    <text class="small end" x="362" y="365">3 lists</text>
+
+    <rect class="surface" x="68" y="379" width="294" height="106" rx="14"/>
+    <text class="label" x="82" y="401">Weeknight groceries</text>
+    <text class="small" x="82" y="419">Meal plan · 17–23 Aug</text>
+    <rect class="muted-fill" x="82" y="435" width="248" height="5" rx="2.5"/>
+    <rect class="accent" x="82" y="435" width="104" height="5" rx="2.5"/>
+    <text class="small" x="82" y="459">5 of 12 checked · Updated today</text>
+    <text class="body end" x="347" y="435">›</text>
+
+    <rect class="surface" x="68" y="497" width="294" height="106" rx="14"/>
+    <text class="label" x="82" y="519">Dinner with friends</text>
+    <text class="small" x="82" y="537">3 recipes</text>
+    <rect class="muted-fill" x="82" y="553" width="248" height="5" rx="2.5"/>
+    <text class="small" x="82" y="577">0 of 9 checked · Updated yesterday</text>
+    <text class="body end" x="347" y="553">›</text>
+
+    <rect class="surface" x="68" y="615" width="294" height="106" rx="14"/>
+    <text class="label" x="82" y="637">Household top-up</text>
+    <text class="small" x="82" y="655">Manual</text>
+    <rect class="muted-fill" x="82" y="671" width="248" height="5" rx="2.5"/>
+    <rect class="accent" x="82" y="671" width="248" height="5" rx="2.5"/>
+    <text class="small" x="82" y="695">4 of 4 checked · Updated 18 Aug</text>
+    <text class="body end" x="347" y="671">›</text>
+
+    <rect class="appbar" x="52" y="850" width="326" height="58"/>
+    <line class="divider" x1="52" y1="850" x2="378" y2="850"/>
+    <text class="body center" x="106" y="877">⌂</text><text class="tiny center" x="106" y="894">HOME</text>
+    <circle class="accent" cx="215" cy="875" r="18"/><text class="white-large center" x="215" y="881">＋</text>
+    <text class="accent-text center" x="324" y="877">•••</text><text class="tiny center" x="324" y="894">MORE</text>
+  </g>
+
+  <!-- Phone 2: compact grouped checklist -->
+  <g clip-path="url(#clip2)">
+    <text class="accent-text" x="478" y="143">‹ Grocery lists</text>
+    <text class="tiny" x="478" y="176">MEAL PLAN · 17–23 AUG</text>
+    <text class="screen-title" x="478" y="204">Weeknight groceries</text>
+    <text class="body" x="478" y="224">2 of 9 items checked</text>
+    <circle class="surface" cx="755" cy="194" r="19"/>
+    <text class="body center" x="755" y="198">•••</text>
+
+    <rect class="surface" x="478" y="244" width="294" height="42" rx="11"/>
+    <text class="accent-text center" x="625" y="270">＋ Add item</text>
+    <text class="heading" x="478" y="323">To buy</text>
+    <text class="small end" x="772" y="323">7 items</text>
+    <line class="divider" x1="478" y1="337" x2="772" y2="337"/>
+
+    <rect class="surface" x="480" y="353" width="20" height="20" rx="5"/>
+    <text class="label" x="516" y="365">Pepper</text>
+    <text class="body" x="516" y="383">6½ tbsp + 4 tsp + 3 more</text>
+    <text class="small" x="516" y="399">Used in 10 recipes</text>
+    <text class="body end" x="770" y="377">⌃</text>
+    <line class="divider" x1="478" y1="414" x2="772" y2="414"/>
+
+    <rect class="surface" x="480" y="433" width="20" height="20" rx="5"/>
+    <text class="label" x="516" y="447">Garlic</text>
+    <text class="small" x="516" y="466">Used in 4 recipes</text>
+    <text class="body end" x="770" y="451">›</text>
+    <line class="divider" x1="478" y1="484" x2="772" y2="484"/>
+
+    <rect class="surface" x="480" y="503" width="20" height="20" rx="5"/>
+    <text class="label" x="516" y="517">Onions</text>
+    <text class="body" x="516" y="535">3 pcs + extra</text>
+    <text class="small" x="516" y="551">Used in 3 recipes</text>
+    <text class="body end" x="770" y="525">›</text>
+    <line class="divider" x1="478" y1="566" x2="772" y2="566"/>
+
+    <rect class="surface" x="480" y="585" width="20" height="20" rx="5"/>
+    <text class="label" x="516" y="599">Jasmine rice</text>
+    <text class="body" x="516" y="617">3 cups total</text>
+    <text class="small" x="516" y="633">Used in 2 recipes</text>
+    <text class="body end" x="770" y="607">›</text>
+    <line class="divider" x1="478" y1="648" x2="772" y2="648"/>
+
+    <rect class="surface" x="480" y="667" width="20" height="20" rx="5"/>
+    <text class="label" x="516" y="681">Milk</text>
+    <text class="body" x="516" y="699">1 L</text>
+    <text class="small" x="516" y="715">Manual item</text>
+    <text class="body end" x="770" y="689">›</text>
+    <line class="divider" x1="478" y1="730" x2="772" y2="730"/>
+
+    <text class="label" x="478" y="765">⌄ Completed</text>
+    <text class="small end" x="772" y="765">2</text>
+
+    <rect class="appbar" x="462" y="850" width="326" height="58"/>
+    <line class="divider" x1="462" y1="850" x2="788" y2="850"/>
+    <text class="body center" x="516" y="877">⌂</text><text class="tiny center" x="516" y="894">HOME</text>
+    <circle class="accent" cx="625" cy="875" r="18"/><text class="white-large center" x="625" y="881">＋</text>
+    <text class="accent-text center" x="734" y="877">•••</text><text class="tiny center" x="734" y="894">MORE</text>
+  </g>
+
+  <!-- Phone 3: expanded ten-recipe requirements -->
+  <g clip-path="url(#clip3)">
+    <text class="accent-text" x="888" y="143">‹ Weeknight groceries</text>
+    <text class="tiny" x="888" y="176">PRODUCT REQUIREMENTS</text>
+    <text class="screen-title" x="888" y="204">Pepper</text>
+    <text class="body" x="888" y="224">6½ tbsp + 4 tsp + 3 more</text>
+    <text class="small" x="888" y="241">Used in 10 recipes</text>
+    <rect class="surface" x="1154" y="188" width="22" height="22" rx="6"/>
+
+    <rect class="soft" x="888" y="263" width="294" height="478" rx="15"/>
+    <text class="heading" x="902" y="291">Recipe requirements</text>
+    <text class="small end" x="1168" y="291">Grouped by unit</text>
+
+    <line class="divider" x1="902" y1="306" x2="1168" y2="306"/>
+    <text class="body" x="902" y="327">6½ tbsp total</text><text class="small end" x="1168" y="327">3 recipes</text>
+    <line class="divider" x1="902" y1="341" x2="1168" y2="341"/>
+    <text class="body" x="902" y="362">4 tsp total</text><text class="small end" x="1168" y="362">2 recipes</text>
+    <line class="divider" x1="902" y1="376" x2="1168" y2="376"/>
+    <text class="body" x="902" y="397">20 g total</text><text class="small end" x="1168" y="397">1 recipe</text>
+    <line class="divider" x1="902" y1="411" x2="1168" y2="411"/>
+    <text class="body" x="902" y="432">2 sachets</text><text class="small end" x="1168" y="432">1 recipe</text>
+    <line class="divider" x1="902" y1="446" x2="1168" y2="446"/>
+    <text class="body" x="902" y="467">Extra</text><text class="small end" x="1168" y="467">3 recipes gave no quantity</text>
+
+    <text class="accent-text" x="902" y="501">⌃ Hide recipe sources</text>
+    <line class="divider" x1="902" y1="517" x2="1168" y2="517"/>
+    <text class="body" x="902" y="538">Black pepper chicken</text><text class="small end" x="1168" y="538">2 tbsp</text>
+    <text class="body" x="902" y="561">Ginger tofu</text><text class="small end" x="1168" y="561">1½ tbsp</text>
+    <text class="body" x="902" y="584">Fried rice</text><text class="small end" x="1168" y="584">3 tbsp</text>
+    <text class="body" x="902" y="607">Vegetable soup</text><text class="small end" x="1168" y="607">2 tsp</text>
+    <text class="body" x="902" y="630">Noodle stir-fry</text><text class="small end" x="1168" y="630">2 tsp</text>
+    <text class="small" x="902" y="653">5 more recipe sources</text>
+
+    <rect class="surface" x="902" y="676" width="266" height="42" rx="10"/>
+    <text class="accent-text center" x="1035" y="702">Set a practical shopping amount</text>
+
+    <text class="heading" x="888" y="778">How compact rows behave</text>
+    <text class="body" x="888" y="800">Same unit → summed total</text>
+    <text class="body" x="888" y="819">Different unit → another group</text>
+    <text class="body" x="888" y="838">No quantity → one “extra” group</text>
+    <text class="body" x="888" y="857">More than two groups → “+ n more”</text>
+  </g>
+
+  <text class="heading center" x="215" y="956">List library</text>
+  <text class="body center" x="215" y="977">Manual and generated lists share one destination.</text>
+  <text class="heading center" x="625" y="956">Approved compact checklist</text>
+  <text class="body center" x="625" y="977">One checkbox per normalized product name.</text>
+  <text class="heading center" x="1035" y="956">Expanded requirements</text>
+  <text class="body center" x="1035" y="977">Grouped totals stay concise; source details remain available.</text>
+</svg>

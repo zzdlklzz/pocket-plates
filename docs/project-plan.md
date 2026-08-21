@@ -253,6 +253,7 @@ Visual reference:
 - `docs/assets/ui-mockups.svg`: generated mobile UI mockups.
 - `docs/assets/navigation-mockups.svg`: approved near-term Home–Add–More navigation, its More sheet, and a clearly separated five-slot concept that is not confirmed or planned for the near future.
 - `docs/assets/meal-planner-mockups.svg`: approved weekly-list planner and interaction-state reference; the calendar-grid concept is not retained.
+- `docs/assets/grocery-list-mockups.svg`: approved future grocery-list library and checklist direction. Repeated ingredient names produce one product row; same-unit quantities total together, different units remain compact requirement groups, null quantities collapse into one `extra` group when mixed with measured sources, and expanded details preserve every recipe contribution.
 
 Navigation direction:
 
