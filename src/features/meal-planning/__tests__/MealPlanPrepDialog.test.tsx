@@ -57,6 +57,16 @@ describe("MealPlanPrepDialog", () => {
     expect(within(dialog).getByText("Scale 0.5×")).toBeInTheDocument();
     expect(within(dialog).getByText("Archived recipe")).toBeInTheDocument();
     expect(within(dialog).getByText("Scale 1.5×")).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("link", {
+        name: "View Coconut lentil curry recipe"
+      })
+    ).toHaveAttribute("href", "/recipes/recipe-1");
+    expect(
+      within(dialog).queryByRole("link", {
+        name: "View Berry overnight oats recipe"
+      })
+    ).not.toBeInTheDocument();
   });
 
   it("closes with Escape or the backdrop and returns focus", () => {

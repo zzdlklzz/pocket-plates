@@ -207,6 +207,7 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Slice 6: allow the Add meal sheet to select any day in the displayed week.
   - [x] Slice 7: default new planned meals to one serving and show saved recipe yield as context.
   - [x] Slice 8: add a read-only weekly preparation summary grouped by recipe.
+  - [x] Link active prep-summary recipes to their detail pages for reference.
   - [x] Complete local mobile and desktop acceptance for the three refinements while retaining the existing planner journey.
 - Grocery list generated from selected recipes.
 - Pantry and staple-item tracking.

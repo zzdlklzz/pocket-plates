@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, type RefObject } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { parseIsoDate } from "./meal-planning.dates";
@@ -131,7 +132,19 @@ export function MealPlanPrepDialog({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-slate-900">{row.title}</h3>
+                    <h3 className="font-semibold text-slate-900">
+                      {row.archived ? (
+                        row.title
+                      ) : (
+                        <Link
+                          aria-label={`View ${row.title} recipe`}
+                          className="inline-flex min-h-11 items-center text-leaf-800 underline decoration-leaf-300 underline-offset-2"
+                          href={`/recipes/${row.recipeId}`}
+                        >
+                          {row.title}
+                        </Link>
+                      )}
+                    </h3>
                     {row.archived ? (
                       <p className="mt-1 text-xs font-medium text-slate-500">
                         Archived recipe
