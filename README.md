@@ -59,7 +59,7 @@ This command starts the local Supabase stack when necessary, applies any pending
 
 Open `http://localhost:3000` and create a local account. Local users and recipe data remain separate from production. To rebuild the local database from every migration, use `npx supabase db reset --local`; this deletes local data only.
 
-Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflow, including the complete meal-planner add, in-week day selection, planned-serving guidance, edit, remove/Undo, navigation, copy/paste, and prep-summary journey. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
+Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflow, including the complete meal-planner visible recipe search and add, in-week day selection, planned-serving guidance, edit, remove/Undo, navigation, copy/paste, and prep-summary journey. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
 
 ## AWS Terraform Lab
 
@@ -74,7 +74,7 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Recipe detail screen
 - Add/edit recipe screen
 - Filter sheet
-- Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with in-week day selection and one-serving defaults, in-app day/week copy and paste, and a grouped preparation summary linked to active recipes
+- Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with bounded title-or-ingredient recipe results, in-week day selection and one-serving defaults, in-app day/week copy and paste, and a grouped preparation summary linked to active recipes
 
 ## Future Features
 

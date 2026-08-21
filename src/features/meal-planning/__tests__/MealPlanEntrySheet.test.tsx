@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { MealPlanEntrySheet } from "../MealPlanEntrySheet";
+import type { MealPlanRecipeOptionDto } from "../meal-planning.types";
 
 const recipeOptions = [
   {
@@ -10,6 +12,26 @@ const recipeOptions = [
     mealTypes: ["dinner" as const],
     servings: 2,
     title: "Ginger tofu bowls"
+  }
+];
+
+const searchableRecipeOptions: MealPlanRecipeOptionDto[] = [
+  ...recipeOptions,
+  {
+    archived: false,
+    id: "recipe-2",
+    ingredientNames: ["eggs", "cheddar"],
+    mealTypes: ["breakfast"],
+    servings: 1,
+    title: "Cheese omelette"
+  },
+  {
+    archived: false,
+    id: "recipe-3",
+    ingredientNames: ["tomatoes", "pasta"],
+    mealTypes: ["dinner"],
+    servings: 4,
+    title: "Tomato spaghetti"
   }
 ];
 
@@ -40,7 +62,144 @@ function sheetProps() {
   };
 }
 
+function SearchableEntrySheet({
+  options = searchableRecipeOptions
+}: {
+  options?: MealPlanRecipeOptionDto[];
+}) {
+  const [search, setSearch] = useState("");
+  const returnFocusRef = useRef<HTMLButtonElement>(null);
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredOptions = options.filter(
+    (recipe) =>
+      !normalizedSearch ||
+      recipe.title.toLowerCase().includes(normalizedSearch) ||
+      recipe.ingredientNames.some((ingredient) =>
+        ingredient.toLowerCase().includes(normalizedSearch)
+      )
+  );
+
+  return (
+    <MealPlanEntrySheet
+      {...sheetProps()}
+      recipeOptions={filteredOptions}
+      returnFocusRef={returnFocusRef}
+      search={search}
+      setSearch={setSearch}
+    />
+  );
+}
+
 describe("MealPlanEntrySheet", () => {
+  it("shows matching recipes immediately for title and ingredient searches", () => {
+    render(<SearchableEntrySheet />);
+    const search = screen.getByRole("searchbox", { name: "Search recipes" });
+
+    fireEvent.change(search, { target: { value: " ginger " } });
+
+    expect(screen.getByRole("status")).toHaveTextContent("1 match");
+    expect(screen.getByRole("button", { name: "Select Ginger tofu bowls" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Select Cheese omelette" })).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "EGGS" } });
+
+    expect(screen.getByRole("status")).toHaveTextContent("1 match");
+    expect(screen.getByRole("button", { name: "Select Cheese omelette" })).toBeInTheDocument();
+    expect(screen.getByText("eggs, cheddar")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Select Ginger tofu bowls" })).not.toBeInTheDocument();
+  });
+
+  it("keeps long result lists bounded while rendering every match", () => {
+    const options = Array.from({ length: 8 }, (_, index) => ({
+      archived: false as const,
+      id: `recipe-${index}`,
+      ingredientNames: ["beans"],
+      mealTypes: ["dinner" as const],
+      servings: 2,
+      title: `Bean recipe ${index + 1}`
+    }));
+    render(<SearchableEntrySheet options={options} />);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search recipes" }), {
+      target: { value: "beans" }
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("8 matches");
+    const results = screen.getByRole("region", { name: "Recipe search results" });
+    expect(results).toHaveClass("max-h-56", "overflow-y-auto");
+    expect(within(results).getAllByRole("button")).toHaveLength(8);
+  });
+
+  it("selects a visible result without resetting planned servings", () => {
+    render(<SearchableEntrySheet />);
+    const dialog = screen.getByRole("dialog", { name: "Add meal" });
+    const search = within(dialog).getByRole("searchbox", { name: "Search recipes" });
+    const recipe = within(dialog).getByRole("combobox", { name: "Recipe" });
+    const mealType = within(dialog).getByRole("combobox", { name: "Meal" });
+    const plannedServings = within(dialog).getByRole("spinbutton", {
+      name: "Planned servings"
+    });
+
+    fireEvent.change(plannedServings, { target: { value: "3" } });
+    fireEvent.change(search, { target: { value: "rice" } });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Select Ginger tofu bowls" })
+    );
+
+    expect(search).toHaveValue("");
+    expect(recipe).toHaveValue("recipe-1");
+    expect(recipe).toHaveFocus();
+    expect(mealType).toHaveValue("dinner");
+    expect(plannedServings).toHaveValue(3);
+  });
+
+  it("shows the existing no-match notice without an empty result panel", () => {
+    render(<SearchableEntrySheet />);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search recipes" }), {
+      target: { value: "no such recipe" }
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "No active recipes match that search."
+    );
+    expect(
+      screen.queryByRole("region", { name: "Recipe search results" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("suppresses search results while recipe options load or fail", () => {
+    const props = sheetProps();
+    const view = render(
+      <MealPlanEntrySheet
+        {...props}
+        isRecipeOptionsLoading
+        search="rice"
+      />
+    );
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Recipe search results" })
+    ).not.toBeInTheDocument();
+
+    view.rerender(
+      <MealPlanEntrySheet
+        {...props}
+        recipeOptionsError={new Error("load failed")}
+        search="rice"
+      />
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "We could not load your recipes."
+    );
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Recipe search results" })
+    ).not.toBeInTheDocument();
+  });
+
   it("starts on the clicked day and offers only the displayed boundary week", () => {
     const props = sheetProps();
     const weekDates = [

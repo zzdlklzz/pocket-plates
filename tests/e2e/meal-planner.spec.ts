@@ -71,9 +71,20 @@ test.describe("with local Supabase", () => {
     await expect(addDay).toHaveValue(currentWeek!);
     await addDay.selectOption({ value: addIsoDays(currentWeek!, 1) });
     await expect(plannedServings).toHaveValue("1");
-    await addMealDialog.getByRole("combobox", { name: "Recipe" }).selectOption({
-      label: recipeTitle
+    await addMealDialog.getByRole("searchbox", { name: "Search recipes" }).fill("Pasta");
+    const recipeSearchResults = addMealDialog.getByRole("region", {
+      name: "Recipe search results"
     });
+    await expect(addMealDialog.getByRole("status")).toHaveText("1 match");
+    await expect(recipeSearchResults).toBeVisible();
+    await expect(recipeSearchResults).toHaveClass(/max-h-56/);
+    await expect(recipeSearchResults).toHaveClass(/overflow-y-auto/);
+    await recipeSearchResults
+      .getByRole("button", { name: `Select ${recipeTitle}` })
+      .click();
+    await expect(addMealDialog.getByRole("combobox", { name: "Recipe" })).toHaveValue(
+      /.+/
+    );
     await expect(plannedServings).toHaveValue("1");
     await expect(plannedServings).toHaveAccessibleDescription(
       /Defaults to 1.*Saved recipe makes 4 servings\./

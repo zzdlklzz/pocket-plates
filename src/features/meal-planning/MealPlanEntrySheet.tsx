@@ -96,6 +96,7 @@ export function MealPlanEntrySheet({
   const isBusy = isPending || isRemovePending;
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const recipeSelectRef = useRef<HTMLSelectElement>(null);
   const plannedServingsHelpId = useId();
   const plannedServingsInputId = useId();
   const isPendingRef = useRef(isBusy);
@@ -166,6 +167,11 @@ export function MealPlanEntrySheet({
     }
   }
 
+  function selectSearchResult(nextRecipeId: string) {
+    selectRecipe(nextRecipeId);
+    recipeSelectRef.current?.focus();
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const plannedServings = Number(servings);
@@ -203,6 +209,7 @@ export function MealPlanEntrySheet({
   const dayName = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(
     parseIsoDate(selectedDate) ?? undefined
   );
+  const hasSearch = search.trim().length > 0;
   const selectedRecipe = recipeOptions.find((recipe) => recipe.id === recipeId);
   const savedRecipeServings = entry?.recipe.servings ?? selectedRecipe?.servings;
 
@@ -284,6 +291,44 @@ export function MealPlanEntrySheet({
                 </span>
               </label>
 
+              {hasSearch &&
+              !isRecipeOptionsLoading &&
+              !recipeOptionsError &&
+              recipeOptions.length > 0 ? (
+                <div className="mt-3">
+                  <p
+                    aria-live="polite"
+                    className="text-xs font-medium text-slate-500"
+                    role="status"
+                  >
+                    {recipeOptions.length} {recipeOptions.length === 1 ? "match" : "matches"}
+                  </p>
+                  <div
+                    aria-label="Recipe search results"
+                    className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1"
+                    role="region"
+                  >
+                    {recipeOptions.map((recipe) => (
+                      <button
+                        aria-label={`Select ${recipe.title}`}
+                        className="flex min-h-11 w-full flex-col justify-center rounded-md px-3 py-2 text-left hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-500"
+                        disabled={isBusy}
+                        key={recipe.id}
+                        onClick={() => selectSearchResult(recipe.id)}
+                        type="button"
+                      >
+                        <span className="text-sm font-semibold text-slate-800">
+                          {recipe.title}
+                        </span>
+                        <span className="w-full truncate text-xs font-normal text-slate-500">
+                          {recipe.ingredientNames.join(", ")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Recipe
                 <select
@@ -291,6 +336,7 @@ export function MealPlanEntrySheet({
                   className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
                   disabled={isBusy || isRecipeOptionsLoading || Boolean(recipeOptionsError)}
                   onChange={(event) => selectRecipe(event.target.value)}
+                  ref={recipeSelectRef}
                   value={recipeId}
                 >
                   <option value="">
@@ -319,8 +365,8 @@ export function MealPlanEntrySheet({
               </button>
             </InlineNotice>
           ) : !isEditing && !isRecipeOptionsLoading && recipeOptions.length === 0 ? (
-            <InlineNotice className="mt-3" tone="info">
-              {search ? (
+            <InlineNotice className="mt-3" role={hasSearch ? "status" : undefined} tone="info">
+              {hasSearch ? (
                 "No active recipes match that search."
               ) : (
                 <>

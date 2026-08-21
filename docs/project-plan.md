@@ -208,6 +208,7 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Slice 7: default new planned meals to one serving and show saved recipe yield as context.
   - [x] Slice 8: add a read-only weekly preparation summary grouped by recipe.
   - [x] Link active prep-summary recipes to their detail pages for reference.
+  - [x] Show title-or-ingredient recipe matches directly in a bounded, scrollable Add meal result list and select them without opening the native picker.
   - [x] Complete local mobile and desktop acceptance for the three refinements while retaining the existing planner journey.
 - Grocery list generated from selected recipes.
 - Pantry and staple-item tracking.
@@ -245,7 +246,7 @@ Primary screens:
 - Recipe Detail: image, title, meal types, servings, effort labels, equipment/setup, source links, ingredients, steps, edit action.
 - Add/Edit Recipe: title, servings, meal types, optional effort and equipment/setup metadata, device cover image, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types and cost ratings, single-select difficulty, match-all effort and equipment/setup values, clear filters, and done action. The sheet is viewport-bounded, scrollable, focus-contained, and usable with enlarged mobile text. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
-- Meal Planner: canonical Monday-based week URLs, previous/current/next navigation, seven vertical day sections, persistent per-day add actions, a compact add/edit sheet with in-week day selection, direct entry removal with bounded Undo, one temporary in-app buffer for deliberate additive day/week copy and paste, and a read-only weekly prep summary grouped by recipe.
+- Meal Planner: canonical Monday-based week URLs, previous/current/next navigation, seven vertical day sections, persistent per-day add actions, a compact add/edit sheet with bounded visible title-or-ingredient recipe results and in-week day selection, direct entry removal with bounded Undo, one temporary in-app buffer for deliberate additive day/week copy and paste, and a read-only weekly prep summary grouped by recipe.
 
 Visual reference:
 
