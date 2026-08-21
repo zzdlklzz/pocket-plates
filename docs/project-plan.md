@@ -210,7 +210,13 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Link active prep-summary recipes to their detail pages for reference.
   - [x] Show title-or-ingredient recipe matches directly in a bounded, scrollable Add meal result list and select them without opening the native picker.
   - [x] Complete local mobile and desktop acceptance for the three refinements while retaining the existing planner journey.
-- Grocery list generated from selected recipes.
+- [ ] Private grocery lists and generated recipe snapshots.
+  - [x] Slice 1: establish the private schema, normalized product uniqueness, source snapshots, owner isolation, summary reads, and atomic generated-create/week-refresh boundaries.
+  - [ ] Slice 2: add the reusable ingredient grouping engine and shared amount parsing.
+  - [ ] Slice 3: add standalone list library/detail routes and manual checklist editing.
+  - [ ] Slice 4: generate lists from selected recipes with a grouped review.
+  - [ ] Slice 5: generate and explicitly refresh a list from one meal-plan week on the existing detail page.
+  - [ ] Slice 6: complete signed-in mobile/desktop acceptance and the final documentation sweep.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
 - Favorites.
@@ -297,6 +303,7 @@ Future-ready tables already represented in the draft schema:
 - `meal_plan_entries`: scheduled recipes.
 - `grocery_lists`: generated or manual grocery lists.
 - `grocery_list_items`: grocery list line items.
+- `grocery_list_item_sources`: durable recipe-ingredient contributions for generated grocery products.
 
 Public discovery should build on the `recipes.visibility` and `recipes.published_at` fields rather than requiring a second recipe table. Private recipes stay visible only to their owner. Public recipes can be searched by other users once the community stage is implemented.
 

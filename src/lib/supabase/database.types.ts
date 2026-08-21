@@ -46,6 +46,85 @@ export type Database = {
           },
         ]
       }
+      grocery_list_item_sources: {
+        Row: {
+          canonical_unit: string | null
+          contributed_amount: number | null
+          created_at: string
+          grocery_list_item_id: string
+          id: string
+          ingredient_amount: number | null
+          ingredient_name: string
+          ingredient_notes: string | null
+          ingredient_unit: string | null
+          recipe_id: string | null
+          recipe_ingredient_id: string | null
+          recipe_title: string
+          saved_servings: number
+          scale_factor: number
+          sort_order: number
+          target_servings: number
+        }
+        Insert: {
+          canonical_unit?: string | null
+          contributed_amount?: number | null
+          created_at?: string
+          grocery_list_item_id: string
+          id?: string
+          ingredient_amount?: number | null
+          ingredient_name: string
+          ingredient_notes?: string | null
+          ingredient_unit?: string | null
+          recipe_id?: string | null
+          recipe_ingredient_id?: string | null
+          recipe_title: string
+          saved_servings: number
+          scale_factor: number
+          sort_order: number
+          target_servings: number
+        }
+        Update: {
+          canonical_unit?: string | null
+          contributed_amount?: number | null
+          created_at?: string
+          grocery_list_item_id?: string
+          id?: string
+          ingredient_amount?: number | null
+          ingredient_name?: string
+          ingredient_notes?: string | null
+          ingredient_unit?: string | null
+          recipe_id?: string | null
+          recipe_ingredient_id?: string | null
+          recipe_title?: string
+          saved_servings?: number
+          scale_factor?: number
+          sort_order?: number
+          target_servings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grocery_list_item_sources_grocery_list_item_id_fkey"
+            columns: ["grocery_list_item_id"]
+            isOneToOne: false
+            referencedRelation: "grocery_list_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grocery_list_item_sources_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grocery_list_item_sources_recipe_ingredient_id_fkey"
+            columns: ["recipe_ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grocery_list_items: {
         Row: {
           amount: number | null
@@ -53,9 +132,12 @@ export type Database = {
           created_at: string
           grocery_list_id: string
           id: string
+          is_manual: boolean
           name: string
+          normalized_name: string
+          notes: string | null
+          quantity_overridden: boolean
           sort_order: number
-          source_recipe_id: string | null
           unit: string | null
           updated_at: string
         }
@@ -65,9 +147,12 @@ export type Database = {
           created_at?: string
           grocery_list_id: string
           id?: string
+          is_manual?: boolean
           name: string
+          normalized_name?: never
+          notes?: string | null
+          quantity_overridden?: boolean
           sort_order?: number
-          source_recipe_id?: string | null
           unit?: string | null
           updated_at?: string
         }
@@ -77,9 +162,12 @@ export type Database = {
           created_at?: string
           grocery_list_id?: string
           id?: string
+          is_manual?: boolean
           name?: string
+          normalized_name?: never
+          notes?: string | null
+          quantity_overridden?: boolean
           sort_order?: number
-          source_recipe_id?: string | null
           unit?: string | null
           updated_at?: string
         }
@@ -91,13 +179,6 @@ export type Database = {
             referencedRelation: "grocery_lists"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "grocery_list_items_source_recipe_id_fkey"
-            columns: ["source_recipe_id"]
-            isOneToOne: false
-            referencedRelation: "recipes"
-            referencedColumns: ["id"]
-          },
         ]
       }
       grocery_lists: {
@@ -106,6 +187,8 @@ export type Database = {
           id: string
           meal_plan_id: string | null
           owner_id: string
+          source_type: Database["public"]["Enums"]["grocery_list_source_type"]
+          source_week_start_date: string | null
           title: string
           updated_at: string
         }
@@ -114,6 +197,8 @@ export type Database = {
           id?: string
           meal_plan_id?: string | null
           owner_id: string
+          source_type?: Database["public"]["Enums"]["grocery_list_source_type"]
+          source_week_start_date?: string | null
           title: string
           updated_at?: string
         }
@@ -122,6 +207,8 @@ export type Database = {
           id?: string
           meal_plan_id?: string | null
           owner_id?: string
+          source_type?: Database["public"]["Enums"]["grocery_list_source_type"]
+          source_week_start_date?: string | null
           title?: string
           updated_at?: string
         }
@@ -654,6 +741,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_grocery_list_with_items: {
+        Args: {
+          p_items: Json
+          p_meal_plan_id: string | null
+          p_source_type: Database["public"]["Enums"]["grocery_list_source_type"]
+          p_source_week_start_date: string | null
+          p_title: string
+        }
+        Returns: string
+      }
+      list_grocery_lists: {
+        Args: never
+        Returns: {
+          checked_item_count: number
+          id: string
+          item_count: number
+          meal_plan_available: boolean
+          source_type: Database["public"]["Enums"]["grocery_list_source_type"]
+          source_week_start_date: string | null
+          title: string
+          updated_at: string
+        }[]
+      }
       list_private_library_recipes: {
         Args: {
           p_cost_ratings?: Database["public"]["Enums"]["cost_rating"][] | null
@@ -674,6 +784,14 @@ export type Database = {
           title: string
         }[]
       }
+      normalize_grocery_item_name: {
+        Args: { p_value: string }
+        Returns: string
+      }
+      refresh_grocery_list_from_meal_plan: {
+        Args: { p_generated_items: Json; p_grocery_list_id: string }
+        Returns: undefined
+      }
       replace_recipe_discovery_metadata: {
         Args: {
           p_effort_labels?: Database["public"]["Enums"]["recipe_effort_label"][] | null
@@ -682,10 +800,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_generated_grocery_items: {
+        Args: {
+          p_allow_empty?: boolean
+          p_items: Json
+          p_meal_plan_id: string | null
+          p_source_type: Database["public"]["Enums"]["grocery_list_source_type"]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       cost_rating: "very_cheap" | "cheap" | "moderate" | "splurge"
       difficulty_level: "easy" | "medium" | "hard" | "beginner_friendly"
+      grocery_list_source_type: "manual" | "recipes" | "meal_plan"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack" | "flexible"
       pantry_item_status: "active" | "archived"
       recipe_effort_label: "quick" | "make_ahead" | "one_pot" | "low_cleanup"
@@ -819,6 +947,7 @@ export const Constants = {
     Enums: {
       cost_rating: ["very_cheap", "cheap", "moderate", "splurge"],
       difficulty_level: ["easy", "medium", "hard", "beginner_friendly"],
+      grocery_list_source_type: ["manual", "recipes", "meal_plan"],
       meal_type: ["breakfast", "lunch", "dinner", "snack", "flexible"],
       pantry_item_status: ["active", "archived"],
       recipe_effort_label: ["quick", "make_ahead", "one_pot", "low_cleanup"],

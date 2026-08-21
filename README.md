@@ -1,6 +1,6 @@
 # PocketPlates
 
-PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, and a low-friction weekly meal planner with URL-stable navigation, editing, direct remove/Undo, deliberate day/week copy and paste, and a read-only preparation summary.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, and a low-friction weekly meal planner with URL-stable navigation, editing, direct remove/Undo, deliberate day/week copy and paste, and a read-only preparation summary. A private grocery-list database foundation is implemented; its application screens remain in progress.
 
 ## Recommended Stack
 
@@ -44,8 +44,10 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `supabase/migrations/20260819203000_add_recipe_effort_labels.sql`: owner-scoped controlled effort metadata, atomic replacement, and match-all private-library filtering
 - `supabase/migrations/20260819205000_add_equipment_presets.sql`: owner-scoped equipment presets, atomic effort/equipment replacement, match-all equipment filtering, and fresh-install recipe CRUD grants
 - `supabase/migrations/20260821090000_prepare_meal_planner_foundation.sql`: authenticated meal-planner CRUD grants and uniqueness guarantees for one plan per owner/week and one exact recipe/slot entry
+- `supabase/migrations/20260821230000_add_grocery_list_foundation.sql`: private manual and generated grocery snapshots, normalized product uniqueness, provenance rows, and atomic create/meal-plan-refresh functions
 - `supabase/tests/equipment_presets.sql`: transactional local SQL checks for preset reuse, filter semantics, validation, and RLS
 - `supabase/tests/meal_planner_foundation.sql`: transactional local SQL checks for planner grants, uniqueness, and owner isolation
+- `supabase/tests/grocery_lists.sql`: transactional local SQL checks for grocery-list grants, isolation, generated snapshots, and refresh preservation rules
 - `scripts/run-local-e2e.mjs`: isolated local-Supabase Playwright runner for signed-in mobile and desktop workflows
 
 ## Local Development

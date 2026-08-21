@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, and the weekly meal planner. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, and a URL-stable weekly meal agenda with add, edit, direct remove/Undo, deliberate day/week copy and paste, and a read-only preparation summary. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented discovery tags remain pending.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, and the weekly meal planner. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, and a URL-stable weekly meal agenda with add, edit, direct remove/Undo, deliberate day/week copy and paste, and a read-only preparation summary. The private database foundation for manual, recipe-snapshot, and meal-plan-snapshot grocery lists is also present; grocery-list application routes and UI remain pending. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented discovery tags remain pending.
 
 ## Stack
 
@@ -38,7 +38,7 @@ flowchart TD
     H --> I["Supabase Auth"]
     H --> J["Supabase Postgres + RLS"]
     H --> K["Supabase Storage"]
-    J --> L["Private recipes and weekly meal plans"]
+    J --> L["Private recipes, meal plans, and grocery snapshots"]
     M["GitHub Actions on Node.js 24"] --> N["ESLint, typecheck, Vitest, build, Playwright"]
     M --> O["Supabase migration deploy"]
     P["Vercel verify + build"] --> B
@@ -55,6 +55,7 @@ The database schema is migration-first and represented in:
 - `supabase/migrations/20260819203000_add_recipe_effort_labels.sql`
 - `supabase/migrations/20260819205000_add_equipment_presets.sql`
 - `supabase/migrations/20260821090000_prepare_meal_planner_foundation.sql`
+- `supabase/migrations/20260821230000_add_grocery_list_foundation.sql`
 - `docs/database-schema.dbml`
 - `docs/database-erd.mmd`
 
@@ -75,13 +76,21 @@ Meal-planning foundation entities:
 - `meal_plans`: one private row per owner and Monday-based week.
 - `meal_plan_entries`: scheduled recipe references, with exact duplicates prevented per plan/date/slot/recipe.
 
+Grocery-list foundation entities:
+
+- `grocery_lists`: private manual, selected-recipe, or meal-plan-week list snapshots. Meal-plan lists retain their source week after the linked plan is deleted.
+- `grocery_list_items`: one editable checklist product per normalized name, including manual/generated ownership, checked state, and an optional practical quantity override.
+- `grocery_list_item_sources`: durable recipe-requirement snapshots for generated products. Nullable recipe and ingredient references preserve snapshot text after a source is deleted.
+
 Other future-ready entities:
 
 - `pantry_items`
-- `grocery_lists`
-- `grocery_list_items`
 
 Authenticated browser clients have explicit CRUD grants on both planner tables, while their existing RLS policies remain the ownership boundary. The owner/week and exact-entry uniqueness constraints make lazy plan creation and duplicate prevention safe under repeated requests. Pure planner date helpers use local calendar parts rather than parsing date-only values as UTC timestamps; they normalize any viewed date to Monday, generate the seven ISO dates in a week, and validate week membership without timezone drift.
+
+Authenticated browser clients also have owner-scoped CRUD access to grocery lists and products. Grocery source rows permit authenticated read, insert, and delete but not direct update; their RLS policy follows the parent list and rejects recipe or ingredient references outside the owner boundary. One immutable SQL normalizer collapses every PostgreSQL whitespace run before trimming and lowercasing, so spaces, tabs, and newlines produce the same stored product key and per-list uniqueness behavior; display names remain editable. Item mutations trigger one parent timestamp update so list-library activity and progress queries stay current.
+
+`list_grocery_lists()` returns owner-scoped list metadata and checked/total counts without downloading item bodies. `create_grocery_list_with_items(...)` atomically creates a bounded recipe or meal-plan snapshot after validating source ownership, every current ingredient exactly once, canonical unit buckets, six-decimal scaling arithmetic, and current snapshot fields. `refresh_grocery_list_from_meal_plan(...)` accepts only an available linked owned plan, locks that grocery-list row for the transaction, and then replaces its generated source requirements. The row lock serializes concurrent refresh attempts for one list. Refresh preserves manual rows plus matched checked states and quantity overrides, adds new generated rows unchecked, and removes obsolete generated rows. All grocery functions are security-invoker boundaries with explicit authenticated execution grants; no background sync, refresh history, version table, or separate requirement-group table exists.
 
 The authenticated `/meal-planner` route shows the approved Monday-through-Sunday vertical agenda. Its normalized `week=YYYY-MM-DD` Monday value survives refresh and browser history; missing, invalid, or non-Monday values canonicalize from the browser's local calendar without parsing date-only strings as UTC. Previous, current, and next controls navigate by exact calendar weeks.
 
@@ -561,9 +570,10 @@ Run the transactional database/RLS integration checks after a reset:
 ```bash
 docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/equipment_presets.sql
 docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/meal_planner_foundation.sql
+docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/grocery_lists.sql
 ```
 
-The SQL tests roll their fixtures back. They verify recipe-discovery behavior and planner table grants, owner isolation, cross-owner recipe protection, and both planner uniqueness rules.
+The SQL tests roll their fixtures back. They verify recipe-discovery behavior; planner grants, isolation, and uniqueness; and grocery-list grants, normalized-name uniqueness, atomic snapshot creation/refresh, preserved manual state, source deletion behavior, and two-user isolation.
 
 Supabase Studio is available at the Studio URL printed by `npx supabase status`, usually `http://127.0.0.1:54323`. Stop the local containers when they are no longer needed:
 
@@ -710,6 +720,6 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 1. Stage 0: foundation, app shell, CI, tests, Supabase boundary, TanStack Query setup.
 2. Stage 1: true MVP private recipe library with archived recipe viewing and restoration.
 3. Stage 2: title-or-ingredient search plus controlled effort and equipment/setup discovery are complete; student-oriented tags remain intentionally deferred.
-4. Stage 3: weekly meal planning and its recipe-level prep summary are complete; grocery lists, ingredient scaling, and pantry/cost features remain pending.
+4. Stage 3: weekly meal planning and its recipe-level prep summary are complete; the grocery-list data foundation is complete, while grocery application screens, ingredient-scaling workflows, and pantry/cost features remain pending.
 5. Stage 4: public/shared recipe discovery.
 6. Stage 5: polish, import flows, nutrition/macros, recommendations.

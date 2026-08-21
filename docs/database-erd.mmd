@@ -24,7 +24,9 @@ erDiagram
 
     meal_plans ||--o{ grocery_lists : can_generate
     grocery_lists ||--o{ grocery_list_items : contains
-    recipes ||--o{ grocery_list_items : contributed
+    grocery_list_items ||--o{ grocery_list_item_sources : records
+    recipes ||--o{ grocery_list_item_sources : contributed
+    recipe_ingredients ||--o{ grocery_list_item_sources : snapshots
 
     profiles {
         uuid id PK
@@ -169,6 +171,8 @@ erDiagram
         uuid owner_id FK
         uuid meal_plan_id FK
         text title
+        grocery_list_source_type source_type
+        date source_week_start_date
         timestamptz created_at
         timestamptz updated_at
     }
@@ -179,9 +183,31 @@ erDiagram
         text name
         numeric amount
         text unit
+        text notes
+        text normalized_name "generated; unique per list"
+        boolean quantity_overridden
+        boolean is_manual
         boolean checked
-        uuid source_recipe_id FK
         int sort_order
         timestamptz created_at
         timestamptz updated_at
+    }
+
+    grocery_list_item_sources {
+        uuid id PK
+        uuid grocery_list_item_id FK
+        uuid recipe_id FK "optional after source deletion"
+        uuid recipe_ingredient_id FK "optional after source deletion"
+        text recipe_title
+        text ingredient_name
+        numeric ingredient_amount
+        text ingredient_unit
+        text ingredient_notes
+        int saved_servings
+        int target_servings
+        numeric scale_factor
+        numeric contributed_amount
+        text canonical_unit
+        int sort_order
+        timestamptz created_at
     }
