@@ -488,4 +488,38 @@ test("refreshes a meal-plan grocery snapshot while preserving shopping state", a
     pepperRow.getByText(`From ${repeatedRecipeTitle}`, { exact: true })
   ).toBeVisible();
   await expect(page.getByText("1 of 3 items checked", { exact: true })).toBeVisible();
+
+  const addItemButton = page.getByRole("button", { name: "Add item" });
+  await addItemButton.focus();
+  await page.keyboard.press("Enter");
+  const keyboardDialog = page.getByRole("dialog", { name: "Add item" });
+  await expect(keyboardDialog).toBeVisible();
+  await expect(
+    keyboardDialog.getByRole("button", { name: "Close add item" })
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(keyboardDialog.getByRole("textbox", { name: "Item" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(keyboardDialog).not.toBeVisible();
+  await expect(addItemButton).toBeFocused();
+
+  await page.addStyleTag({ content: "html { font-size: 200% !important; }" });
+  await expect(page.getByRole("button", { name: "Refresh from week" })).toBeVisible();
+  await expect(addItemButton).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit Carrots" })).toBeVisible();
+  const overflowingElements = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    return Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .filter((element) => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.width > 0 && (bounds.left < -1 || bounds.right > viewportWidth + 1);
+      })
+      .map((element) => ({
+        ariaLabel: element.getAttribute("aria-label"),
+        className: element.className,
+        tagName: element.tagName,
+        text: element.textContent?.trim().slice(0, 80)
+      }));
+  });
+  expect(overflowingElements).toEqual([]);
 });
