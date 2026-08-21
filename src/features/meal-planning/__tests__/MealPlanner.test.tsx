@@ -284,7 +284,7 @@ describe("MealPlanner", () => {
     );
   });
 
-  it("adds a recipe using its single meal type and saved servings as defaults", async () => {
+  it("adds a recipe using its single meal type and one planned serving", async () => {
     const week = currentWeek();
     const friday = getWeekDates(week.weekStartDate)[4];
     render(<MealPlanner requestedWeek={week.weekStartDate} />);
@@ -306,7 +306,9 @@ describe("MealPlanner", () => {
     });
 
     expect(within(dialog).getByRole("combobox", { name: "Meal" })).toHaveValue("dinner");
-    expect(within(dialog).getByRole("spinbutton", { name: "Servings" })).toHaveValue(4);
+    expect(
+      within(dialog).getByRole("spinbutton", { name: "Planned servings" })
+    ).toHaveValue(1);
     fireEvent.click(within(dialog).getByRole("button", { name: "Add to Friday" }));
 
     await waitFor(() =>
@@ -315,7 +317,7 @@ describe("MealPlanner", () => {
           mealType: "dinner",
           plannedFor: friday,
           recipeId: "recipe-2",
-          servings: 4
+          servings: 1
         })
       )
     );
@@ -345,7 +347,7 @@ describe("MealPlanner", () => {
     fireEvent.change(within(dialog).getByRole("combobox", { name: "Meal" }), {
       target: { value: "dinner" }
     });
-    fireEvent.change(within(dialog).getByRole("spinbutton", { name: "Servings" }), {
+    fireEvent.change(within(dialog).getByRole("spinbutton", { name: "Planned servings" }), {
       target: { value: "5" }
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));

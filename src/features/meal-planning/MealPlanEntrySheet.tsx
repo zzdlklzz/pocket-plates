@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import Link from "next/link";
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type FormEvent,
@@ -95,6 +96,8 @@ export function MealPlanEntrySheet({
   const isBusy = isPending || isRemovePending;
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const plannedServingsHelpId = useId();
+  const plannedServingsInputId = useId();
   const isPendingRef = useRef(isBusy);
   const onCloseRef = useRef(onClose);
   const [selectedDate, setSelectedDate] = useState(entry?.plannedFor ?? plannedFor);
@@ -159,7 +162,6 @@ export function MealPlanEntrySheet({
 
     if (recipe) {
       setMealType(recipe.mealTypes.length === 1 ? recipe.mealTypes[0] : "flexible");
-      setServings(String(recipe.servings));
       setSearch("");
     }
   }
@@ -201,6 +203,8 @@ export function MealPlanEntrySheet({
   const dayName = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(
     parseIsoDate(selectedDate) ?? undefined
   );
+  const selectedRecipe = recipeOptions.find((recipe) => recipe.id === recipeId);
+  const savedRecipeServings = entry?.recipe.servings ?? selectedRecipe?.servings;
 
   return (
     <div
@@ -343,11 +347,13 @@ export function MealPlanEntrySheet({
               </select>
             </label>
 
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Servings
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <label htmlFor={plannedServingsInputId}>Planned servings</label>
               <input
+                aria-describedby={plannedServingsHelpId}
                 className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
                 disabled={isBusy}
+                id={plannedServingsInputId}
                 inputMode="numeric"
                 max={MAX_PLANNED_SERVINGS}
                 min={1}
@@ -355,8 +361,24 @@ export function MealPlanEntrySheet({
                 type="number"
                 value={servings}
               />
-            </label>
+            </div>
           </div>
+
+          <p
+            className="mt-2 text-xs leading-5 text-slate-500"
+            id={plannedServingsHelpId}
+          >
+            {!isEditing ? "Defaults to 1 · change for guests or leftovers." : null}
+            {savedRecipeServings ? (
+              <>
+                {!isEditing ? " " : null}
+                <span className="block">
+                  Saved recipe makes {savedRecipeServings} serving
+                  {savedRecipeServings === 1 ? "" : "s"}.
+                </span>
+              </>
+            ) : null}
+          </p>
 
           {validationError || error ? (
             <InlineNotice className="mt-4" role="alert" tone="error">

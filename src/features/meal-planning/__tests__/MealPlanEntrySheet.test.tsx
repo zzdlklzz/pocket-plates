@@ -86,11 +86,83 @@ describe("MealPlanEntrySheet", () => {
         mealType: "dinner",
         plannedFor: "2026-08-21",
         recipeId: "recipe-1",
-        servings: 2,
+        servings: 1,
         weekStartDate: "2026-08-17"
       })
     );
   });
+
+  it("keeps planned servings separate from saved recipe yield", () => {
+    const props = sheetProps();
+    render(
+      <MealPlanEntrySheet
+        {...props}
+        recipeOptions={[
+          ...recipeOptions,
+          {
+            archived: false,
+            id: "recipe-2",
+            ingredientNames: ["noodles"],
+            mealTypes: ["lunch"],
+            servings: 4,
+            title: "Sesame noodles"
+          }
+        ]}
+      />
+    );
+    const dialog = screen.getByRole("dialog", { name: "Add meal" });
+    const plannedServings = within(dialog).getByRole("spinbutton", {
+      name: "Planned servings"
+    });
+    const recipe = within(dialog).getByRole("combobox", { name: "Recipe" });
+
+    expect(plannedServings).toHaveValue(1);
+    expect(plannedServings).toHaveAccessibleDescription(
+      "Defaults to 1 · change for guests or leftovers."
+    );
+
+    fireEvent.change(recipe, { target: { value: "recipe-1" } });
+    expect(plannedServings).toHaveValue(1);
+    expect(plannedServings).toHaveAccessibleDescription(
+      "Defaults to 1 · change for guests or leftovers. Saved recipe makes 2 servings."
+    );
+    expect(within(dialog).getByRole("combobox", { name: "Meal" })).toHaveValue(
+      "dinner"
+    );
+
+    fireEvent.change(plannedServings, { target: { value: "3" } });
+    fireEvent.change(recipe, { target: { value: "recipe-2" } });
+    expect(plannedServings).toHaveValue(3);
+    expect(plannedServings).toHaveAccessibleDescription(
+      "Defaults to 1 · change for guests or leftovers. Saved recipe makes 4 servings."
+    );
+    expect(within(dialog).getByRole("combobox", { name: "Meal" })).toHaveValue(
+      "lunch"
+    );
+  });
+
+  it.each(["0", "1.5", "101"])(
+    "rejects invalid planned servings of %s",
+    (servings) => {
+      const props = sheetProps();
+      render(<MealPlanEntrySheet {...props} />);
+      const dialog = screen.getByRole("dialog", { name: "Add meal" });
+
+      fireEvent.change(within(dialog).getByRole("combobox", { name: "Recipe" }), {
+        target: { value: "recipe-1" }
+      });
+      const plannedServings = within(dialog).getByRole("spinbutton", {
+        name: "Planned servings"
+      });
+      fireEvent.change(plannedServings, { target: { value: servings } });
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Add to Wednesday" })
+      );
+
+      expect(plannedServings).toBeInvalid();
+      expect(props.onSubmit).not.toHaveBeenCalled();
+    }
+  );
 
   it("contains a rejected save and keeps the sheet available for retry", async () => {
     const props = sheetProps();
@@ -115,11 +187,18 @@ describe("MealPlanEntrySheet", () => {
     const { rerender } = render(<MealPlanEntrySheet {...props} />);
     const closeButton = screen.getByRole("button", { name: "Close add meal" });
     expect(closeButton).toHaveFocus();
+    fireEvent.change(screen.getByRole("combobox", { name: "Recipe" }), {
+      target: { value: "recipe-1" }
+    });
 
     rerender(<MealPlanEntrySheet {...props} isPending />);
 
     expect(closeButton).toHaveFocus();
     expect(screen.getByRole("combobox", { name: "Day" })).toBeDisabled();
+    const pendingButton = screen.getByRole("button", { name: "Adding meal..." });
+    expect(pendingButton).toBeDisabled();
+    fireEvent.click(pendingButton);
+    expect(props.onSubmit).not.toHaveBeenCalled();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(props.onClose).not.toHaveBeenCalled();
   });
@@ -161,13 +240,19 @@ describe("MealPlanEntrySheet", () => {
     expect(dialog).toHaveClass("max-h-[calc(100dvh-1rem)]", "overflow-hidden");
     expect(within(dialog).getByText("Archived recipe")).toBeInTheDocument();
     expect(within(dialog).queryByPlaceholderText("Title or ingredient")).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("spinbutton", { name: "Planned servings" })
+    ).toHaveValue(2);
+    expect(
+      within(dialog).getByRole("spinbutton", { name: "Planned servings" })
+    ).toHaveAccessibleDescription("Saved recipe makes 2 servings.");
     fireEvent.change(within(dialog).getByRole("combobox", { name: "Day" }), {
       target: { value: "2026-08-21" }
     });
     fireEvent.change(within(dialog).getByRole("combobox", { name: "Meal" }), {
       target: { value: "snack" }
     });
-    fireEvent.change(within(dialog).getByRole("spinbutton", { name: "Servings" }), {
+    fireEvent.change(within(dialog).getByRole("spinbutton", { name: "Planned servings" }), {
       target: { value: "3" }
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
