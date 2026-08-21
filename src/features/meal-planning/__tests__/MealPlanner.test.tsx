@@ -285,7 +285,9 @@ describe("MealPlanner", () => {
   });
 
   it("adds a recipe using its single meal type and saved servings as defaults", async () => {
-    render(<MealPlanner />);
+    const week = currentWeek();
+    const friday = getWeekDates(week.weekStartDate)[4];
+    render(<MealPlanner requestedWeek={week.weekStartDate} />);
     const thursdaySection = await screen.findByRole("region", {
       name: /^Thursday /
     });
@@ -299,23 +301,31 @@ describe("MealPlanner", () => {
     fireEvent.change(within(dialog).getByRole("combobox", { name: "Recipe" }), {
       target: { value: "recipe-2" }
     });
+    fireEvent.change(within(dialog).getByRole("combobox", { name: "Day" }), {
+      target: { value: friday }
+    });
 
     expect(within(dialog).getByRole("combobox", { name: "Meal" })).toHaveValue("dinner");
     expect(within(dialog).getByRole("spinbutton", { name: "Servings" })).toHaveValue(4);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Add to Thursday" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add to Friday" }));
 
     await waitFor(() =>
       expect(mocks.addEntry).toHaveBeenCalledWith(
         expect.objectContaining({
           mealType: "dinner",
-          plannedFor: currentWeek().entries[1].plannedFor,
+          plannedFor: friday,
           recipeId: "recipe-2",
           servings: 4
         })
       )
     );
     expect(screen.queryByRole("dialog", { name: "Add meal" })).not.toBeInTheDocument();
-    await waitFor(() => expect(addButton).toHaveFocus());
+    const fridaySection = screen.getByRole("region", { name: /^Friday / });
+    await waitFor(() =>
+      expect(within(fridaySection).getByRole("button", {
+        name: /^Add meal to Friday/
+      })).toHaveFocus()
+    );
   });
 
   it("edits an entry's day, meal type, and servings", async () => {

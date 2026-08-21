@@ -74,7 +74,7 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Recipe detail screen
 - Add/edit recipe screen
 - Filter sheet
-- Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet, and in-app day/week copy and paste
+- Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with in-week day selection, and in-app day/week copy and paste
 
 ## Future Features
 

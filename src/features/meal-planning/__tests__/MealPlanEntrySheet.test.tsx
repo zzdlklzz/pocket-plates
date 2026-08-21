@@ -41,6 +41,57 @@ function sheetProps() {
 }
 
 describe("MealPlanEntrySheet", () => {
+  it("starts on the clicked day and offers only the displayed boundary week", () => {
+    const props = sheetProps();
+    const weekDates = [
+      "2026-12-28",
+      "2026-12-29",
+      "2026-12-30",
+      "2026-12-31",
+      "2027-01-01",
+      "2027-01-02",
+      "2027-01-03"
+    ] as const;
+    render(
+      <MealPlanEntrySheet
+        {...props}
+        plannedFor="2026-12-31"
+        weekDates={weekDates}
+        weekStartDate="2026-12-28"
+      />
+    );
+
+    const daySelect = screen.getByRole("combobox", { name: "Day" });
+    expect(daySelect).toHaveValue("2026-12-31");
+    expect(
+      within(daySelect).getAllByRole("option").map((option) => option.getAttribute("value"))
+    ).toEqual(weekDates);
+  });
+
+  it("submits a different selected day through the existing add contract", async () => {
+    const props = sheetProps();
+    render(<MealPlanEntrySheet {...props} />);
+    const dialog = screen.getByRole("dialog", { name: "Add meal" });
+
+    fireEvent.change(within(dialog).getByRole("combobox", { name: "Day" }), {
+      target: { value: "2026-08-21" }
+    });
+    fireEvent.change(within(dialog).getByRole("combobox", { name: "Recipe" }), {
+      target: { value: "recipe-1" }
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add to Friday" }));
+
+    await waitFor(() =>
+      expect(props.onSubmit).toHaveBeenCalledWith({
+        mealType: "dinner",
+        plannedFor: "2026-08-21",
+        recipeId: "recipe-1",
+        servings: 2,
+        weekStartDate: "2026-08-17"
+      })
+    );
+  });
+
   it("contains a rejected save and keeps the sheet available for retry", async () => {
     const props = sheetProps();
     props.onSubmit.mockRejectedValueOnce(new Error("save failed"));
@@ -68,6 +119,7 @@ describe("MealPlanEntrySheet", () => {
     rerender(<MealPlanEntrySheet {...props} isPending />);
 
     expect(closeButton).toHaveFocus();
+    expect(screen.getByRole("combobox", { name: "Day" })).toBeDisabled();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(props.onClose).not.toHaveBeenCalled();
   });

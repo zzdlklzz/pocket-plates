@@ -237,44 +237,34 @@ export function MealPlanEntrySheet({
         </div>
 
         <form className="mt-4 min-h-0 overflow-y-auto" onSubmit={submit}>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Day
+            <select
+              className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
+              disabled={isBusy}
+              onChange={(event) => setSelectedDate(event.target.value as IsoDate)}
+              value={selectedDate}
+            >
+              {weekDates.map((date) => (
+                <option key={date} value={date}>
+                  {formatSheetDate(date)}
+                </option>
+              ))}
+            </select>
+          </label>
+
           {isEditing ? (
-            <>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Day
-                <select
-                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800"
-                  disabled={isBusy}
-                  onChange={(event) => setSelectedDate(event.target.value as IsoDate)}
-                  value={selectedDate}
-                >
-                  {weekDates.map((date) => (
-                    <option key={date} value={date}>
-                      {formatSheetDate(date)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Recipe
-                <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 normal-case tracking-normal">
-                  <p className="text-sm font-semibold text-slate-800">{entry?.recipe.title}</p>
-                  {entry?.recipe.archived ? (
-                    <p className="mt-1 text-xs font-medium text-slate-500">Archived recipe</p>
-                  ) : null}
-                </div>
+            <div className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Recipe
+              <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 normal-case tracking-normal">
+                <p className="text-sm font-semibold text-slate-800">{entry?.recipe.title}</p>
+                {entry?.recipe.archived ? (
+                  <p className="mt-1 text-xs font-medium text-slate-500">Archived recipe</p>
+                ) : null}
               </div>
-            </>
+            </div>
           ) : (
             <>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Day
-                <input
-                  className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-3 text-sm text-slate-700"
-                  disabled
-                  value={formatSheetDate(selectedDate)}
-                />
-              </label>
-
               <label className="mt-5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Search recipes
                 <span className="mt-2 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">

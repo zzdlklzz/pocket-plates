@@ -277,7 +277,9 @@ function CurrentWeekPlanner({
 
   async function addEntry(input: AddMealPlanEntryInput) {
     await addMutation.mutateAsync(input);
-    closeEntrySheet();
+    closeEntrySheetWithFocus(
+      dayAddButtonRefs.current.get(input.plannedFor) ?? sheetTriggerRef.current
+    );
   }
 
   async function updateEntry(input: AddMealPlanEntryInput) {
