@@ -6,6 +6,7 @@ export type GroceryListSummaryDto = {
   checkedItemCount: number;
   id: string;
   itemCount: number;
+  mealPlanAvailable: boolean;
   sourceType: GroceryListSourceType;
   sourceWeekStartDate: IsoDate | null;
   title: string;
@@ -58,11 +59,53 @@ export type GroceryListItemDto = {
 export type GroceryListDetailDto = {
   id: string;
   items: GroceryListItemDto[];
+  mealPlanAvailable: boolean;
   mealPlanId: string | null;
   sourceType: GroceryListSourceType;
   sourceWeekStartDate: IsoDate | null;
   title: string;
   updatedAt: string;
+};
+
+export type GroceryListItemValues = {
+  amount: string;
+  name: string;
+  notes: string;
+  unit: string;
+};
+
+export type CreateBlankGroceryListInput = {
+  title: string;
+};
+
+export type RenameGroceryListInput = {
+  groceryListId: string;
+  title: string;
+};
+
+export type AddGroceryListItemInput = {
+  groceryListId: string;
+  values: GroceryListItemValues;
+};
+
+export type UpdateGroceryListItemInput = AddGroceryListItemInput & {
+  itemId: string;
+  quantityOverridden: boolean;
+};
+
+export type SetGroceryListItemCheckedInput = {
+  checked: boolean;
+  groceryListId: string;
+  itemId: string;
+};
+
+export type RemoveGroceryListItemInput = {
+  groceryListId: string;
+  itemId: string;
+};
+
+export type DeleteGroceryListInput = {
+  groceryListId: string;
 };
 
 export type GroceryListGenerationIngredientInput = {

@@ -2,7 +2,7 @@
 
 ## Current State
 
-PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, and the weekly meal planner. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, and a URL-stable weekly meal agenda with add, edit, direct remove/Undo, deliberate day/week copy and paste, and a read-only preparation summary. The private database foundation for manual, recipe-snapshot, and meal-plan-snapshot grocery lists is also present; grocery-list application routes and UI remain pending. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented discovery tags remain pending.
+PocketPlates is a multi-user, private-first recipe Progressive Web App for students and beginner cooks. The current codebase has completed the Stage 1 private recipe library, discovery Slices 1–3, the weekly meal planner, and standalone manual grocery lists. It has authenticated recipe list/detail/create/edit/archive/restore/permanent-delete flows, combined library discovery, optimized private device images, a URL-stable weekly meal agenda, and private grocery-list library/create/detail routes with manual checklist editing. The data and pure grouping foundations for recipe- and meal-plan-generated grocery snapshots are present; their generator and week-refresh interfaces remain pending. The app also includes the Next.js shell, PWA manifest, TanStack Query provider, Supabase browser/server/proxy boundaries, complete auth flows, local SQL integration checks, signed-in mobile/desktop E2E coverage, and GitHub Actions workflow templates. Student-oriented discovery tags remain pending.
 
 ## Stack
 
@@ -94,6 +94,8 @@ Authenticated browser clients also have owner-scoped CRUD access to grocery list
 
 The pure grocery generation layer has no database or React dependency. It scales each authoritative ingredient to the requested servings with six-decimal precision, groups products only by trimmed/collapsed/lowercased names, totals compatible unit buckets, and retains incompatible units inside one checklist item. Null amounts form one `extra` requirement group; an all-null product omits a quantity label. Compact display shows at most two groups plus `+ n more`, while every original recipe line and preparation note remains in the source snapshot. The selected-recipe picker will enforce its own 10-recipe and 1–100 serving limits; the shared engine deliberately accepts larger meal-plan weeks and summed serving totals.
 
+The authenticated `/grocery-lists`, `/grocery-lists/new`, and `/grocery-lists/[id]` routes provide the first application slice. The library reads compact owner-scoped progress summaries newest-activity first and links to blank creation or the pending recipe generator. One shared detail screen partitions unchecked and checked rows, keeps Completed collapsed initially, and uses distinct checkbox and edit controls. Manual items accept an optional amount, unit, and note; add and edit share one focus-trapped sheet, while rename and deliberate delete use focused dialogs. Mutations stay behind feature repository and TanStack Query hooks, invalidate only the affected grocery caches, and map missing or inaccessible lists to the same safe unavailable state. Manual lists never render a week-refresh control.
+
 The authenticated `/meal-planner` route shows the approved Monday-through-Sunday vertical agenda. Its normalized `week=YYYY-MM-DD` Monday value survives refresh and browser history; missing, invalid, or non-Monday values canonicalize from the browser's local calendar without parsing date-only strings as UTC. Previous, current, and next controls navigate by exact calendar weeks.
 
 Reading an empty week remains read-only. The first valid add lazily upserts its owner/week plan, validates an active owned recipe and planned servings, and inserts one entry. Active picker options are loaded once without images and filtered locally by title or ingredient. While searching, matching recipes appear as buttons in a height-bounded, internally scrollable result list with a visible count; choosing one reuses the existing recipe selection behavior and closes the results. Add and edit modes share the same seven-date selector, constrained to the viewed week; the day action that opened the sheet remains the initial selection. A new entry defaults to one planned serving and keeps that value when recipes change, while the selected recipe's saved yield is shown only as context. Editing preserves the entry's stored planned servings. Selecting an existing entry reuses the compact sheet to change only its day within that week, meal slot, or planned servings. The repository scopes updates to an owner-visible entry and its selected plan before changing those three fields, so an existing archived recipe can remain editable without becoming a new picker option. Direct removal deletes only the planning reference; the latest removal exposes a six-second inline Undo with an archived-safe ownership check.
@@ -137,6 +139,15 @@ src/
     meal-planner/
       __tests__/
         page.test.tsx
+      loading.tsx
+      page.tsx
+    grocery-lists/
+      [id]/
+        loading.tsx
+        page.tsx
+      new/
+        loading.tsx
+        page.tsx
       loading.tsx
       page.tsx
   components/
@@ -207,6 +218,18 @@ src/
         meal-planning.dates.test.ts
         meal-planning.queries.test.tsx
         meal-planning.repository.test.ts
+    grocery-lists/
+      GroceryListCard.tsx
+      GroceryListDetail.tsx
+      GroceryListItemRow.tsx
+      GroceryListItemSheet.tsx
+      GroceryListLibrary.tsx
+      grocery-list.generation.ts
+      grocery-list.mappers.ts
+      grocery-list.queries.ts
+      grocery-list.repository.ts
+      grocery-list.types.ts
+      grocery-list.validation.ts
   lib/
     env/
       __tests__/
@@ -251,13 +274,15 @@ Small, application-wide presentation components live under `src/components/ui`. 
 - `InlineNotice.tsx` owns error, informational, and neutral notice treatments with the established padding densities.
 - `BackLink.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
 
-Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Meal Planner and Archived Recipes live in that sheet without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
+Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Grocery Lists, Meal Planner, and Archived Recipes live in that sheet without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
 
 ## Server-State Rule
 
 Use TanStack Query for server state from the start. Components should consume feature-level query hooks, such as `useRecipeList`, instead of making ad hoc API calls in `useEffect`. Keep `useEffect` for true browser-side effects such as focus handling, subscriptions, or direct browser APIs.
 
 Meal-planner queries follow the same boundary. Week data is keyed by normalized Monday, recipe options use one shared active-library cache, and entry mutations invalidate only the affected week. The canonical URL owns the selected week; the outer planner owns the one temporary copy buffer, while the keyed week view owns transient sheet, preview, feedback, search, and Undo state.
+
+Grocery-list queries use separate library-summary and detail keys. Blank creation invalidates the library; rename and item mutations invalidate the affected detail plus the library summary; deletion removes the detail cache and refreshes the library. Checkbox changes optimistically update both caches with rollback on failure so an item moves between To buy and Completed immediately without invalidating planner or recipe data.
 
 ## Supabase Client Boundary
 
@@ -267,7 +292,7 @@ Meal-planner queries follow the same boundary. Week data is keyed by normalized 
 
 Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI. Supabase 5xx failures during email signup are treated as confirmation-email delivery failures in the UI because account creation depends on the configured Supabase Auth email provider.
 
-Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then searched by title or ingredient name and filtered by one or more meal types, cost rating, difficulty, optional effort traits, and optional equipment/setup values. Multiple effort or equipment selections use match-all semantics; dimensions combine with one another using AND. Recipe cards link to owner-scoped detail pages and remain free of discovery metadata. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
+Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then searched by title or ingredient name and filtered by one or more meal types, cost rating, difficulty, optional effort traits, and optional equipment/setup values. Multiple effort or equipment selections use match-all semantics; dimensions combine with one another using AND. Recipe cards link to owner-scoped detail pages and remain free of discovery metadata. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Grocery Lists, Meal Planner, and Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
 
 ## Recipe Read Path
 
@@ -722,6 +747,6 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 1. Stage 0: foundation, app shell, CI, tests, Supabase boundary, TanStack Query setup.
 2. Stage 1: true MVP private recipe library with archived recipe viewing and restoration.
 3. Stage 2: title-or-ingredient search plus controlled effort and equipment/setup discovery are complete; student-oriented tags remain intentionally deferred.
-4. Stage 3: weekly meal planning and its recipe-level prep summary are complete; the grocery-list data foundation is complete, while grocery application screens, ingredient-scaling workflows, and pantry/cost features remain pending.
+4. Stage 3: weekly meal planning and its recipe-level prep summary are complete; the grocery-list data foundation, grouping engine, and standalone manual checklist are complete, while generated-list and week-refresh interfaces plus pantry/cost features remain pending.
 5. Stage 4: public/shared recipe discovery.
 6. Stage 5: polish, import flows, nutrition/macros, recommendations.

@@ -1,0 +1,430 @@
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { GroceryListDetailDto } from "../grocery-list.types";
+
+const mocks = vi.hoisted(() => ({
+  add: {} as Record<string, unknown>,
+  check: {} as Record<string, unknown>,
+  deleteList: {} as Record<string, unknown>,
+  detailResult: {} as Record<string, unknown>,
+  remove: {} as Record<string, unknown>,
+  rename: {} as Record<string, unknown>,
+  routerPush: vi.fn(),
+  update: {} as Record<string, unknown>
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mocks.routerPush })
+}));
+vi.mock("../grocery-list.queries", () => ({
+  useAddGroceryListItem: () => mocks.add,
+  useDeleteGroceryList: () => mocks.deleteList,
+  useGroceryListDetail: () => mocks.detailResult,
+  useRemoveGroceryListItem: () => mocks.remove,
+  useRenameGroceryList: () => mocks.rename,
+  useSetGroceryListItemChecked: () => mocks.check,
+  useUpdateGroceryListItem: () => mocks.update
+}));
+
+import { GroceryListDetail } from "../GroceryListDetail";
+
+function mutation() {
+  return {
+    error: null,
+    isError: false,
+    isPending: false,
+    mutateAsync: vi.fn().mockResolvedValue(undefined),
+    reset: vi.fn(),
+    variables: undefined
+  };
+}
+
+function deferredMutation() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+
+  return { promise, resolve };
+}
+
+function detail(): GroceryListDetailDto {
+  return {
+    id: "list-1",
+    items: [
+      {
+        amount: 2,
+        checked: false,
+        id: "item-rice",
+        isManual: true,
+        name: "Rice",
+        normalizedName: "rice",
+        notes: "Jasmine",
+        quantityOverridden: false,
+        requirementGroups: [],
+        sortOrder: 0,
+        sources: [],
+        unit: "cups"
+      },
+      {
+        amount: null,
+        checked: false,
+        id: "item-pepper",
+        isManual: false,
+        name: "Pepper",
+        normalizedName: "pepper",
+        notes: null,
+        quantityOverridden: false,
+        requirementGroups: [
+          {
+            amount: 1,
+            contributionCount: 1,
+            displayUnit: "tbsp",
+            key: "tbsp",
+            kind: "measured",
+            sourceCount: 1
+          },
+          {
+            amount: null,
+            contributionCount: 1,
+            displayUnit: null,
+            key: "extra",
+            kind: "extra",
+            sourceCount: 1
+          }
+        ],
+        sortOrder: 1,
+        sources: [
+          {
+            canonicalUnit: "tbsp",
+            contributedAmount: 1,
+            id: "source-1",
+            original: {
+              amount: 1,
+              name: "Pepper",
+              notes: "ground",
+              unit: "tbsp"
+            },
+            recipeId: "recipe-1",
+            recipeIngredientId: "ingredient-1",
+            recipeTitle: "Pepper noodles",
+            savedServings: 4,
+            scaleFactor: 1,
+            sortOrder: 0,
+            targetServings: 4
+          }
+        ],
+        unit: null
+      },
+      {
+        amount: 12,
+        checked: true,
+        id: "item-eggs",
+        isManual: true,
+        name: "Eggs",
+        normalizedName: "eggs",
+        notes: null,
+        quantityOverridden: false,
+        requirementGroups: [],
+        sortOrder: 2,
+        sources: [],
+        unit: "pcs"
+      }
+    ],
+    mealPlanAvailable: false,
+    mealPlanId: null,
+    sourceType: "manual",
+    sourceWeekStartDate: null,
+    title: "Weekend shop",
+    updatedAt: "2026-08-21T00:00:00Z"
+  };
+}
+
+describe("GroceryListDetail", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.add = mutation();
+    mocks.check = mutation();
+    mocks.deleteList = mutation();
+    mocks.remove = mutation();
+    mocks.rename = mutation();
+    mocks.update = mutation();
+    mocks.detailResult = {
+      data: detail(),
+      isError: false,
+      isPending: false
+    };
+  });
+
+  it("renders one shared manual checklist without a week refresh action", () => {
+    render(<GroceryListDetail id="list-1" />);
+
+    expect(screen.getByRole("heading", { name: "Weekend shop" })).toBeInTheDocument();
+    expect(screen.getByText("Manual list")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Refresh from week/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Mark Rice as bought" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit Rice" })).toBeInTheDocument();
+    expect(screen.getByText("2 cups")).toBeInTheDocument();
+    expect(screen.queryByText("Eggs")).not.toBeInTheDocument();
+    expect(screen.getByText("1 tbsp + extra")).toBeInTheDocument();
+    expect(screen.getByText("Recipe requirements")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Completed (1)" }));
+    expect(screen.getByText("Eggs")).toBeInTheDocument();
+  });
+
+  it("adds and edits an item through the shared sheet", async () => {
+    render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add item" }));
+    const addDialog = screen.getByRole("dialog", { name: "Add item" });
+    fireEvent.change(within(addDialog).getByRole("textbox", { name: "Item" }), {
+      target: { value: "Milk" }
+    });
+    fireEvent.change(within(addDialog).getByRole("textbox", { name: "Amount" }), {
+      target: { value: "2" }
+    });
+    fireEvent.change(within(addDialog).getByRole("textbox", { name: "Unit" }), {
+      target: { value: "bottles" }
+    });
+    fireEvent.click(within(addDialog).getByRole("button", { name: "Add item" }));
+
+    await waitFor(() => {
+      expect(mocks.add.mutateAsync).toHaveBeenCalledWith({
+        groceryListId: "list-1",
+        values: { amount: "2", name: "Milk", notes: "", unit: "bottles" }
+      });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Rice" }));
+    const editDialog = screen.getByRole("dialog", { name: "Edit Rice" });
+    fireEvent.change(within(editDialog).getByRole("textbox", { name: "Note" }), {
+      target: { value: "Basmati" }
+    });
+    fireEvent.click(within(editDialog).getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(mocks.update.mutateAsync).toHaveBeenCalledWith({
+        groceryListId: "list-1",
+        itemId: "item-rice",
+        quantityOverridden: false,
+        values: { amount: "2", name: "Rice", notes: "Basmati", unit: "cups" }
+      });
+    });
+  });
+
+  it("checks an item with a distinct control and announces the move", async () => {
+    render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Mark Rice as bought" }));
+
+    await waitFor(() => {
+      expect(mocks.check.mutateAsync).toHaveBeenCalledWith({
+        checked: true,
+        groceryListId: "list-1",
+        itemId: "item-rice"
+      });
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Rice moved to Completed.");
+  });
+
+  it("shows a failed checkbox save even when the mutation observer resets", async () => {
+    mocks.check = {
+      ...mutation(),
+      mutateAsync: vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+    };
+    render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Mark Rice as bought" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Check your connection and try again."
+    );
+  });
+
+  it("keeps every affected checkbox disabled until its own save settles", async () => {
+    const riceCheck = deferredMutation();
+    const pepperCheck = deferredMutation();
+    mocks.check = {
+      ...mutation(),
+      mutateAsync: vi.fn(({ itemId }: { itemId: string }) =>
+        itemId === "item-rice" ? riceCheck.promise : pepperCheck.promise
+      )
+    };
+    render(<GroceryListDetail id="list-1" />);
+    const rice = screen.getByRole("checkbox", { name: "Mark Rice as bought" });
+    const pepper = screen.getByRole("checkbox", { name: "Mark Pepper as bought" });
+
+    fireEvent.click(rice);
+    await waitFor(() => expect(rice).toBeDisabled());
+    expect(pepper).toBeEnabled();
+
+    fireEvent.click(pepper);
+    await waitFor(() => {
+      expect(rice).toBeDisabled();
+      expect(pepper).toBeDisabled();
+    });
+
+    await act(async () => {
+      riceCheck.resolve();
+      await riceCheck.promise;
+    });
+    await waitFor(() => expect(rice).toBeEnabled());
+    expect(pepper).toBeDisabled();
+
+    await act(async () => {
+      pepperCheck.resolve();
+      await pepperCheck.promise;
+    });
+    await waitFor(() => expect(pepper).toBeEnabled());
+  });
+
+  it("renames and deliberately deletes the list", async () => {
+    render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "List actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rename list" }));
+    const renameDialog = screen.getByRole("dialog", { name: "Rename grocery list" });
+    const renameInput = within(renameDialog).getByRole("textbox", { name: "List title" });
+    expect(renameInput).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(within(renameDialog).getByRole("button", { name: "Save" })).toHaveFocus();
+    fireEvent.change(within(renameDialog).getByRole("textbox", { name: "List title" }), {
+      target: { value: "Weekly shop" }
+    });
+    fireEvent.click(within(renameDialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(mocks.rename.mutateAsync).toHaveBeenCalledWith({
+        groceryListId: "list-1",
+        title: "Weekly shop"
+      });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "List actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete list" }));
+    const deleteDialog = screen.getByRole("alertdialog", {
+      name: "Delete “Weekend shop”?"
+    });
+    fireEvent.click(within(deleteDialog).getByRole("button", { name: "Delete list" }));
+
+    await waitFor(() => {
+      expect(mocks.deleteList.mutateAsync).toHaveBeenCalledWith({
+        groceryListId: "list-1"
+      });
+    });
+    expect(mocks.routerPush).toHaveBeenCalledWith("/grocery-lists");
+  });
+
+  it("dismisses the ordinary actions popover with Escape or an outside press", () => {
+    render(<GroceryListDetail id="list-1" />);
+    const trigger = screen.getByRole("button", { name: "List actions" });
+    trigger.focus();
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole("button", { name: "Rename list" })).toBeInTheDocument();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("button", { name: "Rename list" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole("button", { name: "Rename list" })).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("button", { name: "Rename list" })).not.toBeInTheDocument();
+  });
+
+  it("traps focus in delete confirmation and restores the actions trigger", () => {
+    render(<GroceryListDetail id="list-1" />);
+    const actionsTrigger = screen.getByRole("button", { name: "List actions" });
+
+    fireEvent.click(actionsTrigger);
+    fireEvent.click(screen.getByRole("button", { name: "Delete list" }));
+    const dialog = screen.getByRole("alertdialog", {
+      name: "Delete “Weekend shop”?"
+    });
+    const cancelButton = within(dialog).getByRole("button", { name: "Cancel" });
+    const deleteButton = within(dialog).getByRole("button", { name: "Delete list" });
+    expect(cancelButton).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(deleteButton).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(actionsTrigger).toHaveFocus();
+  });
+
+  it("focuses a stable action after the first-add trigger is replaced", async () => {
+    const emptyList = { ...detail(), items: [] };
+    const populatedList = {
+      ...emptyList,
+      items: [detail().items[0]!]
+    };
+    const pendingAdd = deferredMutation();
+    mocks.detailResult = { data: emptyList, isError: false, isPending: false };
+    mocks.add = {
+      ...mutation(),
+      mutateAsync: vi.fn(() => pendingAdd.promise)
+    };
+    const view = render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add item" }));
+    const dialog = screen.getByRole("dialog", { name: "Add item" });
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Item" }), {
+      target: { value: "Rice" }
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add item" }));
+    await waitFor(() => expect(mocks.add.mutateAsync).toHaveBeenCalledOnce());
+
+    mocks.detailResult = { data: populatedList, isError: false, isPending: false };
+    view.rerender(<GroceryListDetail id="list-1" />);
+    await act(async () => {
+      pendingAdd.resolve();
+      await pendingAdd.promise;
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Add item" })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "List actions" })).toHaveFocus();
+  });
+
+  it("focuses a stable action after removing the edited item", async () => {
+    const pendingRemove = deferredMutation();
+    mocks.remove = {
+      ...mutation(),
+      mutateAsync: vi.fn(() => pendingRemove.promise)
+    };
+    const view = render(<GroceryListDetail id="list-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Rice" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Rice" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove item" }));
+    await waitFor(() => expect(mocks.remove.mutateAsync).toHaveBeenCalledOnce());
+
+    const withoutRice = {
+      ...detail(),
+      items: detail().items.filter(({ id }) => id !== "item-rice")
+    };
+    mocks.detailResult = { data: withoutRice, isError: false, isPending: false };
+    view.rerender(<GroceryListDetail id="list-1" />);
+    await act(async () => {
+      pendingRemove.resolve();
+      await pendingRemove.promise;
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Edit Rice" })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "List actions" })).toHaveFocus();
+  });
+
+  it("renders a generic unavailable state", () => {
+    mocks.detailResult = { data: null, isError: false, isPending: false };
+    render(<GroceryListDetail id="missing" />);
+
+    expect(screen.getByText("We could not find this grocery list.")).toBeInTheDocument();
+  });
+});

@@ -4,7 +4,7 @@
 
 Build PocketPlates, a multi-user, private-first, mobile-first Progressive Web App for students and beginner cooks who want practical recipes that are cheap, approachable, and realistic in small kitchens. The app should open from a URL, install cleanly to the iPhone Home Screen, and feel app-like without requiring App Store distribution.
 
-The first release grew in small verified slices from saving, viewing, and finding recipes into controlled discovery and weekly meal planning. Future phases can extend naturally into student-oriented tags, grocery lists, ingredient scaling, community recipe discovery, and nutrition/macros.
+The first release grew in small verified slices from saving, viewing, and finding recipes into controlled discovery, weekly meal planning, and standalone grocery checklists. Future phases can extend naturally into generated grocery workflows, student-oriented tags, ingredient scaling, community recipe discovery, and nutrition/macros.
 
 ## Working Name
 
@@ -213,7 +213,7 @@ Goal: help users turn recipes into weekly cooking decisions.
 - [ ] Private grocery lists and generated recipe snapshots.
   - [x] Slice 1: establish the private schema, normalized product uniqueness, source snapshots, owner isolation, summary reads, and atomic generated-create/week-refresh boundaries.
   - [x] Slice 2: add the reusable ingredient grouping engine and shared amount parsing.
-  - [ ] Slice 3: add standalone list library/detail routes and manual checklist editing.
+  - [x] Slice 3: add standalone list library/detail routes and manual checklist editing.
   - [ ] Slice 4: generate lists from selected recipes with a grouped review.
   - [ ] Slice 5: generate and explicitly refresh a list from one meal-plan week on the existing detail page.
   - [ ] Slice 6: complete signed-in mobile/desktop acceptance and the final documentation sweep.
@@ -259,7 +259,7 @@ Visual reference:
 - `docs/assets/ui-mockups.svg`: generated mobile UI mockups.
 - `docs/assets/navigation-mockups.svg`: approved near-term Home–Add–More navigation, its More sheet, and a clearly separated five-slot concept that is not confirmed or planned for the near future.
 - `docs/assets/meal-planner-mockups.svg`: approved weekly-list planner and interaction-state reference; the calendar-grid concept is not retained.
-- `docs/assets/grocery-list-mockups.svg`: approved future grocery-list library and checklist direction. Repeated ingredient names produce one product row; same-unit quantities total together, different units remain compact requirement groups, null quantities collapse into one `extra` group when mixed with measured sources, and expanded details preserve every recipe contribution. A list generated from a meal-plan week has a simple **Refresh from week** button on its existing detail page; manual and selected-recipe lists omit the button.
+- `docs/assets/grocery-list-mockups.svg`: approved grocery-list library and checklist direction. The standalone library, blank creation, and manual checklist are implemented. Repeated generated ingredient names produce one product row; same-unit quantities total together, different units remain compact requirement groups, null quantities collapse into one `extra` group when mixed with measured sources, and expanded details preserve every recipe contribution. A list generated from a meal-plan week has a simple **Refresh from week** button on its existing detail page; manual and selected-recipe lists omit the button.
 
 Navigation direction:
 

@@ -1,4 +1,9 @@
 export const queryKeys = {
+  groceryLists: {
+    all: ["grocery-lists"] as const,
+    list: ["grocery-lists", "list"] as const,
+    detail: (id: string) => ["grocery-lists", "detail", id] as const
+  },
   mealPlanning: {
     all: ["meal-planning"] as const,
     week: (weekStartDate: string) => ["meal-planning", "week", weekStartDate] as const

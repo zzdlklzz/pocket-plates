@@ -425,16 +425,16 @@ describe("grocery-list ordering and display", () => {
   });
 
   it.each([0.0000001, Number.MAX_VALUE])(
-    "rejects an override that cannot be represented at six decimals: %s",
+    "defensively hides an override that cannot be represented at six decimals: %s",
     (amount) => {
-      expect(() =>
+      expect(
         formatGroceryListQuantity({
           amount,
           quantityOverridden: true,
           requirementGroups: [],
           unit: "bag"
         })
-      ).toThrow("Grocery quantities must be positive numbers.");
+      ).toBeNull();
     }
   );
 

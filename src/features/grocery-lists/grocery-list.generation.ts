@@ -9,6 +9,7 @@ import type {
   GeneratedGroceryListItem,
   GeneratedGroceryListItemSource,
   GroceryListGenerationRecipeInput,
+  GroceryListItemSourceDto,
   GroceryListQuantityDisplayInput,
   GroceryListRequirementGroupDto
 } from "./grocery-list.types";
@@ -40,9 +41,20 @@ type RequirementAccumulator = {
   amount: number;
   contributionCount: number;
   displayUnit: string | null;
-  firstSource: GeneratedGroceryListItemSource;
+  firstSource: GroceryRequirementSource;
   recipeIds: Set<string>;
 };
+
+type GroceryRequirementSource = Pick<
+  GroceryListItemSourceDto,
+  | "canonicalUnit"
+  | "contributedAmount"
+  | "original"
+  | "recipeId"
+  | "recipeIngredientId"
+  | "recipeTitle"
+  | "sortOrder"
+>;
 
 function compareText(left: string, right: string) {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -115,8 +127,22 @@ function displayUnitForAmount(
   return firstDisplayUnit;
 }
 
-function buildRequirementGroups(
-  sources: readonly GeneratedGroceryListItemSource[]
+function compareRequirementSources(
+  left: GroceryRequirementSource,
+  right: GroceryRequirementSource
+) {
+  return (
+    left.sortOrder - right.sortOrder ||
+    compareText(left.recipeIngredientId ?? left.recipeTitle, right.recipeIngredientId ?? right.recipeTitle)
+  );
+}
+
+function getSourceRecipeIdentity(source: GroceryRequirementSource) {
+  return source.recipeId ?? `snapshot:${source.recipeTitle}`;
+}
+
+export function buildGroceryRequirementGroups(
+  sources: readonly GroceryRequirementSource[]
 ): GroceryListRequirementGroupDto[] {
   const measuredByUnit = new Map<string, RequirementAccumulator>();
   const extraSources = sources.filter(({ contributedAmount }) => contributedAmount === null);
@@ -134,7 +160,7 @@ function buildRequirementGroups(
         existing.amount + source.contributedAmount
       );
       existing.contributionCount += 1;
-      existing.recipeIds.add(source.recipeId);
+      existing.recipeIds.add(getSourceRecipeIdentity(source));
       continue;
     }
 
@@ -143,7 +169,7 @@ function buildRequirementGroups(
       contributionCount: 1,
       displayUnit: normalizeUnit(source.original.unit).displayUnit,
       firstSource: source,
-      recipeIds: new Set([source.recipeId])
+      recipeIds: new Set([getSourceRecipeIdentity(source)])
     });
   }
 
@@ -165,11 +191,11 @@ function buildRequirementGroups(
   )
     .sort(
       (left, right) =>
-        compareSourcePositions(left.firstSource, right.firstSource) ||
+        compareRequirementSources(left.firstSource, right.firstSource) ||
         compareText(left.key, right.key) ||
         compareText(
-          left.firstSource.recipeIngredientId,
-          right.firstSource.recipeIngredientId
+          left.firstSource.recipeIngredientId ?? left.firstSource.recipeTitle,
+          right.firstSource.recipeIngredientId ?? right.firstSource.recipeTitle
         )
     )
     .map((group) => ({
@@ -188,7 +214,7 @@ function buildRequirementGroups(
       displayUnit: null,
       key: EXTRA_REQUIREMENT_KEY,
       kind: "extra",
-      sourceCount: new Set(extraSources.map(({ recipeId }) => recipeId)).size
+      sourceCount: new Set(extraSources.map(getSourceRecipeIdentity)).size
     });
   }
 
@@ -204,16 +230,21 @@ export function roundGroceryQuantity(value: number) {
     QUANTITY_MULTIPLIER;
 }
 
-export function formatGroceryQuantity(value: number) {
+export function isRepresentableGroceryQuantity(value: number) {
   if (!Number.isFinite(value) || value <= 0) {
+    return false;
+  }
+
+  const rounded = roundGroceryQuantity(value);
+  return Number.isFinite(rounded) && rounded > 0;
+}
+
+export function formatGroceryQuantity(value: number) {
+  if (!isRepresentableGroceryQuantity(value)) {
     throw new Error("Grocery quantities must be positive numbers.");
   }
 
   const rounded = roundGroceryQuantity(value);
-  if (!Number.isFinite(rounded) || rounded <= 0) {
-    throw new Error("Grocery quantities must be positive numbers.");
-  }
-
   const whole = Math.floor(rounded);
   const fraction = rounded - whole;
   const displayFraction = DISPLAY_FRACTIONS.find(
@@ -275,8 +306,7 @@ export function formatGroceryListQuantity({
   if (
     quantityOverridden &&
     amount !== null &&
-    Number.isFinite(amount) &&
-    amount > 0
+    isRepresentableGroceryQuantity(amount)
   ) {
     const unitIdentity = normalizeUnit(unit);
     const displayUnit = displayUnitForAmount(
@@ -369,7 +399,7 @@ export function generateGroceryListItems(
 
       if (
         contributedAmount !== null &&
-        (!Number.isFinite(contributedAmount) || contributedAmount <= 0)
+        !isRepresentableGroceryQuantity(contributedAmount)
       ) {
         throw new Error("A scaled ingredient amount is outside the supported range.");
       }
@@ -419,7 +449,7 @@ export function generateGroceryListItems(
     return {
       name: sources[0]!.original.name.trim().replace(/\s+/g, " "),
       normalizedName,
-      requirementGroups: buildRequirementGroups(sources),
+      requirementGroups: buildGroceryRequirementGroups(sources),
       sortOrder: 0,
       sources
     };

@@ -22,8 +22,12 @@ describe("RecipeNavigation", () => {
     fireEvent.click(moreButton);
 
     const dialog = screen.getByRole("dialog", { name: "More" });
+    const groceryListsLink = within(dialog).getByRole("link", {
+      name: "Grocery lists"
+    });
     const plannerLink = within(dialog).getByRole("link", { name: "Meal planner" });
     const archivedLink = within(dialog).getByRole("link", { name: "Archived recipes" });
+    expect(groceryListsLink).toHaveAttribute("href", "/grocery-lists");
     expect(plannerLink).toHaveAttribute("href", "/meal-planner");
     expect(archivedLink).toHaveAttribute("href", "/recipes/archived");
     expect(archivedLink).toHaveAttribute("aria-current", "page");
@@ -40,6 +44,19 @@ describe("RecipeNavigation", () => {
     fireEvent.click(moreButton);
 
     expect(screen.getByRole("link", { name: "Meal planner" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+  });
+
+  it("marks More and Grocery lists active on the list pages", () => {
+    render(<RecipeNavigation activePage="grocery-lists" />);
+
+    const moreButton = screen.getByRole("button", { name: "More" });
+    expect(moreButton).toHaveAttribute("aria-current", "page");
+    fireEvent.click(moreButton);
+
+    expect(screen.getByRole("link", { name: "Grocery lists" })).toHaveAttribute(
       "aria-current",
       "page"
     );

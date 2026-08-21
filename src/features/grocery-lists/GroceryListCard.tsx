@@ -1,0 +1,100 @@
+import { ChevronRight } from "lucide-react";
+import Link from "next/link";
+import type { GroceryListSummaryDto } from "./grocery-list.types";
+
+function parseLocalDate(value: string) {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatWeekLabel(weekStartDate: string | null, mealPlanAvailable: boolean) {
+  if (!weekStartDate) {
+    return "Week unavailable";
+  }
+
+  const start = parseLocalDate(weekStartDate);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const startLabel = new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short"
+  }).format(start);
+  const endLabel = new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short"
+  }).format(end);
+
+  const source = mealPlanAvailable ? "Meal plan" : "Week unavailable";
+  return `${source} · ${startLabel}–${endLabel}`;
+}
+
+function formatSourceLabel(list: GroceryListSummaryDto) {
+  if (list.sourceType === "meal_plan") {
+    return formatWeekLabel(list.sourceWeekStartDate, list.mealPlanAvailable);
+  }
+
+  return list.sourceType === "recipes" ? "Recipe snapshot" : "Manual";
+}
+
+function formatActivity(updatedAt: string) {
+  const updated = new Date(updatedAt);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfUpdated = new Date(
+    updated.getFullYear(),
+    updated.getMonth(),
+    updated.getDate()
+  );
+  const dayDifference = Math.round(
+    (startOfToday.getTime() - startOfUpdated.getTime()) / 86_400_000
+  );
+
+  if (dayDifference === 0) {
+    return "Updated today";
+  }
+  if (dayDifference === 1) {
+    return "Updated yesterday";
+  }
+
+  return `Updated ${new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short"
+  }).format(updated)}`;
+}
+
+export function GroceryListCard({ list }: { list: GroceryListSummaryDto }) {
+  const progress = list.itemCount === 0
+    ? 0
+    : Math.round((list.checkedItemCount / list.itemCount) * 100);
+
+  return (
+    <li>
+      <Link
+        aria-label={`Open ${list.title}, ${list.checkedItemCount} of ${list.itemCount} checked`}
+        className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        href={`/grocery-lists/${list.id}`}
+      >
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-semibold text-slate-900">{list.title}</h2>
+            <p className="mt-1 text-xs text-slate-500">{formatSourceLabel(list)}</p>
+          </div>
+          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+        </div>
+        <div
+          aria-label={`${progress}% complete`}
+          className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100"
+          role="progressbar"
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={progress}
+        >
+          <div className="h-full rounded-full bg-leaf-700" style={{ width: `${progress}%` }} />
+        </div>
+        <p className="mt-3 text-xs text-slate-500">
+          {list.checkedItemCount} of {list.itemCount} checked · {formatActivity(list.updatedAt)}
+        </p>
+      </Link>
+    </li>
+  );
+}

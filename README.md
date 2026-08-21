@@ -1,6 +1,6 @@
 # PocketPlates
 
-PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, and a low-friction weekly meal planner with URL-stable navigation, editing, direct remove/Undo, deliberate day/week copy and paste, and a read-only preparation summary. A private grocery-list database foundation is implemented; its application screens remain in progress.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, a low-friction weekly meal planner, and private standalone grocery checklists. Grocery-list generation from saved recipes and meal-plan weeks remains in progress on top of the completed private data and ingredient-grouping foundations.
 
 ## Recommended Stack
 
@@ -22,7 +22,7 @@ PocketPlates is a multi-user, private-first mobile recipe app for students and b
 
 ## MVP Goal
 
-Create a multi-user private recipe library that works well on iPhone, lets anyone create an account, save and find practical recipes, and arrange them in a weekly meal plan while leaving room for public recipes and grocery lists.
+Create a multi-user private recipe library that works well on iPhone, lets anyone create an account, save and find practical recipes, arrange them in a weekly meal plan, and maintain private grocery checklists while leaving room for generated lists and public recipes.
 
 ## Included Files
 
@@ -62,7 +62,7 @@ This command starts the local Supabase stack when necessary, applies any pending
 
 Open `http://localhost:3000` and create a local account. Local users and recipe data remain separate from production. To rebuild the local database from every migration, use `npx supabase db reset --local`; this deletes local data only.
 
-Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflow, including the complete meal-planner visible recipe search and add, in-week day selection, planned-serving guidance, edit, remove/Undo, navigation, copy/paste, and prep-summary journey. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
+Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflows, including the complete meal-planner journey and the standalone grocery-list create, edit, check, reload, and delete journey. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
 
 ## AWS Terraform Lab
 
@@ -78,12 +78,13 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Add/edit recipe screen
 - Filter sheet
 - Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with bounded title-or-ingredient recipe results, in-week day selection and one-serving defaults, in-app day/week copy and paste, and a grouped preparation summary linked to active recipes
+- Grocery-list library, blank-list creation, and a private manual checklist with add, edit, check, rename, and delete controls
 
 ## Future Features
 
 - Image moderation before future public recipe sharing
 - Student-friendly tags such as budget, high-protein, freezer-friendly, and dorm-friendly
-- Grocery list from selected recipes
+- Grocery lists generated from selected recipes or a meal-plan week
 - Optional total-cost entry and estimated cost per serving
 - Pantry and staple tracking
 - Favorites

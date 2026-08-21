@@ -7,13 +7,18 @@ import {
   Ellipsis,
   House,
   Plus,
+  ShoppingCart,
   X,
   type LucideIcon
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-export type RecipeNavigationPage = "archived" | "home" | "meal-planner";
+export type RecipeNavigationPage =
+  | "archived"
+  | "grocery-lists"
+  | "home"
+  | "meal-planner";
 
 type RecipeNavigationProps = {
   activePage: RecipeNavigationPage;
@@ -27,6 +32,12 @@ type NavigationItem = {
 };
 
 const MORE_NAVIGATION_ITEMS: NavigationItem[] = [
+  {
+    href: "/grocery-lists",
+    icon: ShoppingCart,
+    id: "grocery-lists",
+    label: "Grocery lists"
+  },
   {
     href: "/meal-planner",
     icon: CalendarDays,
