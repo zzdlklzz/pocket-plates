@@ -59,7 +59,7 @@ This command starts the local Supabase stack when necessary, applies any pending
 
 Open `http://localhost:3000` and create a local account. Local users and recipe data remain separate from production. To rebuild the local database from every migration, use `npx supabase db reset --local`; this deletes local data only.
 
-Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflow, including the complete meal-planner add, edit, remove/Undo, navigation, and copy/paste journey. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
+Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflow, including the complete meal-planner add, in-week day selection, planned-serving guidance, edit, remove/Undo, navigation, copy/paste, and prep-summary journey. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
 
 ## AWS Terraform Lab
 

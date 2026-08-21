@@ -39,6 +39,7 @@ test.describe("with local Supabase", () => {
     await page.getByLabel("Ingredient", { exact: true }).fill("Pasta");
     await page.getByLabel("Instruction", { exact: true }).fill("Cook the pasta, then serve.");
     await page.getByLabel("Title").fill(recipeTitle);
+    await page.getByLabel("Servings", { exact: true }).fill("4");
     await page.getByRole("button", { name: "Save recipe" }).click();
 
     await expect(page.getByRole("heading", { name: recipeTitle })).toBeVisible();
@@ -61,27 +62,42 @@ test.describe("with local Supabase", () => {
     await addMealActions.first().click();
 
     const addMealDialog = page.getByRole("dialog", { name: "Add meal" });
+    const addDay = addMealDialog.getByRole("combobox", { name: "Day" });
+    const plannedServings = addMealDialog.getByRole("spinbutton", {
+      name: "Planned servings"
+    });
+    await expect(addDay).toBeEnabled();
+    await expect(addDay.getByRole("option")).toHaveCount(7);
+    await expect(addDay).toHaveValue(currentWeek!);
+    await addDay.selectOption({ value: addIsoDays(currentWeek!, 1) });
+    await expect(plannedServings).toHaveValue("1");
     await addMealDialog.getByRole("combobox", { name: "Recipe" }).selectOption({
       label: recipeTitle
     });
-    await addMealDialog.getByRole("combobox", { name: "Meal" }).selectOption({ label: "Dinner" });
-    await addMealDialog.getByRole("spinbutton", { name: "Servings" }).fill("3");
-    await addMealDialog.getByRole("button", { name: /^Add to / }).click();
+    await expect(plannedServings).toHaveValue("1");
+    await expect(plannedServings).toHaveAccessibleDescription(
+      /Defaults to 1.*Saved recipe makes 4 servings\./
+    );
+    await expect(addMealDialog.getByRole("combobox", { name: "Meal" })).toHaveValue(
+      "dinner"
+    );
+    await plannedServings.fill("3");
+    await addMealDialog.getByRole("button", { name: "Add to Tuesday" }).click();
 
     await expect(
-      page.getByRole("button", { name: `Edit ${recipeTitle} on Monday` })
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
     ).toBeVisible();
     await expect(page.getByText("3 servings", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: new RegExp(`^Remove ${recipeTitle} from `) }).click();
+    await page.getByRole("button", { name: `Remove ${recipeTitle} from Tuesday` }).click();
     await expect(
-      page.getByRole("button", { name: `Edit ${recipeTitle} on Monday` })
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
     ).not.toBeVisible();
     await expect(page.getByText(`${recipeTitle} removed`, { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Undo", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: `Edit ${recipeTitle} on Monday` })
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
     ).toBeVisible();
     await expect(page.getByText("3 servings", { exact: true })).toBeVisible();
 
@@ -114,19 +130,19 @@ test.describe("with local Supabase", () => {
       new RegExp(`/meal-planner\\?week=${currentWeek}$`)
     );
 
-    await page.getByRole("button", { name: `Edit ${recipeTitle} on Monday` }).click();
+    await page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` }).click();
     const editMealDialog = page.getByRole("dialog", { name: "Edit meal" });
     await editMealDialog.getByRole("combobox", { name: "Day" }).selectOption({
-      value: addIsoDays(currentWeek!, 1)
+      value: currentWeek!
     });
     await editMealDialog.getByRole("combobox", { name: "Meal" }).selectOption({
       label: "Lunch"
     });
-    await editMealDialog.getByRole("spinbutton", { name: "Servings" }).fill("5");
+    await editMealDialog.getByRole("spinbutton", { name: "Planned servings" }).fill("5");
     await editMealDialog.getByRole("button", { name: "Save changes" }).click();
 
     const editedMeal = page.getByRole("button", {
-      name: `Edit ${recipeTitle} on Tuesday`
+      name: `Edit ${recipeTitle} on Monday`
     });
     await expect(editedMeal).toContainText("Lunch");
     await expect(editedMeal).toContainText("5 servings");
@@ -138,11 +154,11 @@ test.describe("with local Supabase", () => {
     await expect(editedMeal).toContainText("Lunch");
     await expect(editedMeal).toContainText("5 servings");
 
-    const tuesday = page.getByRole("region", { name: /^Tuesday / });
-    await tuesday.getByRole("button", { name: "Copy meals from Tuesday" }).click();
-    await expect(page.getByText(/1 meal copied from Tuesday/)).toBeVisible();
+    const monday = page.getByRole("region", { name: /^Monday / });
+    await monday.getByRole("button", { name: "Copy meals from Monday" }).click();
+    await expect(page.getByText(/1 meal copied from Monday/)).toBeVisible();
 
-    await page.getByRole("button", { name: "Paste copied day to Wednesday" }).click();
+    await page.getByRole("button", { name: "Paste copied day to Tuesday" }).click();
     const dayPasteDialog = page.getByRole("dialog", { name: "Paste copied day?" });
     await expect(
       dayPasteDialog.getByText("Ready to add", { exact: true }).locator("..")
@@ -152,8 +168,27 @@ test.describe("with local Supabase", () => {
     ).toContainText("0");
     await dayPasteDialog.getByRole("button", { name: "Paste 1 meal" }).click();
     await expect(
-      page.getByRole("button", { name: `Edit ${recipeTitle} on Wednesday` })
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
     ).toContainText("5 servings");
+
+    const prepSummaryTrigger = page.getByRole("button", {
+      name: "Prep summary · 1 recipe"
+    });
+    await prepSummaryTrigger.click();
+    const prepSummaryDialog = page.getByRole("dialog", {
+      name: "Weekly prep summary"
+    });
+    await expect(
+      prepSummaryDialog.getByText("1 recipe · 10 planned servings")
+    ).toBeVisible();
+    await expect(prepSummaryDialog.getByText("Mon · Tue")).toBeVisible();
+    await expect(prepSummaryDialog.getByText("Need 10 servings")).toBeVisible();
+    await expect(
+      prepSummaryDialog.getByText("Saved recipe makes 4 servings")
+    ).toBeVisible();
+    await expect(prepSummaryDialog.getByText("Scale 2.5×")).toBeVisible();
+    await prepSummaryDialog.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(prepSummaryDialog).not.toBeVisible();
 
     await page.getByRole("button", { name: "Copy week" }).click();
     await expect(page.getByText(/2 meals copied from/)).toBeVisible();
@@ -177,7 +212,7 @@ test.describe("with local Supabase", () => {
       page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: `Edit ${recipeTitle} on Wednesday` })
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Monday` })
     ).toBeVisible();
 
     await page.getByRole("button", { name: `Remove ${recipeTitle} from Tuesday` }).click();
@@ -185,7 +220,7 @@ test.describe("with local Supabase", () => {
       page.getByRole("button", { name: `Edit ${recipeTitle} on Tuesday` })
     ).not.toBeVisible();
     await expect(
-      page.getByRole("button", { name: `Edit ${recipeTitle} on Wednesday` })
+      page.getByRole("button", { name: `Edit ${recipeTitle} on Monday` })
     ).toBeVisible();
     await page.getByRole("button", { name: "Paste week" }).click();
     const repeatedWeekPasteDialog = page.getByRole("dialog", {
