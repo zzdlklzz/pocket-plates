@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="1040" viewBox="0 0 1250 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Simple profile editing mockups</title>
+  <desc id="desc">Three mobile screens show access from the More menu, a small profile form, and the saved profile state. The design follows the recipe app's cream, leaf-green, and slate visual theme.</desc>
+  <defs>
+    <style>
+      .canvas { fill: #f7faf7; }
+      .phone { fill: #172019; }
+      .screen { fill: #fffdf8; }
+      .appbar { fill: #eef6ef; }
+      .surface { fill: #ffffff; stroke: #d7e2da; stroke-width: 1.5; }
+      .muted-surface { fill: #f3f7f3; stroke: #d7e2da; stroke-width: 1.5; }
+      .primary { fill: #2f6f50; }
+      .primary-soft { fill: #e0f0e4; }
+      .success { fill: #e5f3e8; stroke: #9cccad; stroke-width: 1.5; }
+      .divider { stroke: #d7e2da; stroke-width: 1.5; }
+      .icon { fill: none; stroke: #496354; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .icon-white { fill: none; stroke: #ffffff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .title { fill: #172019; font: 700 22px Arial, sans-serif; }
+      .heading { fill: #172019; font: 700 17px Arial, sans-serif; }
+      .body { fill: #25382c; font: 14px Arial, sans-serif; }
+      .small { fill: #617068; font: 12px Arial, sans-serif; }
+      .label { fill: #32483a; font: 700 12px Arial, sans-serif; }
+      .button { fill: #ffffff; font: 700 14px Arial, sans-serif; }
+      .nav { fill: #617068; font: 11px Arial, sans-serif; }
+      .nav-active { fill: #2f6f50; font: 700 11px Arial, sans-serif; }
+      .caption-title { fill: #172019; font: 700 18px Arial, sans-serif; }
+      .caption { fill: #52635a; font: 14px Arial, sans-serif; }
+    </style>
+    <clipPath id="screen-one"><rect x="67" y="98" width="326" height="736" rx="30"/></clipPath>
+    <clipPath id="screen-two"><rect x="462" y="98" width="326" height="736" rx="30"/></clipPath>
+    <clipPath id="screen-three"><rect x="857" y="98" width="326" height="736" rx="30"/></clipPath>
+  </defs>
+
+  <rect class="canvas" width="1250" height="1040"/>
+  <text x="625" y="42" text-anchor="middle" class="title">Simple profile editing</text>
+  <text x="625" y="67" text-anchor="middle" class="body">One small identity form before community publishing—no avatar, biography, or public profile page.</text>
+
+  <!-- Phone frames -->
+  <rect class="phone" x="55" y="86" width="350" height="760" rx="42"/>
+  <rect class="screen" x="67" y="98" width="326" height="736" rx="30"/>
+  <rect class="phone" x="450" y="86" width="350" height="760" rx="42"/>
+  <rect class="screen" x="462" y="98" width="326" height="736" rx="30"/>
+  <rect class="phone" x="845" y="86" width="350" height="760" rx="42"/>
+  <rect class="screen" x="857" y="98" width="326" height="736" rx="30"/>
+
+  <!-- Screen one: More sheet -->
+  <g clip-path="url(#screen-one)">
+    <rect x="67" y="98" width="326" height="736" fill="#fffdf8"/>
+    <rect class="appbar" x="67" y="98" width="326" height="76"/>
+    <text x="91" y="145" class="title">My recipes</text>
+    <rect class="surface" x="87" y="202" width="286" height="92" rx="15"/>
+    <rect class="primary-soft" x="103" y="218" width="60" height="60" rx="12"/>
+    <path class="icon" d="M119 250h28M133 236v28"/>
+    <text x="179" y="240" class="heading">Add your first recipe</text>
+    <text x="179" y="263" class="small">Keep your own cooking library.</text>
+    <rect x="67" y="98" width="326" height="736" fill="#172019" opacity="0.22"/>
+    <rect x="67" y="354" width="326" height="480" rx="26" fill="#fffdf8"/>
+    <rect x="203" y="369" width="54" height="5" rx="3" fill="#c4d1c7"/>
+    <text x="91" y="411" class="heading">More</text>
+
+    <rect class="primary-soft" x="87" y="432" width="42" height="42" rx="12"/>
+    <circle cx="108" cy="447" r="7" class="icon"/>
+    <path class="icon" d="M96 466c2-8 22-8 24 0"/>
+    <text x="145" y="457" class="heading">Profile</text>
+    <path class="icon" d="M352 445l8 8-8 8"/>
+
+    <path class="divider" d="M87 489h286"/>
+    <rect class="muted-surface" x="87" y="506" width="42" height="42" rx="12"/>
+    <path class="icon" d="M97 522h22v17H97zM101 518v8M115 518v8"/>
+    <text x="145" y="532" class="body">Grocery lists</text>
+    <path class="icon" d="M352 520l8 8-8 8"/>
+
+    <rect class="muted-surface" x="87" y="562" width="42" height="42" rx="12"/>
+    <path class="icon" d="M97 573h22v20H97zM97 580h22M103 569v8M113 569v8"/>
+    <text x="145" y="588" class="body">Meal planner</text>
+    <path class="icon" d="M352 576l8 8-8 8"/>
+
+    <rect class="muted-surface" x="87" y="618" width="42" height="42" rx="12"/>
+    <path class="icon" d="M98 629h20v19H98zM102 625h12v4"/>
+    <text x="145" y="644" class="body">Archived recipes</text>
+    <path class="icon" d="M352 632l8 8-8 8"/>
+
+    <rect x="67" y="754" width="326" height="80" fill="#ffffff"/>
+    <path class="divider" d="M67 754h326"/>
+    <path class="icon" d="M111 780l12-10 12 10v17h-8v-10h-8v10h-8z"/>
+    <text x="123" y="817" text-anchor="middle" class="nav">Home</text>
+    <circle class="primary" cx="230" cy="780" r="27"/>
+    <path class="icon-white" d="M219 780h22M230 769v22"/>
+    <circle cx="337" cy="779" r="2.5" fill="#2f6f50"/><circle cx="345" cy="779" r="2.5" fill="#2f6f50"/><circle cx="353" cy="779" r="2.5" fill="#2f6f50"/>
+    <text x="345" y="817" text-anchor="middle" class="nav-active">More</text>
+  </g>
+
+  <!-- Screen two: profile form -->
+  <g clip-path="url(#screen-two)">
+    <rect x="462" y="98" width="326" height="736" fill="#fffdf8"/>
+    <rect class="appbar" x="462" y="98" width="326" height="76"/>
+    <path class="icon" d="M489 136h18M489 136l8-8M489 136l8 8"/>
+    <text x="525" y="143" class="title">Profile</text>
+
+    <text x="486" y="204" class="heading">Your community identity</text>
+    <text x="486" y="229" class="body">Set the name people will see on recipes</text>
+    <text x="486" y="249" class="body">you publish.</text>
+
+    <text x="486" y="298" class="label">DISPLAY NAME</text>
+    <rect class="surface" x="486" y="310" width="278" height="52" rx="11"/>
+    <text x="502" y="342" class="body">Dani Lim</text>
+
+    <text x="486" y="398" class="label">USERNAME</text>
+    <rect class="surface" x="486" y="410" width="278" height="52" rx="11"/>
+    <text x="502" y="442" class="body">dlkl</text>
+    <text x="486" y="484" class="small">Shown publicly as @dlkl</text>
+
+    <rect class="primary" x="486" y="528" width="278" height="52" rx="13"/>
+    <text x="625" y="560" text-anchor="middle" class="button">Save profile</text>
+
+    <rect class="muted-surface" x="486" y="608" width="278" height="94" rx="14"/>
+    <path class="icon" d="M506 642v-6a9 9 0 0118 0v6M504 642h22v18h-22z"/>
+    <text x="538" y="636" class="label">YOUR EMAIL STAYS PRIVATE</text>
+    <text x="538" y="657" class="small">No avatar, biography, or public</text>
+    <text x="538" y="675" class="small">profile page is needed for launch.</text>
+  </g>
+
+  <!-- Screen three: saved state -->
+  <g clip-path="url(#screen-three)">
+    <rect x="857" y="98" width="326" height="736" fill="#fffdf8"/>
+    <rect class="appbar" x="857" y="98" width="326" height="76"/>
+    <path class="icon" d="M884 136h18M884 136l8-8M884 136l8 8"/>
+    <text x="920" y="143" class="title">Profile</text>
+
+    <rect class="success" x="881" y="194" width="278" height="58" rx="12"/>
+    <path d="M901 222l6 6 12-14" fill="none" stroke="#2f6f50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="931" y="228" class="body">Profile saved</text>
+
+    <text x="881" y="302" class="label">DISPLAY NAME</text>
+    <rect class="surface" x="881" y="314" width="278" height="52" rx="11"/>
+    <text x="897" y="346" class="body">Dani Lim</text>
+
+    <text x="881" y="402" class="label">USERNAME</text>
+    <rect class="surface" x="881" y="414" width="278" height="52" rx="11"/>
+    <text x="897" y="446" class="body">dlkl</text>
+    <text x="881" y="488" class="small">Shown publicly as @dlkl</text>
+
+    <rect class="primary" x="881" y="532" width="278" height="52" rx="13"/>
+    <text x="1020" y="564" text-anchor="middle" class="button">Save profile</text>
+
+    <rect class="primary-soft" x="881" y="616" width="278" height="86" rx="14"/>
+    <text x="899" y="644" class="label">READY TO PUBLISH</text>
+    <text x="899" y="666" class="small">Your profile is used only when you</text>
+    <text x="899" y="684" class="small">choose to publish a recipe.</text>
+  </g>
+
+  <!-- Captions -->
+  <text x="230" y="894" text-anchor="middle" class="caption-title">1. Find Profile in More</text>
+  <text x="230" y="920" text-anchor="middle" class="caption">One additional destination in the existing sheet.</text>
+  <text x="625" y="894" text-anchor="middle" class="caption-title">2. Edit two fields</text>
+  <text x="625" y="920" text-anchor="middle" class="caption">Display name and unique username only.</text>
+  <text x="1020" y="894" text-anchor="middle" class="caption-title">3. Save and continue</text>
+  <text x="1020" y="920" text-anchor="middle" class="caption">Publishing can now show a stable author identity.</text>
+</svg>

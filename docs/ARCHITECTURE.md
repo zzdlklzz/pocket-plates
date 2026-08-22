@@ -275,7 +275,7 @@ vitest.config.mts
 - `docs/changelog/`: chronological implementation notes for each completed change slice.
 - `docs/database-schema.dbml`: DBML source for dbdiagram.io.
 - `docs/database-erd.mmd`: Mermaid ERD source.
-- `docs/assets/`: generated visual references and mockups.
+- `docs/assets/`: generated visual references and mockups, including the planned simple profile and public community-sharing flows.
 - `infra/test/`: planned beginner Terraform sandbox. This folder is intentionally created by hand during the learning path.
 
 ## Shared UI Boundary
@@ -763,5 +763,5 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 2. Stage 1: true MVP private recipe library with archived recipe viewing and restoration.
 3. Stage 2: title-or-ingredient search plus controlled effort and equipment/setup discovery are complete; student-oriented tags remain intentionally deferred.
 4. Stage 3: weekly meal planning, its recipe-level prep summary, and the complete manual/selected-recipe/meal-plan grocery-list workflow are complete; pantry and cost features remain pending.
-5. Stage 4: public/shared recipe discovery.
+5. Stage 4: simple profile editing, then direct public publishing without a rights attestation, URL sharing, filterable community discovery, bookmark-style saved recipes/favourites/collections, and required moderation safeguards. Unlisted sharing and recipe copying are not planned. The approved profile and community UI references live in `docs/assets/profile-mockups.svg` and `docs/assets/community-sharing-mockups.svg`.
 6. Stage 5: polish, import flows, nutrition/macros, recommendations.

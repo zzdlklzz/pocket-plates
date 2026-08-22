@@ -37,6 +37,8 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `docs/assets/navigation-mockups.svg`: approved Home–Add–More navigation reference plus an unconfirmed future five-slot concept
 - `docs/assets/meal-planner-mockups.svg`: approved weekly-list meal-planner layout and interaction-state reference
 - `docs/assets/grocery-list-mockups.svg`: approved grocery-list library, grouped checklist, and simple week-refresh button reference
+- `docs/assets/profile-mockups.svg`: approved simple profile-editing reference for display name and username
+- `docs/assets/community-sharing-mockups.svg`: approved public publishing, discovery, sharing, and saved-recipes reference
 - `src/features/grocery-lists/`: grocery-list screens, shared requirement rendering and validation, query hooks, mapping, generation rules, and focused repositories
 - `src/features/grocery-lists/grocery-list.repository.ts`: grocery-list library/detail reads and checklist CRUD
 - `src/features/grocery-lists/grocery-list-generation.repository.ts`: selected-recipe and meal-plan source reads, previews, generated creation, and week refresh
@@ -88,13 +90,13 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 
 ## Future Features
 
-- Image moderation before future public recipe sharing
+- Simple display-name and username editing before community publishing
+- Public recipe publishing and ordinary public-URL sharing, with no unlisted-link mode
+- Filterable community discovery with reporting, hiding, moderation, and private-bucket image safeguards
+- A separate saved-recipes page with bookmark-style saves, favourites, and collections; recipe copying is not planned
 - Student-friendly tags such as budget, high-protein, freezer-friendly, and dorm-friendly
 - Optional total-cost entry and estimated cost per serving
 - Pantry and staple tracking
-- Favorites
-- Public recipe discovery
 - Recipe import from pasted text or supported links
 - Nutrition/macros
 - Personalized recommendations and beginner onboarding
-- Collections and themed recipe packs

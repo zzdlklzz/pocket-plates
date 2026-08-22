@@ -39,7 +39,7 @@ Product angle:
 - More practical than a polished recipe blog.
 - More personal and searchable than scattered screenshots, bookmarks, or notes.
 - Open signup at launch, where every user gets a private recipe library by default.
-- Designed to support public/shared recipes later without exposing private user data.
+- Designed to support deliberately public recipes later without exposing private user data or adding an unlisted-link mode.
 
 ## Confirmed Stack
 
@@ -222,19 +222,19 @@ Goal: help users turn recipes into weekly cooking decisions.
   - [x] Slice 9: reopen the canonical active grocery list for a planned week, enforce indexed owner/week uniqueness without new fields, and include the year in the editable generated title.
 - Pantry and staple-item tracking.
 - Optional estimated cost per serving, with cost rating derived only when a total SGD cost is provided.
-- Favorites.
 
-### Stage 4: Community Recipe Discovery
+### Stage 4: Profiles, Community Sharing, And Discovery
 
-Goal: let users discover recipes created by others while keeping private recipes safe.
+Goal: establish a minimal public author identity, then let users deliberately publish, share, discover, and bookmark recipes created by others while keeping private recipes safe.
 
-- Public/shared recipe visibility controls.
-- Public profile basics.
-- Browse and search public recipes.
-- Filter public recipes by cost, difficulty, equipment, meal types, tags, and ingredients.
-- Save or fork another user's recipe into your private library.
-- Report or hide inappropriate public recipes.
-- Moderation/admin workflow if the audience grows beyond trusted users.
+- [ ] First add simple owner-only profile editing for display name and unique lowercase username. Existing private use remains available without profile completion; both fields become a publishing prerequisite.
+- [ ] Add deliberate private/public publishing through one direct confirmation, a safe public recipe projection, public recipe details, and ordinary public-URL sharing. Do not add a publishing-rights checkbox, unlisted links, or expose the dormant `shared` enum state.
+- [ ] Browse and cursor-search public recipes with title/ingredient, cost, difficulty, equipment, meal-type, and controlled discovery filters.
+- [ ] Add a separate Saved Recipes page with bookmark-style saves, favourites, and user-owned collections. Saved entries remain linked to the author's current public recipe and are never mixed into the owned library.
+- [ ] Preserve saves as anonymous unavailable placeholders after unpublish/archive, restore them on republish, and cascade them only after permanent recipe deletion.
+- [ ] Add Report, Hide, owner unpublish, minimal moderator removal, rate limits, and private-image authorization before broad public discovery.
+- [ ] Defer public author pages, avatars, bios, follows, feeds, comments, ratings, and richer social features until the core community workflow is proven.
+- [ ] Do not add recipe copying, forking, remixing, or automatic snapshots. Reconsider copying only as a separate future product feature.
 
 ### Stage 5: Polish And Intelligence
 
@@ -244,7 +244,7 @@ Goal: improve quality, convenience, and personalization.
 - Nutrition/macros.
 - Personalized recommendations.
 - Better onboarding for beginner cooks.
-- Collections, courses, or "cheap week" recipe packs.
+- Curated courses or "cheap week" packs after the simpler saved-recipe collections are proven.
 
 ## UI Plan
 
@@ -263,6 +263,8 @@ Visual reference:
 - `docs/assets/navigation-mockups.svg`: approved near-term Home–Add–More navigation, its More sheet, and a clearly separated five-slot concept that is not confirmed or planned for the near future.
 - `docs/assets/meal-planner-mockups.svg`: approved weekly-list planner and interaction-state reference; the calendar-grid concept is not retained.
 - `docs/assets/grocery-list-mockups.svg`: approved grocery-list library and checklist direction. The standalone library, blank creation, and manual checklist are implemented. Repeated generated ingredient names produce one product row; same-unit quantities total together, different units remain compact requirement groups, null quantities collapse into one `extra` group when mixed with measured sources, and expanded details preserve every recipe contribution. A list generated from a meal-plan week has a simple **Refresh from week** button on its existing detail page; manual and selected-recipe lists omit the button.
+- `docs/assets/profile-mockups.svg`: approved simple profile direction. Profile remains in the existing More sheet and edits only display name and username.
+- `docs/assets/community-sharing-mockups.svg`: approved public publishing, filterable community discovery, public detail/share, save sheet, and separate Saved Recipes direction. Publishing uses one direct confirmation without a rights checkbox.
 
 Navigation direction:
 
@@ -308,7 +310,9 @@ Future-ready tables already represented in the draft schema:
 - `grocery_list_items`: grocery list line items.
 - `grocery_list_item_sources`: durable recipe-ingredient contributions for generated grocery products.
 
-Public discovery should build on the `recipes.visibility` and `recipes.published_at` fields rather than requiring a second recipe table. Private recipes stay visible only to their owner. Public recipes can be searched by other users once the community stage is implemented.
+Public discovery should build on the `recipes.visibility` and `recipes.published_at` fields rather than requiring a second recipe table. The planned application exposes only private and public states; the existing `shared` enum value stays dormant and receives no unlisted-link behavior. Private recipes stay visible only to their owner. A small owner-only profile editor comes first and manages display name and username without avatars, bios, or public profile pages. Public projections expose only approved recipe fields plus those two author fields, never email or owner-only notes.
+
+Community saves are live bookmarks on a separate Saved Recipes page, not recipe copies or owned-library entries. Unpublished or archived sources become metadata-free unavailable placeholders and reappear if republished; permanent deletion cascades the bookmark. Unlisted links, copying/forking, social feeds, and saved-recipe use in meal planning or grocery generation are explicitly deferred. Broad public discovery also requires report, hide, moderator removal, rate-limit, and private-image authorization safeguards.
 
 All user-owned data should be protected by Supabase Row Level Security. Policies should target the `authenticated` role explicitly and use owner checks based on `(select auth.uid())`. The initial policies should support many users, but only owner access. Public-read policies should only be introduced when the community discovery stage is being built.
 
