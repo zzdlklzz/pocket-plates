@@ -58,12 +58,13 @@ The database schema is migration-first and represented in:
 - `supabase/migrations/20260821230000_add_grocery_list_foundation.sql`
 - `supabase/migrations/20260822012421_add_grocery_recipe_snapshot_counts.sql`
 - `supabase/migrations/20260822033256_enforce_one_linked_grocery_list_per_week.sql`
+- `supabase/migrations/20260822134210_add_profile_editing_rules.sql`
 - `docs/database-schema.dbml`
 - `docs/database-erd.mmd`
 
 Core entities:
 
-- `profiles`: one profile per Supabase Auth user.
+- `profiles`: one owner-only profile per Supabase Auth user, with optional display name and username identity fields.
 - `recipes`: owner-scoped recipe records with cost rating, single difficulty rating, visibility, image fields, and timestamps.
 - `recipe_meal_types`: multi-select meal categories for each recipe.
 - `recipe_effort_labels`: controlled effort traits attached to a recipe, with ownership inherited from that recipe.
@@ -87,6 +88,8 @@ Grocery-list foundation entities:
 Other future-ready entities:
 
 - `pantry_items`
+
+Profile identity remains private in this slice. Display names are normalized by the app to trimmed, collapsed whitespace and must contain 1–50 characters without controls. Usernames are stored as trimmed lowercase 3–24 character handles containing only ASCII letters, digits, or underscores; a small reserved-name check and a partial unique index on `lower(username)` enforce safe case-insensitive uniqueness. The owner-only RLS policy is unchanged, authenticated browser updates are column-scoped to `display_name` and `username`, and anonymous users receive no profile access. The signup trigger normalizes valid provider display names and safely stores null for invalid metadata so the new checks cannot break Auth user creation.
 
 Authenticated browser clients have explicit CRUD grants on both planner tables, while their existing RLS policies remain the ownership boundary. The owner/week and exact-entry uniqueness constraints make lazy plan creation and duplicate prevention safe under repeated requests. Pure planner date helpers use local calendar parts rather than parsing date-only values as UTC timestamps; they normalize any viewed date to Monday, generate the seven ISO dates in a week, and validate week membership without timezone drift.
 
@@ -154,6 +157,11 @@ src/
         page.tsx
       loading.tsx
       page.tsx
+    profile/
+      __tests__/
+        page.test.tsx
+      loading.tsx
+      page.tsx
   components/
     ui/
       __tests__/
@@ -174,6 +182,16 @@ src/
       SignOutButton.tsx
       __tests__/
         auth.constants.test.ts
+    profile/
+      ProfileEditor.tsx
+      profile.errors.ts
+      profile.mappers.ts
+      profile.queries.ts
+      profile.repository.ts
+      profile-skeletons.tsx
+      profile.types.ts
+      profile.validation.ts
+      __tests__/
     recipes/
       ArchivedRecipeLibrary.tsx
       DeleteArchivedRecipesDialog.tsx
@@ -275,7 +293,7 @@ vitest.config.mts
 - `docs/changelog/`: chronological implementation notes for each completed change slice.
 - `docs/database-schema.dbml`: DBML source for dbdiagram.io.
 - `docs/database-erd.mmd`: Mermaid ERD source.
-- `docs/assets/`: generated visual references and mockups, including the planned simple profile and public community-sharing flows.
+- `docs/assets/`: generated visual references and mockups, including the implemented simple profile direction and planned public community-sharing flows.
 - `infra/test/`: planned beginner Terraform sandbox. This folder is intentionally created by hand during the learning path.
 
 ## Shared UI Boundary
@@ -289,7 +307,7 @@ Small, application-wide presentation components live under `src/components/ui`. 
 - `BackLink.tsx` owns the arrow-backed navigation treatment used by recipe detail and form screens.
 - `useDialogFocusManagement.ts` owns the shared Escape handling, Tab focus trap, initial focus, and safe focus restoration used by grocery-list and meal-planner dialogs. Feature components continue to own their visible layout, copy, and pending-state rules.
 
-Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Grocery Lists, Meal Planner, and Archived Recipes live in that sheet without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
+Feature-specific components remain with their domain. `AuthHero.tsx` shares the repeated PocketPlates authentication heading treatment without moving auth content into the generic UI layer. `RecipeCard.tsx` remains the reusable recipe summary card for both active and archived results. `RecipeNavigation.tsx` owns a shared three-slot Home–Add–More bar and the More sheet. Profile, Grocery Lists, Meal Planner, and Archived Recipes live in that sheet without shifting the centered Add action or copying navigation markup. Ingredient and step rows remain separate because their fields, summaries, and validation differ.
 
 ## Server-State Rule
 
@@ -299,6 +317,8 @@ Meal-planner queries follow the same boundary. Week data is keyed by normalized 
 
 Grocery-list queries use separate library-summary and detail keys. Blank creation invalidates the library; rename and item mutations invalidate the affected detail plus the library summary; deletion removes the detail cache and refreshes the library. Checkbox changes optimistically update both caches with rollback on failure so an item moves between To buy and Completed immediately without invalidating planner or recipe data. Repository ownership is split by stable responsibility: `grocery-list.repository.ts` owns library/detail reads and checklist CRUD, while `grocery-list-generation.repository.ts` owns recipe and meal-plan source reads, previews, generated creation, and week refresh. Both reuse the same small authenticated-client boundary without exposing database rows to components.
 
+Profile queries use one `profile.current` key. The repository derives the current Auth user for both reads and writes, selects and updates only `display_name,username`, maps them to a small camelCase DTO, and treats a missing trigger-created row as a safe setup error rather than inserting from the browser. A successful save replaces and invalidates only that cache, then calls the Next router refresh boundary so server-rendered private header identity updates without refreshing recipes, plans, or grocery lists.
+
 ## Supabase Client Boundary
 
 `getSupabasePublicConfig` in `env.constants.ts` validates the public Supabase URL and publishable key once for all client factories. The browser, server-rendered, cookie-writing, and middleware factories remain separate because each has different cookie and request behavior. The shared helper never returns `SUPABASE_SECRET_KEY`; that value remains reserved for future server-only administrative work.
@@ -307,7 +327,7 @@ Grocery-list queries use separate library-summary and detail keys. Blank creatio
 
 Signed-out visitors see the auth panel on `/`. Email/password, Google OAuth, confirmation resend, and password reset request flows run through server actions and the `/auth/callback` route. Password recovery links redirect through the callback into `/auth/update-password`, where a signed-in recovery session can set the new password. Middleware refreshes Supabase auth cookies before rendering, and server-rendered pages use the Supabase server client to check the current user before showing private app UI. Supabase 5xx failures during email signup are treated as confirmation-email delivery failures in the UI because account creation depends on the configured Supabase Auth email provider.
 
-Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then searched by title or ingredient name and filtered by one or more meal types, cost rating, difficulty, optional effort traits, and optional equipment/setup values. Multiple effort or equipment selections use match-all semantics; dimensions combine with one another using AND. Recipe cards link to owner-scoped detail pages and remain free of discovery metadata. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Grocery Lists, Meal Planner, and Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
+Once signed in, the user sees a Supabase-backed recipe library. The list is loaded through TanStack Query and the recipe repository, then searched by title or ingredient name and filtered by one or more meal types, cost rating, difficulty, optional effort traits, and optional equipment/setup values. Multiple effort or equipment selections use match-all semantics; dimensions combine with one another using AND. Recipe cards link to owner-scoped detail pages and remain free of discovery metadata. RLS keeps results owner-scoped. The header shows a profile label from `profiles.display_name`, `profiles.username`, or email, plus a consistently sized sign-out action. The authenticated `/profile` route edits only the owner display name and username; private app use remains available with both values null, and email never enters its DTO. A three-slot bottom bar keeps Home and More at the edges with Add Recipe centered; More opens a sheet containing Profile, Grocery Lists, Meal Planner, and Archived Recipes. A single page-level Filters action opens every filter option. It shares one left-aligned wrapping toolbar with the individually removable selected values, eliminating both a horizontally scrolling quick-filter bar and an otherwise empty first row.
 
 ## Recipe Read Path
 
@@ -613,9 +633,10 @@ Run the transactional database/RLS integration checks after a reset:
 docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/equipment_presets.sql
 docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/meal_planner_foundation.sql
 docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/grocery_lists.sql
+docker exec -i supabase_db_recipe-app psql -X -v ON_ERROR_STOP=1 -q -U postgres -d postgres < supabase/tests/profiles.sql
 ```
 
-The SQL tests roll their fixtures back. They verify recipe-discovery behavior; planner grants, isolation, and uniqueness; and grocery-list grants, normalized-name uniqueness, one active linked list per owner/week, atomic snapshot creation/refresh, preserved manual state, source deletion behavior, and two-user isolation.
+The SQL tests roll their fixtures back. They verify recipe-discovery behavior; planner grants, isolation, and uniqueness; grocery-list grants, normalized-name uniqueness, one active linked list per owner/week, atomic snapshot creation/refresh, preserved manual state, source deletion behavior, and two-user isolation; and profile validation, narrow grants, Auth-trigger safety, case-insensitive uniqueness, upgrade preflight diagnostics, and owner isolation.
 
 Supabase Studio is available at the Studio URL printed by `npx supabase status`, usually `http://127.0.0.1:54323`. Stop the local containers when they are no longer needed:
 
@@ -763,5 +784,5 @@ PWA capabilities vary by browser and operating system. If App Store distribution
 2. Stage 1: true MVP private recipe library with archived recipe viewing and restoration.
 3. Stage 2: title-or-ingredient search plus controlled effort and equipment/setup discovery are complete; student-oriented tags remain intentionally deferred.
 4. Stage 3: weekly meal planning, its recipe-level prep summary, and the complete manual/selected-recipe/meal-plan grocery-list workflow are complete; pantry and cost features remain pending.
-5. Stage 4: simple profile editing, then direct public publishing without a rights attestation, URL sharing, filterable community discovery, bookmark-style saved recipes/favourites/collections, and required moderation safeguards. Unlisted sharing and recipe copying are not planned. The approved profile and community UI references live in `docs/assets/profile-mockups.svg` and `docs/assets/community-sharing-mockups.svg`.
+5. Stage 4: simple owner-only profile editing is complete; next comes direct public publishing without a rights attestation, URL sharing, filterable community discovery, bookmark-style saved recipes/favourites/collections, and required moderation safeguards. Unlisted sharing and recipe copying are not planned. The approved profile and community UI references live in `docs/assets/profile-mockups.svg` and `docs/assets/community-sharing-mockups.svg`.
 6. Stage 5: polish, import flows, nutrition/macros, recommendations.

@@ -227,7 +227,7 @@ Goal: help users turn recipes into weekly cooking decisions.
 
 Goal: establish a minimal public author identity, then let users deliberately publish, share, discover, and bookmark recipes created by others while keeping private recipes safe.
 
-- [ ] First add simple owner-only profile editing for display name and unique lowercase username. Existing private use remains available without profile completion; both fields become a publishing prerequisite.
+- [x] First add simple owner-only profile editing for display name and unique lowercase username. Existing private use remains available without profile completion; both fields become a publishing prerequisite.
 - [ ] Add deliberate private/public publishing through one direct confirmation, a safe public recipe projection, public recipe details, and ordinary public-URL sharing. Do not add a publishing-rights checkbox, unlisted links, or expose the dormant `shared` enum state.
 - [ ] Browse and cursor-search public recipes with title/ingredient, cost, difficulty, equipment, meal-type, and controlled discovery filters.
 - [ ] Add a separate Saved Recipes page with bookmark-style saves, favourites, and user-owned collections. Saved entries remain linked to the author's current public recipe and are never mixed into the owned library.
@@ -256,6 +256,7 @@ Primary screens:
 - Add/Edit Recipe: title, servings, meal types, optional effort and equipment/setup metadata, device cover image, source links, ingredients, steps, notes, save/cancel actions.
 - Filters Sheet: multi-select meal types and cost ratings, single-select difficulty, match-all effort and equipment/setup values, clear filters, and done action. The sheet is viewport-bounded, scrollable, focus-contained, and usable with enlarged mobile text. Title-or-ingredient search remains visible in the library header rather than becoming a second filter-sheet input.
 - Meal Planner: canonical Monday-based week URLs, previous/current/next navigation, seven vertical day sections, persistent per-day add actions, a compact add/edit sheet with bounded visible title-or-ingredient recipe results and in-week day selection, direct entry removal with bounded Undo, one temporary in-app buffer for deliberate additive day/week copy and paste, and a read-only weekly prep summary grouped by recipe.
+- Profile: owner-only display-name and username editing with normalization, inline validation, safe duplicate feedback, and private-header refresh after save.
 
 Visual reference:
 
@@ -270,7 +271,7 @@ Navigation direction:
 
 - Use three equal bottom-navigation slots for Home, a centered Add Recipe action, and More.
 - Keep filters as local recipe-library controls rather than a global navigation destination.
-- Open Meal Planner and Archived Recipes from the More bottom sheet so secondary pages do not push the Add action off center.
+- Open Profile, Meal Planner, Grocery Lists, and Archived Recipes from the More bottom sheet so secondary pages do not push the Add action off center.
 - Retain the five-slot mockup only as a future exploration. It is not confirmed and should not be implemented until multiple new, frequently used top-level pages actually exist.
 - Do not use the header-selector navigation concept.
 
@@ -289,7 +290,7 @@ Design direction:
 
 Core MVP tables:
 
-- `profiles`: app profile for each Supabase Auth user, created automatically when a user signs up.
+- `profiles`: app profile for each Supabase Auth user, created automatically when a user signs up. Display names are normalized by the app and constrained to 1–50 characters without controls; usernames are normalized lowercase handles with database-enforced format, reserved-name, and case-insensitive uniqueness rules. Authenticated browser updates are limited to those two columns and remain owner-scoped by RLS.
 - `recipes`: main recipe record with owner, title, notes, servings, times, image URL/storage fields, cost rating, estimated total cost, single difficulty rating, and visibility.
 - `recipe_meal_types`: recipe-to-meal-type join table so a recipe can be breakfast, lunch, dinner, snack, and/or flexible.
 - `recipe_effort_labels`: controlled, owner-scoped-through-recipe effort traits used by form, detail, and active-library filtering.
@@ -339,9 +340,15 @@ src/features/recipes/recipe.errors.ts
 src/features/recipes/recipe.mappers.ts
 src/features/recipes/recipe.repository.ts
 src/features/recipes/recipe.queries.ts
+src/features/profile/profile.types.ts
+src/features/profile/profile.validation.ts
+src/features/profile/profile.errors.ts
+src/features/profile/profile.mappers.ts
+src/features/profile/profile.repository.ts
+src/features/profile/profile.queries.ts
 ```
 
-The repository talks to Supabase. The mapper converts rows into DTOs. Validation keeps user input constraints explicit, and recipe errors map backend failures into safe UI messages. TanStack Query hooks call repository functions and expose loading, error, cached data, and mutation states to the UI. Components should not make ad hoc server-state API calls in `useEffect`; `useEffect` should be reserved for true side effects such as focus management, subscriptions, or browser APIs. This keeps future migrations manageable because database changes are absorbed at the repository and mapper boundary.
+The repository talks to Supabase. The mapper converts rows into DTOs. Validation keeps user input constraints explicit, and feature errors map backend failures into safe UI messages. The profile boundary exposes only `displayName` and `username`; it never passes email, Auth metadata, avatar, bio, timestamps, or user IDs to the editor. TanStack Query hooks call repository functions and expose loading, error, cached data, and mutation states to the UI. Components should not make ad hoc server-state API calls in `useEffect`; `useEffect` should be reserved for true side effects such as focus management, subscriptions, or browser APIs. This keeps future migrations manageable because database changes are absorbed at the repository and mapper boundary.
 
 ## Delivery Environments
 

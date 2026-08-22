@@ -50,12 +50,16 @@ Enum grocery_list_source_type {
 
 Table profiles {
   id uuid [pk, note: 'Matches auth.users.id']
-  username text [unique]
-  display_name text
+  username text [unique, note: 'Nullable; normalized lowercase 3–24 character handle using a-z, 0-9, or underscore; reserved names rejected']
+  display_name text [note: 'Nullable; normalized app value is 1–50 characters and control characters are rejected']
   avatar_url text
   bio text
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    `lower(username)` [name: 'profiles_username_lower_unique_idx', unique, note: 'Partial where username is not null']
+  }
 }
 
 Table recipes {

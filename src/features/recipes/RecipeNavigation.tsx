@@ -8,6 +8,7 @@ import {
   House,
   Plus,
   ShoppingCart,
+  UserRound,
   X,
   type LucideIcon
 } from "lucide-react";
@@ -18,7 +19,8 @@ export type RecipeNavigationPage =
   | "archived"
   | "grocery-lists"
   | "home"
-  | "meal-planner";
+  | "meal-planner"
+  | "profile";
 
 type RecipeNavigationProps = {
   activePage: RecipeNavigationPage;
@@ -32,6 +34,12 @@ type NavigationItem = {
 };
 
 const MORE_NAVIGATION_ITEMS: NavigationItem[] = [
+  {
+    href: "/profile",
+    icon: UserRound,
+    id: "profile",
+    label: "Profile"
+  },
   {
     href: "/grocery-lists",
     icon: ShoppingCart,

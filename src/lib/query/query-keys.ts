@@ -16,6 +16,9 @@ export const queryKeys = {
     all: ["meal-planning"] as const,
     week: (weekStartDate: string) => ["meal-planning", "week", weekStartDate] as const
   },
+  profile: {
+    current: ["profile", "current"] as const
+  },
   recipes: {
     all: ["recipes"] as const,
     archivedList: ["recipes", "archived"] as const,

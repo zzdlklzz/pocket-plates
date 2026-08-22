@@ -1,6 +1,6 @@
 # PocketPlates
 
-PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, optimized private images, combined library discovery, a low-friction weekly meal planner, private standalone grocery checklists, and grocery lists generated from saved recipes or a planned week. Grocery checklists can be reset for reuse, week-generated lists can be explicitly refreshed in place after the plan changes, and the planner reopens the existing active list for that week instead of generating a duplicate.
+PocketPlates is a multi-user, private-first mobile recipe app for students and beginner cooks who want practical, affordable meals. The current app supports authenticated recipe management, owner-only display-name and username editing, optimized private images, combined library discovery, a low-friction weekly meal planner, private standalone grocery checklists, and grocery lists generated from saved recipes or a planned week. Grocery checklists can be reset for reuse, week-generated lists can be explicitly refreshed in place after the plan changes, and the planner reopens the existing active list for that week instead of generating a duplicate.
 
 ## Recommended Stack
 
@@ -42,6 +42,7 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `src/features/grocery-lists/`: grocery-list screens, shared requirement rendering and validation, query hooks, mapping, generation rules, and focused repositories
 - `src/features/grocery-lists/grocery-list.repository.ts`: grocery-list library/detail reads and checklist CRUD
 - `src/features/grocery-lists/grocery-list-generation.repository.ts`: selected-recipe and meal-plan source reads, previews, generated creation, and week refresh
+- `src/features/profile/`: owner-only profile editor, shared validation, safe errors, explicit mapping, repository, query hooks, and focused tests
 - `src/components/ui/useDialogFocusManagement.ts`: shared keyboard focus behavior for grocery-list and meal-planner dialogs
 - `infra/aws/`: Terraform project for the low-cost AWS EC2 learning deployment
 - `supabase/migrations/20260710000000_initial_recipe_schema.sql`: initial Supabase schema and RLS migration draft
@@ -53,9 +54,11 @@ Create a multi-user private recipe library that works well on iPhone, lets anyon
 - `supabase/migrations/20260821230000_add_grocery_list_foundation.sql`: private manual and generated grocery snapshots, normalized product uniqueness, provenance rows, and atomic create/meal-plan-refresh functions
 - `supabase/migrations/20260822012421_add_grocery_recipe_snapshot_counts.sql`: frozen selected-recipe counts, bounded recipe generation, and complete owner-scoped grocery recipe search
 - `supabase/migrations/20260822033256_enforce_one_linked_grocery_list_per_week.sql`: indexed uniqueness for one active linked grocery list per owner and meal-plan week
+- `supabase/migrations/20260822134210_add_profile_editing_rules.sql`: profile identity preflight, validation checks, case-insensitive username uniqueness, safe Auth metadata handling, and narrow editor grants
 - `supabase/tests/equipment_presets.sql`: transactional local SQL checks for preset reuse, filter semantics, validation, and RLS
 - `supabase/tests/meal_planner_foundation.sql`: transactional local SQL checks for planner grants, uniqueness, and owner isolation
 - `supabase/tests/grocery_lists.sql`: transactional local SQL checks for grocery-list grants, isolation, generated snapshots, and refresh preservation rules
+- `supabase/tests/profiles.sql`: transactional local SQL checks for profile rules, narrow grants, Auth-trigger safety, uniqueness, preflight diagnostics, and owner isolation
 - `scripts/run-local-e2e.mjs`: isolated local-Supabase Playwright runner for signed-in mobile and desktop workflows
 
 ## Local Development
@@ -70,7 +73,7 @@ This command starts the local Supabase stack when necessary, applies any pending
 
 Open `http://localhost:3000` and create a local account. Local users and recipe data remain separate from production. To rebuild the local database from every migration, use `npx supabase db reset --local`; this deletes local data only.
 
-Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflows, including the complete meal-planner journey, standalone grocery-list editing and checklist reset, selected-recipe generation, and meal-plan snapshot refresh with preserved manual/check/override state. Grocery acceptance also checks keyboard focus return and the linked-list layout at 200% text scale. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
+Run `npm run test:e2e:local` for the automated signed-in mobile and desktop workflows, including profile normalization and duplicate handling, the complete meal-planner journey, standalone grocery-list editing and checklist reset, selected-recipe generation, and meal-plan snapshot refresh with preserved manual/check/override state. Grocery acceptance also checks keyboard focus return and the linked-list layout at 200% text scale. Both local commands apply pending migrations before starting, so newly committed migrations are picked up in future development sessions.
 
 ## AWS Terraform Lab
 
@@ -85,12 +88,12 @@ The repo also contains `infra/aws/`, a fuller Phase 5 Terraform reference implem
 - Recipe detail screen
 - Add/edit recipe screen
 - Filter sheet
+- Owner-only profile editor for display name and unique lowercase username
 - Weekly meal planner with a seven-day vertical agenda, compact add/edit sheet with bounded title-or-ingredient recipe results, in-week day selection and one-serving defaults, in-app day/week copy and paste, and a grouped preparation summary linked to active recipes
 - Grocery-list library, blank-list creation, private checklist editing and reuse through reset, selected-recipe generation with serving adjustments, and canonical whole-week generation that reopens an existing active list and supports explicit in-place refresh
 
 ## Future Features
 
-- Simple display-name and username editing before community publishing
 - Public recipe publishing and ordinary public-URL sharing, with no unlisted-link mode
 - Filterable community discovery with reporting, hiding, moderation, and private-bucket image safeguards
 - A separate saved-recipes page with bookmark-style saves, favourites, and collections; recipe copying is not planned
